@@ -4,10 +4,10 @@
   "level_name": "Foundations",
   "order": 1,
   "title": "What is AI?",
-  "emoji": "🤖",
+  "emoji": "\ud83e\udd16",
   "duration_minutes": 15,
-  "eli8": "# What is AI? 🤖\n\n## It's Like Teaching a Dog Tricks!\n\nImagine you want to teach your dog to sit. You don't hand it a rulebook that says \"bend legs, lower bottom, stay still.\" Instead, you show it what \"sit\" looks like, give it a treat when it gets it right, and after enough tries — your dog just *knows* how to sit!\n\n**AI works the same way.** Instead of writing out every single rule, we *show* a computer thousands (or millions!) of examples and let it figure out the patterns on its own. 🐶\n\n## What Makes Something \"Intelligent\"?\n\nThink about the things only *you* can do:\n- 🧩 Solve problems you've never seen before\n- 🗣️ Understand what someone means even when they say it weirdly\n- 🎨 Be creative and make new things\n- 📚 Learn from mistakes\n\nAI tries to do these same things — but using math and data instead of a brain made of squishy neurons!\n\n## Two Kinds of AI\n\n- **Narrow AI 🎯** — Really, *really* good at ONE thing. Like a chess champion robot that can beat any human at chess... but couldn't make you a sandwich. Siri, Google Maps, Netflix recommendations, spam filters — these are all narrow AI!\n\n- **General AI 🌍** — This would be an AI that can do *anything* a human can do. Scientists are still working on this — it doesn't exist yet!\n\n## AI is Already Everywhere!\n\nYou've probably used AI today without even knowing it:\n- 📱 **Siri/Google Assistant** — understands your voice\n- 🎬 **Netflix** — guesses which shows you'll like\n- 📧 **Gmail** — catches spam before you see it\n- 📸 **Face unlock** on your phone — recognizes your face\n- 🎮 **Video game enemies** — figure out how to chase you!\n\nAI isn't magic — it's a very clever way of learning from examples. And now you're going to learn exactly how it works! 🚀",
-  "detail": "# What is Artificial Intelligence?\n\n## Formal Definition\n\nArtificial Intelligence (AI) is the simulation of human cognitive processes by computer systems. This includes learning (acquiring information and rules), reasoning (using those rules to draw conclusions), and self-correction. The term was coined by John McCarthy in 1956 at the Dartmouth Conference, widely considered the birth of AI as a discipline.\n\n## A Brief History\n\n- **1950 — The Turing Test**: Alan Turing proposed the \"Imitation Game\" — if a machine's responses are indistinguishable from a human's in text conversation, it could be considered intelligent. This remains a philosophical benchmark.\n- **1956–1974 — Early Optimism**: Rule-based expert systems, symbolic reasoning. Programs like ELIZA (1966) mimicked conversation using simple pattern matching.\n- **1980s–1990s — Expert Systems**: Hand-crafted knowledge bases used in medical diagnosis, financial forecasting. Limited by the brittleness of manually encoded rules.\n- **2000s — Machine Learning Revolution**: Statistical approaches and neural networks began outperforming hand-coded rules, especially in speech and image recognition.\n- **2017–present — The Transformer Era**: Large language models (LLMs) like GPT, BERT, and Claude now represent the most visible frontier of AI.\n\n## Types of AI by Capability\n\n### Artificial Narrow Intelligence (ANI)\nANI systems perform a single task or a narrow set of tasks at or above human level. Every AI system in production today is ANI. Examples: spam filters, recommendation engines, image classifiers, chess engines (Stockfish, AlphaZero), voice assistants.\n\n### Artificial General Intelligence (AGI)\nAGI refers to a hypothetical system with the general problem-solving ability of a human — able to learn any intellectual task a person can. No AGI system exists today, though the term is debated in the context of frontier LLMs.\n\n### Artificial Superintelligence (ASI)\nASI is a hypothetical AI that surpasses human intelligence across all domains. This remains speculative and is primarily a subject of alignment research and philosophy.\n\n## Key Subfields of AI\n\n| Subfield | Focus | Example |\n|---|---|---|\n| Machine Learning | Learning from data | Fraud detection |\n| Natural Language Processing | Understanding text/speech | ChatGPT, translation |\n| Computer Vision | Understanding images/video | Self-driving cars, MRI analysis |\n| Robotics | Physical world interaction | Warehouse robots |\n| Reinforcement Learning | Learning via reward | Game-playing agents |\n\n## The Current State: LLMs as Dominant AI\n\nLarge Language Models (LLMs) are currently the most capable and widely deployed form of AI. Trained on massive corpora of text, they exhibit emergent capabilities — reasoning, code generation, summarization, translation — that arise from scale rather than explicit programming.\n\n## A Simple Python Example: Rule-Based vs. Learned AI\n\nA **rule-based** \"AI\" for spam detection:\n\n```python\ndef is_spam_rules(email: str) -> bool:\n    \"\"\"Old-school: hand-coded rules.\"\"\"\n    spam_words = [\"free money\", \"click here\", \"winner\"]\n    return any(word in email.lower() for word in spam_words)\n\n# Works for known patterns, breaks on new ones\nprint(is_spam_rules(\"You have won a prize!\"))  # False — missed it!\n```\n\nA **learned** approach would instead train on thousands of labeled spam/not-spam examples and discover the patterns automatically — catching \"You have won a prize!\" without anyone writing that rule.\n\n## Key Takeaway\n\nAI is not magic. It is pattern recognition at scale, enabled by data, compute, and mathematical optimization. Understanding this demystifies both its power and its limitations.",
+  "eli8": "# What is AI? \ud83e\udd16\n\n## It's Like Teaching a Dog Tricks!\n\nImagine you want to teach your dog to sit. You don't hand it a rulebook that says \"bend legs, lower bottom, stay still.\" Instead, you show it what \"sit\" looks like, give it a treat when it gets it right, and after enough tries \u2014 your dog just *knows* how to sit!\n\n**AI works the same way.** Instead of writing out every single rule, we *show* a computer thousands (or millions!) of examples and let it figure out the patterns on its own. \ud83d\udc36\n\n## What Makes Something \"Intelligent\"?\n\nThink about the things only *you* can do:\n- \ud83e\udde9 Solve problems you've never seen before\n- \ud83d\udde3\ufe0f Understand what someone means even when they say it weirdly\n- \ud83c\udfa8 Be creative and make new things\n- \ud83d\udcda Learn from mistakes\n\nAI tries to do these same things \u2014 but using math and data instead of a brain made of squishy neurons!\n\n## Two Kinds of AI\n\n- **Narrow AI \ud83c\udfaf** \u2014 Really, *really* good at ONE thing. Like a chess champion robot that can beat any human at chess... but couldn't make you a sandwich. Siri, Google Maps, Netflix recommendations, spam filters \u2014 these are all narrow AI!\n\n- **General AI \ud83c\udf0d** \u2014 This would be an AI that can do *anything* a human can do. Scientists are still working on this \u2014 it doesn't exist yet!\n\n## AI is Already Everywhere!\n\nYou've probably used AI today without even knowing it:\n- \ud83d\udcf1 **Siri/Google Assistant** \u2014 understands your voice\n- \ud83c\udfac **Netflix** \u2014 guesses which shows you'll like\n- \ud83d\udce7 **Gmail** \u2014 catches spam before you see it\n- \ud83d\udcf8 **Face unlock** on your phone \u2014 recognizes your face\n- \ud83c\udfae **Video game enemies** \u2014 figure out how to chase you!\n\nAI isn't magic \u2014 it's a very clever way of learning from examples. And now you're going to learn exactly how it works! \ud83d\ude80",
+  "detail": "# What is Artificial Intelligence?\n\n## Formal Definition\n\nArtificial Intelligence (AI) is the simulation of human cognitive processes by computer systems. This includes learning (acquiring information and rules), reasoning (using those rules to draw conclusions), and self-correction. The term was coined by John McCarthy in 1956 at the Dartmouth Conference, widely considered the birth of AI as a discipline.\n\n## A Brief History\n\n- **1950 \u2014 The Turing Test**: Alan Turing proposed the \"Imitation Game\" \u2014 if a machine's responses are indistinguishable from a human's in text conversation, it could be considered intelligent. This remains a philosophical benchmark.\n- **1956\u20131974 \u2014 Early Optimism**: Rule-based expert systems, symbolic reasoning. Programs like ELIZA (1966) mimicked conversation using simple pattern matching.\n- **1980s\u20131990s \u2014 Expert Systems**: Hand-crafted knowledge bases used in medical diagnosis, financial forecasting. Limited by the brittleness of manually encoded rules.\n- **2000s \u2014 Machine Learning Revolution**: Statistical approaches and neural networks began outperforming hand-coded rules, especially in speech and image recognition.\n- **2017\u2013present \u2014 The Transformer Era**: Large language models (LLMs) like GPT, BERT, and Claude now represent the most visible frontier of AI.\n\n## Types of AI by Capability\n\n### Artificial Narrow Intelligence (ANI)\nANI systems perform a single task or a narrow set of tasks at or above human level. Every AI system in production today is ANI. Examples: spam filters, recommendation engines, image classifiers, chess engines (Stockfish, AlphaZero), voice assistants.\n\n### Artificial General Intelligence (AGI)\nAGI refers to a hypothetical system with the general problem-solving ability of a human \u2014 able to learn any intellectual task a person can. No AGI system exists today, though the term is debated in the context of frontier LLMs.\n\n### Artificial Superintelligence (ASI)\nASI is a hypothetical AI that surpasses human intelligence across all domains. This remains speculative and is primarily a subject of alignment research and philosophy.\n\n## Key Subfields of AI\n\n| Subfield | Focus | Example |\n|---|---|---|\n| Machine Learning | Learning from data | Fraud detection |\n| Natural Language Processing | Understanding text/speech | ChatGPT, translation |\n| Computer Vision | Understanding images/video | Self-driving cars, MRI analysis |\n| Robotics | Physical world interaction | Warehouse robots |\n| Reinforcement Learning | Learning via reward | Game-playing agents |\n\n## The Current State: LLMs as Dominant AI\n\nLarge Language Models (LLMs) are currently the most capable and widely deployed form of AI. Trained on massive corpora of text, they exhibit emergent capabilities \u2014 reasoning, code generation, summarization, translation \u2014 that arise from scale rather than explicit programming.\n\n## A Simple Python Example: Rule-Based vs. Learned AI\n\nA **rule-based** \"AI\" for spam detection:\n\n```python\ndef is_spam_rules(email: str) -> bool:\n    \"\"\"Old-school: hand-coded rules.\"\"\"\n    spam_words = [\"free money\", \"click here\", \"winner\"]\n    return any(word in email.lower() for word in spam_words)\n\n# Works for known patterns, breaks on new ones\nprint(is_spam_rules(\"You have won a prize!\"))  # False \u2014 missed it!\n```\n\nA **learned** approach would instead train on thousands of labeled spam/not-spam examples and discover the patterns automatically \u2014 catching \"You have won a prize!\" without anyone writing that rule.\n\n## Key Takeaway\n\nAI is not magic. It is pattern recognition at scale, enabled by data, compute, and mathematical optimization. Understanding this demystifies both its power and its limitations.",
   "mcqs": [
     {
       "id": "q1",
@@ -19,7 +19,7 @@
         "Software that connects to the internet to retrieve information"
       ],
       "correct": 1,
-      "explanation": "AI is formally defined as the simulation of human cognitive processes — such as learning, reasoning, and problem-solving — by machines. Not all AI involves physical robots, automation, or internet connectivity."
+      "explanation": "AI is formally defined as the simulation of human cognitive processes \u2014 such as learning, reasoning, and problem-solving \u2014 by machines. Not all AI involves physical robots, automation, or internet connectivity."
     },
     {
       "id": "q2",
@@ -43,7 +43,7 @@
         "A general-purpose robot that can learn any physical skill"
       ],
       "correct": 1,
-      "explanation": "ANI systems excel at one specific task. A chess engine like Stockfish or AlphaZero is superhuman at chess but has no capability outside that domain — the hallmark of narrow AI."
+      "explanation": "ANI systems excel at one specific task. A chess engine like Stockfish or AlphaZero is superhuman at chess but has no capability outside that domain \u2014 the hallmark of narrow AI."
     },
     {
       "id": "q4",
@@ -79,7 +79,7 @@
         "Is another name for a very large language model"
       ],
       "correct": 1,
-      "explanation": "AGI — a system with human-level general reasoning across all domains — does not exist yet. AlphaGo is a narrow AI (excels only at Go), and LLMs, while impressive, are still debated as potential AGI candidates."
+      "explanation": "AGI \u2014 a system with human-level general reasoning across all domains \u2014 does not exist yet. AlphaGo is a narrow AI (excels only at Go), and LLMs, while impressive, are still debated as potential AGI candidates."
     },
     {
       "id": "q7",
@@ -87,7 +87,7 @@
       "options": [
         "Rule-based systems are always slower to run",
         "Rule-based systems require expensive hardware",
-        "Rule-based systems are brittle — they fail on patterns their rules don't explicitly cover",
+        "Rule-based systems are brittle \u2014 they fail on patterns their rules don't explicitly cover",
         "Rule-based systems cannot be written in Python"
       ],
       "correct": 2,
@@ -98,7 +98,7 @@
     {
       "id": "f1",
       "front": "Artificial Intelligence (AI)",
-      "back": "The simulation of human cognitive processes — learning, reasoning, and self-correction — by computer systems. Coined as a field by John McCarthy in 1956."
+      "back": "The simulation of human cognitive processes \u2014 learning, reasoning, and self-correction \u2014 by computer systems. Coined as a field by John McCarthy in 1956."
     },
     {
       "id": "f2",
@@ -123,7 +123,7 @@
     {
       "id": "f6",
       "front": "Supervised Learning (preview)",
-      "back": "A type of machine learning where the model trains on labeled examples (input → known output). The model learns to predict the correct output for new, unseen inputs."
+      "back": "A type of machine learning where the model trains on labeled examples (input \u2192 known output). The model learns to predict the correct output for new, unseen inputs."
     },
     {
       "id": "f7",
@@ -133,7 +133,7 @@
   ],
   "videos": [
     {
-      "title": "What Is Artificial Intelligence? — IBM Technology",
+      "title": "What Is Artificial Intelligence? \u2014 IBM Technology",
       "youtube_id": "PaFPbb66DxQ",
       "description": "IBM's clear, concise explanation of AI covering its history, how it works, and real-world applications. Great companion to the formal definition section."
     },
@@ -144,5 +144,18 @@
     }
   ],
   "has_practical": true,
-  "practical_description": "An interactive demo that shows the difference between a rule-based classifier and a simple learned classifier on a toy spam-detection dataset, letting you add your own examples and watch the rules versus the model respond differently."
+  "practical_description": "An interactive demo that shows the difference between a rule-based classifier and a simple learned classifier on a toy spam-detection dataset, letting you add your own examples and watch the rules versus the model respond differently.",
+  "diagram": {
+    "type": "layered",
+    "title": "AI Contains ML Contains Deep Learning",
+    "layers": [
+      "Artificial Intelligence \u2014 any system that acts intelligently",
+      [
+        "Machine Learning \u2014 systems that learn from data"
+      ],
+      [
+        "Deep Learning \u2014 learning with neural networks"
+      ]
+    ]
+  }
 }

@@ -539,10 +539,57 @@ function renderTabBody(topic) {
   }
 }
 
+// ── Diagrams ──
+function renderDiagram(diagram) {
+  if (!diagram || !diagram.type) return '';
+  const title = diagram.title ? `<div class="diagram-title">${escHtml(diagram.title)}</div>` : '';
+
+  const renderBoxes = (entry, small) => {
+    const items = Array.isArray(entry) ? entry : [entry];
+    const cls = small ? 'diagram-box diagram-box-sm' : 'diagram-box';
+    return items.map(label => `<div class="${cls}">${escHtml(label)}</div>`).join('');
+  };
+
+  if (diagram.type === 'layered') {
+    const layers = diagram.layers || [];
+    const body = layers.map((layer, i) => {
+      const boxes = renderBoxes(layer, Array.isArray(layer) && layer.length > 1);
+      const arrow = i < layers.length - 1 ? '<div class="diagram-arrow-down">↓</div>' : '';
+      return `<div class="diagram-layer">${boxes}</div>${arrow}`;
+    }).join('');
+    return `<div class="diagram-card card">${title}<div class="diagram-layered">${body}</div></div>`;
+  }
+
+  // "flow" and "loop" share the same horizontal row rendering
+  const steps = diagram.steps || [];
+  const cols = steps.map((step, i) => {
+    const isGroup = Array.isArray(step) && step.length > 1;
+    const boxes = renderBoxes(step, isGroup);
+    const colClass = isGroup ? 'diagram-col diagram-col-group' : 'diagram-col';
+    const arrow = i < steps.length - 1 ? '<div class="diagram-arrow">→</div>' : '';
+    return `<div class="${colClass}">${boxes}</div>${arrow}`;
+  }).join('');
+  const row = `<div class="diagram-flow">${cols}</div>`;
+
+  if (diagram.type === 'loop') {
+    const label = escHtml(diagram.loop_label || 'repeats');
+    return `<div class="diagram-card card">${title}
+      <div class="diagram-loop-wrap">
+        ${row}
+        <div class="diagram-loop-return"><span class="diagram-loop-icon">↺</span> ${label}</div>
+      </div>
+    </div>`;
+  }
+
+  return `<div class="diagram-card card">${title}${row}</div>`;
+}
+
 // ── Theory ──
 function renderTheoryTab(topic) {
+  const diagram = topic.diagram ? renderDiagram(topic.diagram) : '';
   return `
     <div class="tab-content active">
+      ${diagram}
       <div class="subtab-bar">
         <button class="subtab-btn ${state.activeSubtab==='eli8'?'active':''}"
                 data-action="switch-subtab" data-subtab="eli8">🧒 Explain Simply</button>

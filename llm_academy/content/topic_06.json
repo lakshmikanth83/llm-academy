@@ -4,10 +4,10 @@
   "level_name": "How LLMs Work",
   "order": 1,
   "title": "Tokens & Tokenization",
-  "emoji": "🧱",
+  "emoji": "\ud83e\uddf1",
   "duration_minutes": 20,
-  "eli8": "# Breaking Words into LEGO Bricks 🧱\n\nHave you ever played with LEGO bricks? You can build almost anything by snapping different pieces together. AI models do something similar with words — they break them into small pieces called **tokens**!\n\n## What's a Token?\n\nInstead of reading whole words, AI models read little chunks of text:\n\n- The word **\"unhappiness\"** gets broken into: `un` + `happi` + `ness` (3 tokens!)\n- The word **\"cat\"** stays as just: `cat` (1 token)\n- The word **\"playing\"** might become: `play` + `ing` (2 tokens)\n\nHere's a cool trick: **1 token ≈ 4 characters** in English. So \"hello\" (5 chars) is about 1-2 tokens.\n\n## Why Not Just Use Whole Words?\n\nImagine trying to teach someone a language where every new word needs its own flashcard 😅. There are millions of words! Instead, the AI learns:\n\n- **Common word pieces** like `-ing`, `-tion`, `un-`, `re-`\n- **Whole common words** like `the`, `cat`, `jump`\n- **Single characters** for really rare stuff\n\nThis way, even a brand-new word like **\"supercalifragilistic\"** can be understood by combining known pieces!\n\n## Fun Facts About Tokens 🎉\n\n- 📚 GPT-4 knows about **100,000 different tokens** — that's its vocabulary!\n- 🌍 Different languages use tokens differently — emoji 🎉 is often just 1 token\n- 🔢 Numbers can be tricky: `9.11` might split as `9`, `.`, `11` — which is why AI sometimes gets confused about whether 9.9 is bigger than 9.11!\n- 💰 AI companies charge you by the number of tokens — so shorter messages = cheaper!\n\nNext time you ask an AI a question, you're really sending it a stream of tiny LEGO bricks — and it's building its answer the same way! 🏗️",
-  "detail": "# Tokens & Tokenization\n\n## What Is a Token?\n\nA **token** is the fundamental unit of text that a language model processes. Tokens are neither characters nor words — they are subword units derived through a learned segmentation algorithm. In English, a token averages roughly 4 characters or about ¾ of a word. For reference:\n\n- `\"Hello, world!\"` → 4 tokens: `Hello`, `,`, ` world`, `!`\n- `\"tokenization\"` → 3 tokens: `token`, `ization` (model-dependent)\n- A 1,000-word essay is approximately 1,300–1,500 tokens\n\n## Evolution of Tokenization Strategies\n\n**Character-level tokenization** was the earliest approach: treat each character as a token. Simple, but sequences get very long and models struggle to learn word-level meaning.\n\n**Word-level tokenization** splits on whitespace and punctuation. Produces meaningful tokens but results in enormous vocabularies (millions of words), poor handling of unknown words, and no shared representation for morphological variants (`run`, `running`, `runner`).\n\n**Subword tokenization** (current standard) strikes the balance: common words remain intact, rare words are split into meaningful pieces, and the vocabulary stays bounded.\n\n## Byte-Pair Encoding (BPE)\n\nBPE, introduced by Sennrich et al. (2016), is the algorithm behind GPT tokenizers:\n\n1. Start with a vocabulary of individual characters\n2. Count all adjacent symbol pairs in the corpus\n3. Merge the most frequent pair into a new symbol\n4. Repeat until vocabulary size is reached\n\n```python\n# Simplified BPE simulation\ndef get_pairs(vocab):\n    pairs = {}\n    for word, freq in vocab.items():\n        symbols = word.split()\n        for i in range(len(symbols) - 1):\n            pair = (symbols[i], symbols[i+1])\n            pairs[pair] = pairs.get(pair, 0) + freq\n    return pairs\n\nvocab = {'l o w </w>': 5, 'l o w e r </w>': 2, 'n e w e s t </w>': 6}\npairs = get_pairs(vocab)\nbest = max(pairs, key=pairs.get)  # ('e', 's') with freq 6+2=8\n# Merge 'e' + 's' → 'es' everywhere\n```\n\n## Other Tokenization Algorithms\n\n- **WordPiece** (BERT): Similar to BPE but uses likelihood maximization rather than frequency\n- **SentencePiece** (LLaMA, T5): Language-agnostic, treats text as raw bytes, handles any language/script uniformly\n- **Tiktoken** (OpenAI): Fast Rust-based BPE implementation used in GPT-3.5/4; `cl100k_base` vocabulary has ~100,277 tokens\n\n## Why Tokenization Matters\n\n**Arithmetic failures**: `9.9 > 9.11` failures occur because `9.11` tokenizes to `9`, `.`, `11` — the model sees these as text patterns, not numerical values.\n\n**Multilingual inequity**: English is heavily represented in training data, so English text tokenizes efficiently (~1 token/word). Other languages can cost 2–5x more tokens for the same content (e.g., Korean, Arabic).\n\n**Token budget and cost**: All major APIs (OpenAI, Anthropic, Google) price by token. GPT-4o costs $5/1M input tokens. A 10-page document (~5,000 words) costs roughly $0.03–0.05 to process.\n\n**Context limits**: A 128K context window means 128,000 tokens, not words. Understanding this prevents costly truncation bugs.\n\n## Key Vocabulary Sizes\n\n| Model | Tokenizer | Vocab Size |\n|-------|-----------|------------|\n| GPT-2 | BPE | 50,257 |\n| GPT-3.5/4 | tiktoken (cl100k) | 100,277 |\n| LLaMA 2 | SentencePiece | 32,000 |\n| LLaMA 3 | tiktoken | 128,256 |\n| Gemma | SentencePiece | 256,000 |",
+  "eli8": "# Breaking Words into LEGO Bricks \ud83e\uddf1\n\nHave you ever played with LEGO bricks? You can build almost anything by snapping different pieces together. AI models do something similar with words \u2014 they break them into small pieces called **tokens**!\n\n## What's a Token?\n\nInstead of reading whole words, AI models read little chunks of text:\n\n- The word **\"unhappiness\"** gets broken into: `un` + `happi` + `ness` (3 tokens!)\n- The word **\"cat\"** stays as just: `cat` (1 token)\n- The word **\"playing\"** might become: `play` + `ing` (2 tokens)\n\nHere's a cool trick: **1 token \u2248 4 characters** in English. So \"hello\" (5 chars) is about 1-2 tokens.\n\n## Why Not Just Use Whole Words?\n\nImagine trying to teach someone a language where every new word needs its own flashcard \ud83d\ude05. There are millions of words! Instead, the AI learns:\n\n- **Common word pieces** like `-ing`, `-tion`, `un-`, `re-`\n- **Whole common words** like `the`, `cat`, `jump`\n- **Single characters** for really rare stuff\n\nThis way, even a brand-new word like **\"supercalifragilistic\"** can be understood by combining known pieces!\n\n## Fun Facts About Tokens \ud83c\udf89\n\n- \ud83d\udcda GPT-4 knows about **100,000 different tokens** \u2014 that's its vocabulary!\n- \ud83c\udf0d Different languages use tokens differently \u2014 emoji \ud83c\udf89 is often just 1 token\n- \ud83d\udd22 Numbers can be tricky: `9.11` might split as `9`, `.`, `11` \u2014 which is why AI sometimes gets confused about whether 9.9 is bigger than 9.11!\n- \ud83d\udcb0 AI companies charge you by the number of tokens \u2014 so shorter messages = cheaper!\n\nNext time you ask an AI a question, you're really sending it a stream of tiny LEGO bricks \u2014 and it's building its answer the same way! \ud83c\udfd7\ufe0f",
+  "detail": "# Tokens & Tokenization\n\n## What Is a Token?\n\nA **token** is the fundamental unit of text that a language model processes. Tokens are neither characters nor words \u2014 they are subword units derived through a learned segmentation algorithm. In English, a token averages roughly 4 characters or about \u00be of a word. For reference:\n\n- `\"Hello, world!\"` \u2192 4 tokens: `Hello`, `,`, ` world`, `!`\n- `\"tokenization\"` \u2192 3 tokens: `token`, `ization` (model-dependent)\n- A 1,000-word essay is approximately 1,300\u20131,500 tokens\n\n## Evolution of Tokenization Strategies\n\n**Character-level tokenization** was the earliest approach: treat each character as a token. Simple, but sequences get very long and models struggle to learn word-level meaning.\n\n**Word-level tokenization** splits on whitespace and punctuation. Produces meaningful tokens but results in enormous vocabularies (millions of words), poor handling of unknown words, and no shared representation for morphological variants (`run`, `running`, `runner`).\n\n**Subword tokenization** (current standard) strikes the balance: common words remain intact, rare words are split into meaningful pieces, and the vocabulary stays bounded.\n\n## Byte-Pair Encoding (BPE)\n\nBPE, introduced by Sennrich et al. (2016), is the algorithm behind GPT tokenizers:\n\n1. Start with a vocabulary of individual characters\n2. Count all adjacent symbol pairs in the corpus\n3. Merge the most frequent pair into a new symbol\n4. Repeat until vocabulary size is reached\n\n```python\n# Simplified BPE simulation\ndef get_pairs(vocab):\n    pairs = {}\n    for word, freq in vocab.items():\n        symbols = word.split()\n        for i in range(len(symbols) - 1):\n            pair = (symbols[i], symbols[i+1])\n            pairs[pair] = pairs.get(pair, 0) + freq\n    return pairs\n\nvocab = {'l o w </w>': 5, 'l o w e r </w>': 2, 'n e w e s t </w>': 6}\npairs = get_pairs(vocab)\nbest = max(pairs, key=pairs.get)  # ('e', 's') with freq 6+2=8\n# Merge 'e' + 's' \u2192 'es' everywhere\n```\n\n## Other Tokenization Algorithms\n\n- **WordPiece** (BERT): Similar to BPE but uses likelihood maximization rather than frequency\n- **SentencePiece** (LLaMA, T5): Language-agnostic, treats text as raw bytes, handles any language/script uniformly\n- **Tiktoken** (OpenAI): Fast Rust-based BPE implementation used in GPT-3.5/4; `cl100k_base` vocabulary has ~100,277 tokens\n\n## Why Tokenization Matters\n\n**Arithmetic failures**: `9.9 > 9.11` failures occur because `9.11` tokenizes to `9`, `.`, `11` \u2014 the model sees these as text patterns, not numerical values.\n\n**Multilingual inequity**: English is heavily represented in training data, so English text tokenizes efficiently (~1 token/word). Other languages can cost 2\u20135x more tokens for the same content (e.g., Korean, Arabic).\n\n**Token budget and cost**: All major APIs (OpenAI, Anthropic, Google) price by token. GPT-4o costs $5/1M input tokens. A 10-page document (~5,000 words) costs roughly $0.03\u20130.05 to process.\n\n**Context limits**: A 128K context window means 128,000 tokens, not words. Understanding this prevents costly truncation bugs.\n\n## Key Vocabulary Sizes\n\n| Model | Tokenizer | Vocab Size |\n|-------|-----------|------------|\n| GPT-2 | BPE | 50,257 |\n| GPT-3.5/4 | tiktoken (cl100k) | 100,277 |\n| LLaMA 2 | SentencePiece | 32,000 |\n| LLaMA 3 | tiktoken | 128,256 |\n| Gemma | SentencePiece | 256,000 |",
   "mcqs": [
     {
       "id": "q1",
@@ -24,14 +24,24 @@
     {
       "id": "q2",
       "question": "Approximately how many characters does 1 token correspond to in English text?",
-      "options": ["1 character", "4 characters", "10 characters", "1 full word always"],
+      "options": [
+        "1 character",
+        "4 characters",
+        "10 characters",
+        "1 full word always"
+      ],
       "correct": 1,
-      "explanation": "A common rule of thumb is 1 token ≈ 4 characters in English, meaning a 1,000-word document is roughly 1,300–1,500 tokens."
+      "explanation": "A common rule of thumb is 1 token \u2248 4 characters in English, meaning a 1,000-word document is roughly 1,300\u20131,500 tokens."
     },
     {
       "id": "q3",
       "question": "GPT-4 uses the tiktoken library with the cl100k_base vocabulary. How large is this vocabulary?",
-      "options": ["~10,000 tokens", "~50,000 tokens", "~100,277 tokens", "~1,000,000 tokens"],
+      "options": [
+        "~10,000 tokens",
+        "~50,000 tokens",
+        "~100,277 tokens",
+        "~1,000,000 tokens"
+      ],
       "correct": 2,
       "explanation": "The cl100k_base vocabulary used by GPT-3.5 and GPT-4 contains approximately 100,277 tokens."
     },
@@ -65,16 +75,21 @@
       "options": [
         "Fewer tokens, because Korean characters encode more information",
         "The same number of tokens",
-        "2–5x more tokens, because non-English text tokenizes less efficiently",
+        "2\u20135x more tokens, because non-English text tokenizes less efficiently",
         "Exactly twice as many tokens"
       ],
       "correct": 2,
-      "explanation": "Because major tokenizers are trained on English-dominant corpora, non-Latin scripts like Korean, Arabic, and Thai often require 2–5x more tokens to represent the same semantic content, making API costs higher for those languages."
+      "explanation": "Because major tokenizers are trained on English-dominant corpora, non-Latin scripts like Korean, Arabic, and Thai often require 2\u20135x more tokens to represent the same semantic content, making API costs higher for those languages."
     },
     {
       "id": "q7",
       "question": "Which tokenizer is used by LLaMA 2 and treats text as raw Unicode bytes, making it language-agnostic?",
-      "options": ["Tiktoken", "WordPiece", "SentencePiece", "Byte-level BPE with whitespace rules"],
+      "options": [
+        "Tiktoken",
+        "WordPiece",
+        "SentencePiece",
+        "Byte-level BPE with whitespace rules"
+      ],
       "correct": 2,
       "explanation": "SentencePiece, used by LLaMA 2, T5, and others, operates directly on raw text bytes without language-specific preprocessing, making it inherently language-agnostic."
     }
@@ -83,7 +98,7 @@
     {
       "id": "f1",
       "front": "Token",
-      "back": "The basic unit of text a language model processes. Tokens are subword units — neither full words nor single characters. In English, 1 token ≈ 4 characters."
+      "back": "The basic unit of text a language model processes. Tokens are subword units \u2014 neither full words nor single characters. In English, 1 token \u2248 4 characters."
     },
     {
       "id": "f2",
@@ -123,16 +138,26 @@
   ],
   "videos": [
     {
-      "title": "Let's build the GPT Tokenizer — Andrej Karpathy",
+      "title": "Let's build the GPT Tokenizer \u2014 Andrej Karpathy",
       "youtube_id": "zduSFxRajkE",
       "description": "Karpathy builds a BPE tokenizer from scratch in Python, walking through the exact algorithm used in GPT models. Essential viewing for understanding how tokenization works under the hood."
     },
     {
-      "title": "Let's build GPT: from scratch, in code, spelled out — Andrej Karpathy",
+      "title": "Let's build GPT: from scratch, in code, spelled out \u2014 Andrej Karpathy",
       "youtube_id": "kCc8FmEb1nY",
       "description": "Full GPT implementation from scratch. The early sections cover tokenization in the context of a real model build, showing how token IDs flow into embeddings."
     }
   ],
   "has_practical": true,
-  "practical_description": "Interactive tokenizer demo that visualizes how a sentence is split into tokens using BPE, color-coding each token and displaying the token count and character-to-token ratio in real time."
+  "practical_description": "Interactive tokenizer demo that visualizes how a sentence is split into tokens using BPE, color-coding each token and displaying the token count and character-to-token ratio in real time.",
+  "diagram": {
+    "type": "flow",
+    "title": "From Text to Tokens",
+    "steps": [
+      "Raw Text: \"unhappiness\"",
+      "BPE Merge Rules",
+      "Tokens: un + happi + ness",
+      "Token IDs: [403, 8821, 191]"
+    ]
+  }
 }

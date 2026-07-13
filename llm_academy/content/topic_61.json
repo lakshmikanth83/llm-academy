@@ -4,10 +4,10 @@
   "level_name": "Capstone & Interview Prep",
   "order": 1,
   "title": "Capstone Project",
-  "emoji": "🏆",
+  "emoji": "\ud83c\udfc6",
   "duration_minutes": 60,
-  "eli8": "# 🏆 Build Your First Real AI App!\n\nYou've learned SO much — transformers, embeddings, RAG, prompting, agents, evaluation, fine-tuning, and production! Now it's time to put it ALL together and build something real that you can show people!\n\nWe're going to build **DocBot** — an AI that reads a bunch of documents and answers questions about them!\n\n## 📚 What DocBot Does\n\nImagine your school library has 1000 books. You want to ask \"What is the capital of France?\" without reading all 1000 books!\n\nDocBot does this automatically:\n1. 📖 **Reads** all the documents and chops them into small pieces\n2. 🔢 **Converts** each piece into a magic number (embedding) that captures its meaning\n3. 💾 **Stores** all those numbers in a special database (vector store)\n4. 🔍 **Finds** the most relevant pieces when you ask a question\n5. 🤖 **Sends** the relevant pieces + your question to an AI\n6. ✅ **Returns** an answer WITH the sources it used!\n\n## 🧱 The Building Blocks\n\nDocBot uses everything from this course:\n- **Chunking** (Level 5): split documents wisely\n- **Embeddings** (Level 5): turn text into numbers\n- **Vector Store** (Level 5): fast search through millions of chunks\n- **Prompting** (Level 3): tell the AI HOW to answer\n- **FastAPI** (Level 10): make it accessible as a web API\n- **Evaluation** (Level 7): check if the answers are actually good!\n\n## 🌟 Your Portfolio Project\n\nWhen you finish, you'll have:\n- Real Python code on GitHub 💻\n- A working demo you can show employers 🎯\n- Understanding of the full stack of LLM engineering 🚀\n\nThis is what AI engineers actually build at companies! You're now one of them! 🎉",
-  "detail": "## Capstone Project: DocBot — A RAG-Powered Q&A System\n\nThis capstone integrates all concepts from the course into a complete, deployable project. DocBot is a document question-answering system with a REST API, demonstrating the full LLM engineering stack.\n\n### Project Architecture\n\n```\n┌─────────────────────────────────────────────────────┐\n│                    DocBot System                     │\n├───────────────────┬─────────────────────────────────┤\n│  Ingestion        │  Query                          │\n│  Pipeline         │  Pipeline                       │\n│                   │                                 │\n│  PDF/TXT files    │  User question                  │\n│      ↓            │      ↓                          │\n│  Text extractor   │  Embed query                    │\n│      ↓            │      ↓                          │\n│  Chunker          │  Vector search (top-5)          │\n│      ↓            │      ↓                          │\n│  Embedder         │  Format prompt + context        │\n│      ↓            │      ↓                          │\n│  Vector store     │  LLM generation                 │\n│  (Chroma)         │      ↓                          │\n│                   │  Answer + citations             │\n└───────────────────┴─────────────────────────────────┘\n```\n\n### Project Structure\n\n```\ndocbot/\n├── main.py              # FastAPI application\n├── ingestion.py         # Document loading and chunking\n├── embeddings.py        # Embedding model wrapper\n├── vector_store.py      # Chroma operations\n├── rag_pipeline.py      # Query pipeline\n├── evaluation.py        # Basic quality checks\n├── static/\n│   └── index.html       # Simple frontend\n├── data/                # Sample documents\n├── requirements.txt\n└── README.md\n```\n\n### Component 1: Document Ingestion Pipeline\n\n```python\n# ingestion.py\nfrom pathlib import Path\nfrom typing import List\nimport re\n\ndef load_document(filepath: str) -> str:\n    path = Path(filepath)\n    if path.suffix == \".txt\":\n        return path.read_text(encoding=\"utf-8\")\n    elif path.suffix == \".pdf\":\n        import pypdf\n        reader = pypdf.PdfReader(filepath)\n        return \"\\n\".join(page.extract_text() for page in reader.pages)\n    raise ValueError(f\"Unsupported format: {path.suffix}\")\n\ndef chunk_text(text: str, chunk_size: int = 512,\n              overlap: int = 64) -> List[dict]:\n    words = text.split()\n    chunks = []\n    i = 0\n    while i < len(words):\n        chunk_words = words[i:i + chunk_size]\n        chunk_text = \" \".join(chunk_words)\n        chunks.append({\n            \"text\": chunk_text,\n            \"start_word\": i,\n            \"word_count\": len(chunk_words)\n        })\n        i += chunk_size - overlap\n    return chunks\n```\n\n### Component 2: Offline-Compatible Embeddings\n\n```python\n# embeddings.py\nfrom sentence_transformers import SentenceTransformer\nimport numpy as np\n\nclass EmbeddingModel:\n    def __init__(self, model_name: str = \"all-MiniLM-L6-v2\"):\n        # Lightweight model: 80MB, runs on CPU\n        self.model = SentenceTransformer(model_name)\n\n    def embed(self, texts: list[str]) -> list[list[float]]:\n        embeddings = self.model.encode(texts, normalize_embeddings=True)\n        return embeddings.tolist()\n\n    def embed_query(self, query: str) -> list[float]:\n        return self.embed([query])[0]\n```\n\n### Component 3: RAG Query Pipeline\n\n```python\n# rag_pipeline.py\nimport chromadb\nfrom embeddings import EmbeddingModel\n\nSYSTEM_PROMPT = \"\"\"You are a helpful assistant that answers questions \nusing ONLY the provided context. Always cite your sources by referencing \nthe document name and chunk number. If the context doesn't contain the \nanswer, say 'I don't have information about that in the provided documents.'\"\"\"\n\ndef query(question: str, collection, embedder: EmbeddingModel,\n          llm_client, n_results: int = 5) -> dict:\n    # 1. Embed the query\n    query_embedding = embedder.embed_query(question)\n\n    # 2. Retrieve top-k chunks\n    results = collection.query(\n        query_embeddings=[query_embedding], n_results=n_results\n    )\n    context_chunks = results[\"documents\"][0]\n    metadatas = results[\"metadatas\"][0]\n\n    # 3. Format context with source labels\n    context = \"\\n\\n\".join(\n        f\"[Source {i+1}: {m['source']}]\\n{chunk}\"\n        for i, (chunk, m) in enumerate(zip(context_chunks, metadatas))\n    )\n\n    # 4. Generate answer\n    messages = [\n        {\"role\": \"user\", \"content\": f\"Context:\\n{context}\\n\\nQuestion: {question}\"}\n    ]\n    response = llm_client.messages.create(\n        model=\"claude-haiku-3\",\n        max_tokens=512,\n        system=SYSTEM_PROMPT,\n        messages=messages\n    )\n\n    return {\n        \"answer\": response.content[0].text,\n        \"sources\": [m[\"source\"] for m in metadatas]\n    }\n```\n\n### Component 4: FastAPI REST API\n\n```python\n# main.py\nfrom fastapi import FastAPI\nfrom fastapi.staticfiles import StaticFiles\nfrom pydantic import BaseModel\n\napp = FastAPI(title=\"DocBot\")\napp.mount(\"/static\", StaticFiles(directory=\"static\"), name=\"static\")\n\nclass QueryRequest(BaseModel):\n    question: str\n\n@app.post(\"/query\")\nasync def query_endpoint(req: QueryRequest):\n    result = rag_pipeline.query(req.question, collection, embedder, llm)\n    return result\n\n@app.post(\"/ingest\")\nasync def ingest_endpoint(filepath: str):\n    chunks = ingest.process_file(filepath)\n    return {\"chunks_added\": len(chunks)}\n```\n\n### Extended Challenges\n\n1. **Conversation history**: pass previous Q&A pairs in the context\n2. **Source display**: show the actual text of retrieved chunks in the UI\n3. **RAGAS evaluation**: run faithfulness + answer relevance on a test set\n4. **Multi-document comparison**: answer questions that span multiple docs\n5. **Cloud deployment**: deploy to Cloud Run with Docker",
+  "eli8": "# \ud83c\udfc6 Build Your First Real AI App!\n\nYou've learned SO much \u2014 transformers, embeddings, RAG, prompting, agents, evaluation, fine-tuning, and production! Now it's time to put it ALL together and build something real that you can show people!\n\nWe're going to build **DocBot** \u2014 an AI that reads a bunch of documents and answers questions about them!\n\n## \ud83d\udcda What DocBot Does\n\nImagine your school library has 1000 books. You want to ask \"What is the capital of France?\" without reading all 1000 books!\n\nDocBot does this automatically:\n1. \ud83d\udcd6 **Reads** all the documents and chops them into small pieces\n2. \ud83d\udd22 **Converts** each piece into a magic number (embedding) that captures its meaning\n3. \ud83d\udcbe **Stores** all those numbers in a special database (vector store)\n4. \ud83d\udd0d **Finds** the most relevant pieces when you ask a question\n5. \ud83e\udd16 **Sends** the relevant pieces + your question to an AI\n6. \u2705 **Returns** an answer WITH the sources it used!\n\n## \ud83e\uddf1 The Building Blocks\n\nDocBot uses everything from this course:\n- **Chunking** (Level 5): split documents wisely\n- **Embeddings** (Level 5): turn text into numbers\n- **Vector Store** (Level 5): fast search through millions of chunks\n- **Prompting** (Level 3): tell the AI HOW to answer\n- **FastAPI** (Level 10): make it accessible as a web API\n- **Evaluation** (Level 7): check if the answers are actually good!\n\n## \ud83c\udf1f Your Portfolio Project\n\nWhen you finish, you'll have:\n- Real Python code on GitHub \ud83d\udcbb\n- A working demo you can show employers \ud83c\udfaf\n- Understanding of the full stack of LLM engineering \ud83d\ude80\n\nThis is what AI engineers actually build at companies! You're now one of them! \ud83c\udf89",
+  "detail": "## Capstone Project: DocBot \u2014 A RAG-Powered Q&A System\n\nThis capstone integrates all concepts from the course into a complete, deployable project. DocBot is a document question-answering system with a REST API, demonstrating the full LLM engineering stack.\n\n### Project Architecture\n\n```\n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502                    DocBot System                     \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502  Ingestion        \u2502  Query                          \u2502\n\u2502  Pipeline         \u2502  Pipeline                       \u2502\n\u2502                   \u2502                                 \u2502\n\u2502  PDF/TXT files    \u2502  User question                  \u2502\n\u2502      \u2193            \u2502      \u2193                          \u2502\n\u2502  Text extractor   \u2502  Embed query                    \u2502\n\u2502      \u2193            \u2502      \u2193                          \u2502\n\u2502  Chunker          \u2502  Vector search (top-5)          \u2502\n\u2502      \u2193            \u2502      \u2193                          \u2502\n\u2502  Embedder         \u2502  Format prompt + context        \u2502\n\u2502      \u2193            \u2502      \u2193                          \u2502\n\u2502  Vector store     \u2502  LLM generation                 \u2502\n\u2502  (Chroma)         \u2502      \u2193                          \u2502\n\u2502                   \u2502  Answer + citations             \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n```\n\n### Project Structure\n\n```\ndocbot/\n\u251c\u2500\u2500 main.py              # FastAPI application\n\u251c\u2500\u2500 ingestion.py         # Document loading and chunking\n\u251c\u2500\u2500 embeddings.py        # Embedding model wrapper\n\u251c\u2500\u2500 vector_store.py      # Chroma operations\n\u251c\u2500\u2500 rag_pipeline.py      # Query pipeline\n\u251c\u2500\u2500 evaluation.py        # Basic quality checks\n\u251c\u2500\u2500 static/\n\u2502   \u2514\u2500\u2500 index.html       # Simple frontend\n\u251c\u2500\u2500 data/                # Sample documents\n\u251c\u2500\u2500 requirements.txt\n\u2514\u2500\u2500 README.md\n```\n\n### Component 1: Document Ingestion Pipeline\n\n```python\n# ingestion.py\nfrom pathlib import Path\nfrom typing import List\nimport re\n\ndef load_document(filepath: str) -> str:\n    path = Path(filepath)\n    if path.suffix == \".txt\":\n        return path.read_text(encoding=\"utf-8\")\n    elif path.suffix == \".pdf\":\n        import pypdf\n        reader = pypdf.PdfReader(filepath)\n        return \"\\n\".join(page.extract_text() for page in reader.pages)\n    raise ValueError(f\"Unsupported format: {path.suffix}\")\n\ndef chunk_text(text: str, chunk_size: int = 512,\n              overlap: int = 64) -> List[dict]:\n    words = text.split()\n    chunks = []\n    i = 0\n    while i < len(words):\n        chunk_words = words[i:i + chunk_size]\n        chunk_text = \" \".join(chunk_words)\n        chunks.append({\n            \"text\": chunk_text,\n            \"start_word\": i,\n            \"word_count\": len(chunk_words)\n        })\n        i += chunk_size - overlap\n    return chunks\n```\n\n### Component 2: Offline-Compatible Embeddings\n\n```python\n# embeddings.py\nfrom sentence_transformers import SentenceTransformer\nimport numpy as np\n\nclass EmbeddingModel:\n    def __init__(self, model_name: str = \"all-MiniLM-L6-v2\"):\n        # Lightweight model: 80MB, runs on CPU\n        self.model = SentenceTransformer(model_name)\n\n    def embed(self, texts: list[str]) -> list[list[float]]:\n        embeddings = self.model.encode(texts, normalize_embeddings=True)\n        return embeddings.tolist()\n\n    def embed_query(self, query: str) -> list[float]:\n        return self.embed([query])[0]\n```\n\n### Component 3: RAG Query Pipeline\n\n```python\n# rag_pipeline.py\nimport chromadb\nfrom embeddings import EmbeddingModel\n\nSYSTEM_PROMPT = \"\"\"You are a helpful assistant that answers questions \nusing ONLY the provided context. Always cite your sources by referencing \nthe document name and chunk number. If the context doesn't contain the \nanswer, say 'I don't have information about that in the provided documents.'\"\"\"\n\ndef query(question: str, collection, embedder: EmbeddingModel,\n          llm_client, n_results: int = 5) -> dict:\n    # 1. Embed the query\n    query_embedding = embedder.embed_query(question)\n\n    # 2. Retrieve top-k chunks\n    results = collection.query(\n        query_embeddings=[query_embedding], n_results=n_results\n    )\n    context_chunks = results[\"documents\"][0]\n    metadatas = results[\"metadatas\"][0]\n\n    # 3. Format context with source labels\n    context = \"\\n\\n\".join(\n        f\"[Source {i+1}: {m['source']}]\\n{chunk}\"\n        for i, (chunk, m) in enumerate(zip(context_chunks, metadatas))\n    )\n\n    # 4. Generate answer\n    messages = [\n        {\"role\": \"user\", \"content\": f\"Context:\\n{context}\\n\\nQuestion: {question}\"}\n    ]\n    response = llm_client.messages.create(\n        model=\"claude-haiku-3\",\n        max_tokens=512,\n        system=SYSTEM_PROMPT,\n        messages=messages\n    )\n\n    return {\n        \"answer\": response.content[0].text,\n        \"sources\": [m[\"source\"] for m in metadatas]\n    }\n```\n\n### Component 4: FastAPI REST API\n\n```python\n# main.py\nfrom fastapi import FastAPI\nfrom fastapi.staticfiles import StaticFiles\nfrom pydantic import BaseModel\n\napp = FastAPI(title=\"DocBot\")\napp.mount(\"/static\", StaticFiles(directory=\"static\"), name=\"static\")\n\nclass QueryRequest(BaseModel):\n    question: str\n\n@app.post(\"/query\")\nasync def query_endpoint(req: QueryRequest):\n    result = rag_pipeline.query(req.question, collection, embedder, llm)\n    return result\n\n@app.post(\"/ingest\")\nasync def ingest_endpoint(filepath: str):\n    chunks = ingest.process_file(filepath)\n    return {\"chunks_added\": len(chunks)}\n```\n\n### Extended Challenges\n\n1. **Conversation history**: pass previous Q&A pairs in the context\n2. **Source display**: show the actual text of retrieved chunks in the UI\n3. **RAGAS evaluation**: run faithfulness + answer relevance on a test set\n4. **Multi-document comparison**: answer questions that span multiple docs\n5. **Cloud deployment**: deploy to Cloud Run with Docker",
   "mcqs": [
     {
       "id": "q1",
@@ -19,14 +19,14 @@
         "Overlap reduces the total number of chunks, saving storage"
       ],
       "correct": 1,
-      "explanation": "Semantic units (sentences, paragraphs) often span chunk boundaries. Overlapping chunks ensure context at boundaries isn't split — a sentence starting at the end of chunk N also appears at the start of chunk N+1."
+      "explanation": "Semantic units (sentences, paragraphs) often span chunk boundaries. Overlapping chunks ensure context at boundaries isn't split \u2014 a sentence starting at the end of chunk N also appears at the start of chunk N+1."
     },
     {
       "id": "q2",
       "question": "Why does DocBot use `sentence-transformers` (all-MiniLM-L6-v2) for embeddings rather than an API-based embedding model?",
       "options": [
         "Sentence Transformers always produce higher quality embeddings than API models",
-        "It runs locally and offline — no API key required, suitable for demos and development without cloud costs",
+        "It runs locally and offline \u2014 no API key required, suitable for demos and development without cloud costs",
         "The LLM API does not support embedding generation",
         "Sentence Transformers are faster for queries longer than 512 tokens"
       ],
@@ -43,7 +43,7 @@
         "Automatically search the web for the answer"
       ],
       "correct": 2,
-      "explanation": "A critical RAG system prompt instruction is to restrict the model to only provided context. When context doesn't contain the answer, the model should explicitly say so — this prevents hallucination and builds user trust."
+      "explanation": "A critical RAG system prompt instruction is to restrict the model to only provided context. When context doesn't contain the answer, the model should explicitly say so \u2014 this prevents hallucination and builds user trust."
     },
     {
       "id": "q4",
@@ -67,7 +67,7 @@
         "It is required by the FastAPI framework for document routing"
       ],
       "correct": 1,
-      "explanation": "Source labels enable citation — the LLM can reference 'Source 2: company_policy.pdf' in its answer. Users can then verify the response against the original document, a critical trust feature in production RAG systems."
+      "explanation": "Source labels enable citation \u2014 the LLM can reference 'Source 2: company_policy.pdf' in its answer. Users can then verify the response against the original document, a critical trust feature in production RAG systems."
     },
     {
       "id": "q6",
@@ -75,23 +75,23 @@
       "options": [
         "Response time (latency) in milliseconds",
         "Number of chunks retrieved per query",
-        "RAGAS faithfulness score — whether claims in the answer are supported by the retrieved context",
+        "RAGAS faithfulness score \u2014 whether claims in the answer are supported by the retrieved context",
         "Total token count of the generated answer"
       ],
       "correct": 2,
-      "explanation": "RAGAS faithfulness measures whether statements in the answer are grounded in the retrieved context — directly measuring hallucination. Latency and token count are operational metrics, not answer quality metrics."
+      "explanation": "RAGAS faithfulness measures whether statements in the answer are grounded in the retrieved context \u2014 directly measuring hallucination. Latency and token count are operational metrics, not answer quality metrics."
     }
   ],
   "flashcards": [
     {
       "id": "f1",
       "front": "Document ingestion pipeline",
-      "back": "The offline process that prepares documents for RAG: load raw files → extract text → chunk into segments → generate embeddings → store in vector database. Runs once when new documents are added."
+      "back": "The offline process that prepares documents for RAG: load raw files \u2192 extract text \u2192 chunk into segments \u2192 generate embeddings \u2192 store in vector database. Runs once when new documents are added."
     },
     {
       "id": "f2",
       "front": "Query pipeline",
-      "back": "The real-time process that handles user questions in a RAG system: embed query → vector search for top-k chunks → format prompt with context → LLM generation → return answer with citations."
+      "back": "The real-time process that handles user questions in a RAG system: embed query \u2192 vector search for top-k chunks \u2192 format prompt with context \u2192 LLM generation \u2192 return answer with citations."
     },
     {
       "id": "f3",
@@ -101,7 +101,7 @@
     {
       "id": "f4",
       "front": "TF-IDF (Term Frequency-Inverse Document Frequency)",
-      "back": "A classical text retrieval method that scores document relevance by word frequency weighted by how rare the word is across all documents. No neural network required — good offline fallback for embeddings."
+      "back": "A classical text retrieval method that scores document relevance by word frequency weighted by how rare the word is across all documents. No neural network required \u2014 good offline fallback for embeddings."
     },
     {
       "id": "f5",
@@ -116,7 +116,7 @@
     {
       "id": "f7",
       "front": "Chroma",
-      "back": "An open-source, local vector database. Stores embeddings and metadata, supports similarity search. Runs entirely in-process (no server needed) — ideal for development, prototyping, and small-scale production."
+      "back": "An open-source, local vector database. Stores embeddings and metadata, supports similarity search. Runs entirely in-process (no server needed) \u2014 ideal for development, prototyping, and small-scale production."
     },
     {
       "id": "f8",
@@ -128,14 +128,29 @@
     {
       "title": "Build a RAG App from Scratch",
       "youtube_id": "T-D1OfcDW1M",
-      "description": "Complete walkthrough of building a production-quality RAG system from document ingestion through vector search to a FastAPI endpoint — covers all components of the DocBot architecture."
+      "description": "Complete walkthrough of building a production-quality RAG system from document ingestion through vector search to a FastAPI endpoint \u2014 covers all components of the DocBot architecture."
     },
     {
       "title": "Complete RAG Project: End-to-End Implementation",
       "youtube_id": "8OJC21T2SL4",
-      "description": "Full project build of a document Q&A system using LangChain, Chroma, and a language model — demonstrates the complete pipeline from raw documents to a working chat interface."
+      "description": "Full project build of a document Q&A system using LangChain, Chroma, and a language model \u2014 demonstrates the complete pipeline from raw documents to a working chat interface."
     }
   ],
   "has_practical": true,
-  "practical_description": "The offline demo runs DocBot with TF-IDF retrieval over a set of sample text documents, demonstrating the full ingestion → retrieval → simulated generation pipeline without requiring any API keys or GPU."
+  "practical_description": "The offline demo runs DocBot with TF-IDF retrieval over a set of sample text documents, demonstrating the full ingestion \u2192 retrieval \u2192 simulated generation pipeline without requiring any API keys or GPU.",
+  "diagram": {
+    "type": "flow",
+    "title": "A Production RAG + Agent Architecture",
+    "steps": [
+      "User",
+      "Agent Orchestrator",
+      [
+        "RAG Tool",
+        "Calculator Tool",
+        "Search Tool"
+      ],
+      "LLM",
+      "Final Answer"
+    ]
+  }
 }

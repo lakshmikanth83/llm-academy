@@ -4,10 +4,10 @@
   "level_name": "How LLMs Work",
   "order": 2,
   "title": "Embeddings",
-  "emoji": "🗺️",
+  "emoji": "\ud83d\uddfa\ufe0f",
   "duration_minutes": 20,
-  "eli8": "# Words as Map Coordinates 🗺️\n\nImagine a magical map where words are placed on it based on their *meaning*. Words that are similar end up close together, and words that are different end up far apart.\n\n## The Meaning Map\n\nOn this meaning map:\n- 🐱 \"cat\" and \"kitten\" are next-door neighbors\n- 🍎 \"apple\" and \"banana\" live in the same fruit neighborhood\n- 👑 \"king\" and \"queen\" are very close, just like a real royal family\n- 🏠 \"house\" and \"banana\" are very far apart — they have nothing to do with each other!\n\nEach word gets its own **coordinates** on this map — a list of numbers that describe exactly where it lives. These coordinates are called an **embedding**.\n\n## Why Is This Useful? 🤔\n\nWhen you ask an AI a question, it looks up the embeddings for all your words and finds nearby neighbors:\n\n- You ask: *\"Tell me about a feline pet\"*\n- The AI looks up \"feline\" and \"pet\" on the map\n- It sees they're close to \"cat\", \"kitten\", \"tabby\"\n- So it knows you're asking about cats! 🐱\n\n## The Magic of Math 🔢\n\nHere's the coolest part — you can do **math** with these coordinates!\n\n> **King** - Man + Woman = **Queen** 👑\n\nThat's real! If you take the king's coordinates, subtract the \"man\" coordinates, and add the \"woman\" coordinates, you end up right next to \"queen\" on the map!\n\nThis is how AI understands that:\n- Paris is to France as Tokyo is to Japan 🗾\n- Hot is to cold as fast is to slow\n- Walking is to walked as running is to ran\n\nEmbeddings turn language into math — and math is something computers are really, really good at! 🧮",
-  "detail": "# Embeddings\n\n## What Is an Embedding?\n\nAn **embedding** is a dense, fixed-length vector of floating-point numbers that represents a piece of text (token, word, sentence, or document) in a continuous high-dimensional space. The core property: semantically similar texts have vectors that are geometrically close to each other.\n\nA 1,536-dimensional embedding for \"cat\" might look like:\n```\n[0.023, -0.412, 0.887, 0.003, -0.156, ... (1,536 values total)]\n```\n\n## Historical Context: Word2Vec and GloVe\n\n**Word2Vec** (Mikolov et al., 2013) was the breakthrough: train a shallow neural network to predict surrounding words (Skip-gram) or predict a word from its context (CBOW). The hidden layer weights become word embeddings. Trained on Google News corpus (100B words), 300-dimensional vectors.\n\n**GloVe** (Pennington et al., 2014) — Global Vectors for Word Representation. Instead of local context windows, factorizes the global word co-occurrence matrix. Tends to capture broader semantic relationships.\n\nBoth have been superseded by contextual embeddings from transformer models, but the intuitions they established remain foundational.\n\n## Semantic Similarity via Cosine Similarity\n\nThe standard measure of similarity between two embedding vectors:\n\n```python\nimport numpy as np\n\ndef cosine_similarity(a, b):\n    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))\n\n# Returns a value in [-1, 1]\n# 1.0  = identical direction (highly similar)\n# 0.0  = orthogonal (unrelated)\n# -1.0 = opposite direction (antonyms)\n\nsim = cosine_similarity(embed(\"dog\"), embed(\"puppy\"))  # ~0.85\nsim = cosine_similarity(embed(\"dog\"), embed(\"quantum\"))  # ~0.12\n```\n\n## The King - Man + Woman = Queen Relationship\n\nWord2Vec demonstrated that linear arithmetic on embedding vectors encodes semantic relationships:\n\n- `vec(\"king\") - vec(\"man\") + vec(\"woman\") ≈ vec(\"queen\")`\n- `vec(\"Paris\") - vec(\"France\") + vec(\"Italy\") ≈ vec(\"Rome\")`\n- `vec(\"walked\") - vec(\"walk\") + vec(\"run\") ≈ vec(\"ran\")`\n\nThis shows that the offset between \"king\" and \"queen\" encodes the concept of gender, separately from the concept of royalty.\n\n## Modern Embedding Models\n\n| Model | Dimensions | Context | Best Use |\n|-------|-----------|---------|----------|\n| text-embedding-ada-002 | 1,536 | 8,192 tokens | General-purpose RAG |\n| text-embedding-3-small | 1,536 | 8,192 tokens | Cost-efficient retrieval |\n| text-embedding-3-large | 3,072 | 8,192 tokens | High-accuracy semantic search |\n| all-MiniLM-L6-v2 | 384 | 256 tokens | Fast local inference |\n| BGE-M3 | 1,024 | 8,192 tokens | Multilingual retrieval |\n\n**Sentence embeddings** (vs. word embeddings) represent an entire sentence or passage as a single vector. Models like SBERT (Sentence-BERT) are fine-tuned specifically for this task using siamese network training.\n\n## Dimensionality and Information Density\n\nHigher-dimensional embeddings can represent more nuanced distinctions, but with trade-offs:\n- Storage: 1M documents × 1,536 dims × 4 bytes = ~6 GB\n- Search latency: nearest-neighbor search scales with dimensions\n- Matryoshka Representation Learning (MRL): embeddings that can be truncated (e.g., 3,072 → 512 dims) with graceful quality degradation\n\n## Use in Retrieval-Augmented Generation (RAG)\n\nThe primary production use of embeddings today:\n\n1. **Indexing**: Encode all documents into vectors, store in a vector database (Pinecone, Weaviate, pgvector)\n2. **Query**: Encode the user's question into a vector\n3. **Retrieve**: Find the K nearest document vectors via approximate nearest neighbor (ANN) search\n4. **Generate**: Feed retrieved documents as context to the LLM\n\nThis enables LLMs to \"retrieve\" relevant knowledge without storing all facts in model weights.",
+  "eli8": "# Words as Map Coordinates \ud83d\uddfa\ufe0f\n\nImagine a magical map where words are placed on it based on their *meaning*. Words that are similar end up close together, and words that are different end up far apart.\n\n## The Meaning Map\n\nOn this meaning map:\n- \ud83d\udc31 \"cat\" and \"kitten\" are next-door neighbors\n- \ud83c\udf4e \"apple\" and \"banana\" live in the same fruit neighborhood\n- \ud83d\udc51 \"king\" and \"queen\" are very close, just like a real royal family\n- \ud83c\udfe0 \"house\" and \"banana\" are very far apart \u2014 they have nothing to do with each other!\n\nEach word gets its own **coordinates** on this map \u2014 a list of numbers that describe exactly where it lives. These coordinates are called an **embedding**.\n\n## Why Is This Useful? \ud83e\udd14\n\nWhen you ask an AI a question, it looks up the embeddings for all your words and finds nearby neighbors:\n\n- You ask: *\"Tell me about a feline pet\"*\n- The AI looks up \"feline\" and \"pet\" on the map\n- It sees they're close to \"cat\", \"kitten\", \"tabby\"\n- So it knows you're asking about cats! \ud83d\udc31\n\n## The Magic of Math \ud83d\udd22\n\nHere's the coolest part \u2014 you can do **math** with these coordinates!\n\n> **King** - Man + Woman = **Queen** \ud83d\udc51\n\nThat's real! If you take the king's coordinates, subtract the \"man\" coordinates, and add the \"woman\" coordinates, you end up right next to \"queen\" on the map!\n\nThis is how AI understands that:\n- Paris is to France as Tokyo is to Japan \ud83d\uddfe\n- Hot is to cold as fast is to slow\n- Walking is to walked as running is to ran\n\nEmbeddings turn language into math \u2014 and math is something computers are really, really good at! \ud83e\uddee",
+  "detail": "# Embeddings\n\n## What Is an Embedding?\n\nAn **embedding** is a dense, fixed-length vector of floating-point numbers that represents a piece of text (token, word, sentence, or document) in a continuous high-dimensional space. The core property: semantically similar texts have vectors that are geometrically close to each other.\n\nA 1,536-dimensional embedding for \"cat\" might look like:\n```\n[0.023, -0.412, 0.887, 0.003, -0.156, ... (1,536 values total)]\n```\n\n## Historical Context: Word2Vec and GloVe\n\n**Word2Vec** (Mikolov et al., 2013) was the breakthrough: train a shallow neural network to predict surrounding words (Skip-gram) or predict a word from its context (CBOW). The hidden layer weights become word embeddings. Trained on Google News corpus (100B words), 300-dimensional vectors.\n\n**GloVe** (Pennington et al., 2014) \u2014 Global Vectors for Word Representation. Instead of local context windows, factorizes the global word co-occurrence matrix. Tends to capture broader semantic relationships.\n\nBoth have been superseded by contextual embeddings from transformer models, but the intuitions they established remain foundational.\n\n## Semantic Similarity via Cosine Similarity\n\nThe standard measure of similarity between two embedding vectors:\n\n```python\nimport numpy as np\n\ndef cosine_similarity(a, b):\n    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))\n\n# Returns a value in [-1, 1]\n# 1.0  = identical direction (highly similar)\n# 0.0  = orthogonal (unrelated)\n# -1.0 = opposite direction (antonyms)\n\nsim = cosine_similarity(embed(\"dog\"), embed(\"puppy\"))  # ~0.85\nsim = cosine_similarity(embed(\"dog\"), embed(\"quantum\"))  # ~0.12\n```\n\n## The King - Man + Woman = Queen Relationship\n\nWord2Vec demonstrated that linear arithmetic on embedding vectors encodes semantic relationships:\n\n- `vec(\"king\") - vec(\"man\") + vec(\"woman\") \u2248 vec(\"queen\")`\n- `vec(\"Paris\") - vec(\"France\") + vec(\"Italy\") \u2248 vec(\"Rome\")`\n- `vec(\"walked\") - vec(\"walk\") + vec(\"run\") \u2248 vec(\"ran\")`\n\nThis shows that the offset between \"king\" and \"queen\" encodes the concept of gender, separately from the concept of royalty.\n\n## Modern Embedding Models\n\n| Model | Dimensions | Context | Best Use |\n|-------|-----------|---------|----------|\n| text-embedding-ada-002 | 1,536 | 8,192 tokens | General-purpose RAG |\n| text-embedding-3-small | 1,536 | 8,192 tokens | Cost-efficient retrieval |\n| text-embedding-3-large | 3,072 | 8,192 tokens | High-accuracy semantic search |\n| all-MiniLM-L6-v2 | 384 | 256 tokens | Fast local inference |\n| BGE-M3 | 1,024 | 8,192 tokens | Multilingual retrieval |\n\n**Sentence embeddings** (vs. word embeddings) represent an entire sentence or passage as a single vector. Models like SBERT (Sentence-BERT) are fine-tuned specifically for this task using siamese network training.\n\n## Dimensionality and Information Density\n\nHigher-dimensional embeddings can represent more nuanced distinctions, but with trade-offs:\n- Storage: 1M documents \u00d7 1,536 dims \u00d7 4 bytes = ~6 GB\n- Search latency: nearest-neighbor search scales with dimensions\n- Matryoshka Representation Learning (MRL): embeddings that can be truncated (e.g., 3,072 \u2192 512 dims) with graceful quality degradation\n\n## Use in Retrieval-Augmented Generation (RAG)\n\nThe primary production use of embeddings today:\n\n1. **Indexing**: Encode all documents into vectors, store in a vector database (Pinecone, Weaviate, pgvector)\n2. **Query**: Encode the user's question into a vector\n3. **Retrieve**: Find the K nearest document vectors via approximate nearest neighbor (ANN) search\n4. **Generate**: Feed retrieved documents as context to the LLM\n\nThis enables LLMs to \"retrieve\" relevant knowledge without storing all facts in model weights.",
   "mcqs": [
     {
       "id": "q1",
@@ -35,7 +35,7 @@
     },
     {
       "id": "q3",
-      "question": "What does the famous Word2Vec relationship 'King - Man + Woman ≈ Queen' demonstrate?",
+      "question": "What does the famous Word2Vec relationship 'King - Man + Woman \u2248 Queen' demonstrate?",
       "options": [
         "That word embeddings can be added and subtracted like ordinary numbers",
         "That linear arithmetic on embedding vectors encodes semantic relationships and analogies",
@@ -48,7 +48,12 @@
     {
       "id": "q4",
       "question": "OpenAI's text-embedding-3-large model produces embeddings with how many dimensions?",
-      "options": ["384", "768", "1,536", "3,072"],
+      "options": [
+        "384",
+        "768",
+        "1,536",
+        "3,072"
+      ],
       "correct": 3,
       "explanation": "text-embedding-3-large produces 3,072-dimensional vectors, making it OpenAI's highest-quality embedding model. text-embedding-3-small and text-embedding-ada-002 produce 1,536-dimensional vectors."
     },
@@ -98,17 +103,17 @@
     {
       "id": "f2",
       "front": "Vector",
-      "back": "An ordered list of numbers. In ML, embedding vectors typically have 384–3,072 dimensions. Each dimension captures some aspect of semantic meaning, though individual dimensions are not humanly interpretable."
+      "back": "An ordered list of numbers. In ML, embedding vectors typically have 384\u20133,072 dimensions. Each dimension captures some aspect of semantic meaning, though individual dimensions are not humanly interpretable."
     },
     {
       "id": "f3",
       "front": "Cosine similarity",
-      "back": "A measure of similarity between two vectors defined as the cosine of the angle between them: cos(θ) = (A·B) / (‖A‖‖B‖). Ranges from -1 (opposite) to 1 (identical direction). The standard metric for embedding similarity."
+      "back": "A measure of similarity between two vectors defined as the cosine of the angle between them: cos(\u03b8) = (A\u00b7B) / (\u2016A\u2016\u2016B\u2016). Ranges from -1 (opposite) to 1 (identical direction). The standard metric for embedding similarity."
     },
     {
       "id": "f4",
       "front": "Semantic similarity",
-      "back": "The degree to which two pieces of text have the same meaning or are related in topic/concept. Measured in embedding space via cosine similarity — semantically similar texts have high cosine similarity scores."
+      "back": "The degree to which two pieces of text have the same meaning or are related in topic/concept. Measured in embedding space via cosine similarity \u2014 semantically similar texts have high cosine similarity scores."
     },
     {
       "id": "f5",
@@ -133,16 +138,26 @@
   ],
   "videos": [
     {
-      "title": "Word Embedding and Word2Vec Explained — StatQuest",
+      "title": "Word Embedding and Word2Vec Explained \u2014 StatQuest",
       "youtube_id": "viZrOnJclY0",
       "description": "Clear visual explanation of how Word2Vec trains word embeddings, the Skip-gram and CBOW architectures, and why the resulting vectors capture semantic relationships."
     },
     {
-      "title": "Embeddings Explained — Visualizing High-Dimensional Space",
+      "title": "Embeddings Explained \u2014 Visualizing High-Dimensional Space",
       "youtube_id": "gQddtTdmG_8",
       "description": "Visual walkthrough of what embedding spaces look like, how dimensionality reduction (t-SNE/UMAP) reveals clustering, and practical examples of semantic similarity in action."
     }
   ],
   "has_practical": true,
-  "practical_description": "Interactive embedding similarity explorer where you type two phrases and see their cosine similarity score, plus a 2D visualization (via PCA projection) showing how words cluster in embedding space."
+  "practical_description": "Interactive embedding similarity explorer where you type two phrases and see their cosine similarity score, plus a 2D visualization (via PCA projection) showing how words cluster in embedding space.",
+  "diagram": {
+    "type": "flow",
+    "title": "Turning Words into Vectors",
+    "steps": [
+      "Word or Sentence",
+      "Embedding Model",
+      "Vector [0.2, -0.5, 0.8, ...]",
+      "Position in Meaning Space"
+    ]
+  }
 }

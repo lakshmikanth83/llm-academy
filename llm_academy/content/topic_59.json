@@ -4,17 +4,17 @@
   "level_name": "Production & Cloud",
   "order": 4,
   "title": "Cost & Model Routing",
-  "emoji": "💰",
+  "emoji": "\ud83d\udcb0",
   "duration_minutes": 15,
-  "eli8": "# 💰 Smart Spending with AI Models!\n\nImagine your mom sends you to buy groceries. She has three stores:\n- 🏪 **Corner store** — fast and close, but expensive\n- 🏬 **Regular supermarket** — pretty good price and quality\n- 🏭 **Bulk warehouse** — massive, best quality, but takes 30 minutes to drive there\n\nWould you drive to the warehouse just to buy a single apple? No way! You'd use the corner store for small stuff and only go to the warehouse for big shopping trips.\n\n**Model routing** works exactly like this! 🛒\n\n## 🎯 The Three Tiers of AI Models\n\n- ⚡ **Fast & Cheap** (like the corner store): Claude Haiku, GPT-4o mini\n  - Great for: simple questions, checking if text is spam, short summaries\n  - Cost: tiny! (fractions of a cent)\n\n- ⚖️ **Balanced** (the supermarket): Claude Sonnet, GPT-4o\n  - Great for: most everyday tasks — answering questions, writing help\n  - Cost: moderate\n\n- 🧠 **Powerful** (the warehouse): Claude Opus, GPT-4\n  - Great for: really hard problems, complex coding, deep reasoning\n  - Cost: expensive! Use sparingly.\n\n## 🔀 How Does Routing Work?\n\nA router looks at your question and decides which model to use:\n- \"Is this email spam?\" → cheap model ✅\n- \"Write me a haiku\" → cheap model ✅\n- \"Debug this complex Rust code\" → expensive model ✅\n- \"Explain quantum physics step by step\" → expensive model ✅\n\n## 🎁 Bonus: Prompt Caching\n\nIf you always start every conversation with the same long instructions (\"You are a helpful assistant for Acme Corp...\"), why pay for that every time? **Prompt caching** remembers the instructions and charges 90% less for repeated use. Huge savings! 💸",
-  "detail": "## Cost Management and Model Routing\n\nAs LLM API costs scale with usage, intelligent routing between model tiers is one of the highest-ROI optimizations available to AI application developers.\n\n### Model Tier Overview (Approximate 2024 Pricing per Million Tokens)\n\n| Tier | Model | Input | Output | Best For |\n|------|-------|-------|--------|----------|\n| Fast | Claude Haiku 3 | $0.25 | $1.25 | Classification, extraction, short QA |\n| Fast | GPT-4o mini | $0.15 | $0.60 | Same as above |\n| Balanced | Claude Sonnet 3.5 | $3.00 | $15.00 | Most production tasks |\n| Balanced | GPT-4o | $5.00 | $15.00 | General purpose |\n| Powerful | Claude Opus 3 | $15.00 | $75.00 | Complex reasoning, nuanced writing |\n| Powerful | GPT-4 | $30.00 | $60.00 | Advanced reasoning |\n\n*Prices change frequently — always check provider documentation.*\n\n### Cost Calculation\n\n```python\ndef estimate_cost(input_tokens: int, output_tokens: int, model: str) -> float:\n    pricing = {\n        \"claude-haiku-3\": (0.25, 1.25),\n        \"claude-sonnet-3-5\": (3.00, 15.00),\n        \"claude-opus-3\": (15.00, 75.00),\n    }\n    price_in, price_out = pricing[model]\n    return (input_tokens * price_in + output_tokens * price_out) / 1_000_000\n```\n\n### Routing Strategies\n\n**1. Rule-based routing** — fast, predictable:\n```python\ndef route_by_task(task_type: str) -> str:\n    cheap_tasks = {\"classification\", \"spam_check\", \"extraction\", \"translation\"}\n    expensive_tasks = {\"complex_reasoning\", \"code_review\", \"creative_writing\"}\n    if task_type in cheap_tasks:\n        return \"claude-haiku-3\"\n    elif task_type in expensive_tasks:\n        return \"claude-opus-3\"\n    return \"claude-sonnet-3-5\"  # default\n```\n\n**2. Complexity scoring** — heuristic-based:\n```python\ndef score_complexity(prompt: str) -> float:\n    score = 0\n    score += min(len(prompt.split()) / 100, 3)  # length signal\n    score += sum(1 for w in [\"explain\",\"analyze\",\"compare\",\"debug\"] if w in prompt.lower())\n    score += 2 if any(c in prompt for c in ['```', 'def ', 'class '])  else 0\n    return score\n\ndef route_by_complexity(prompt: str) -> str:\n    score = score_complexity(prompt)\n    if score < 2: return \"claude-haiku-3\"\n    if score < 5: return \"claude-sonnet-3-5\"\n    return \"claude-opus-3\"\n```\n\n**3. LLM-based classifier** — most accurate, small overhead:\n```python\ndef classify_complexity(prompt: str) -> str:\n    response = haiku_client.messages.create(\n        model=\"claude-haiku-3\",\n        max_tokens=10,\n        system=\"Classify query complexity. Respond with exactly one word: simple, medium, or complex.\",\n        messages=[{\"role\": \"user\", \"content\": prompt}]\n    )\n    return response.content[0].text.strip().lower()\n```\n\n### Prompt Caching (Anthropic)\n\nAnthropic's prompt caching saves up to 90% on repeated system prompt tokens:\n\n```python\nimport anthropic\nclient = anthropic.Anthropic()\n\nresponse = client.messages.create(\n    model=\"claude-sonnet-3-5\",\n    max_tokens=1024,\n    system=[\n        {\n            \"type\": \"text\",\n            \"text\": very_long_system_prompt,  # e.g., 10,000 token company knowledge base\n            \"cache_control\": {\"type\": \"ephemeral\"}  # cache this prefix\n        }\n    ],\n    messages=[{\"role\": \"user\", \"content\": user_question}]\n)\n# First call: full price. Subsequent calls with same prefix: ~90% discount on cached tokens\n```\n\n### Latency Budgets\n\nModel selection must account for latency requirements:\n- **Real-time** (<500ms): Haiku or cached Sonnet only\n- **Interactive** (<2s): Sonnet, small Opus prompts\n- **Batch** (minutes): any model, maximize quality\n- **Overnight** (hours): Opus with large context, complex reasoning\n\n### Cost Monitoring\n\n```python\nfrom dataclasses import dataclass\nfrom datetime import datetime\n\n@dataclass\nclass UsageRecord:\n    user_id: str\n    endpoint: str\n    model: str\n    input_tokens: int\n    output_tokens: int\n    cost_usd: float\n    timestamp: datetime\n\n# Track per-user, per-feature costs\n# Alert when hourly cost > 2× rolling average\n# Set hard limits per user tier (free/paid/enterprise)\n```\n\n### Budget Alerts\n\nSet tiered alerts:\n- 🟡 Warning at 70% of monthly budget\n- 🔴 Alert at 90% of monthly budget\n- 🛑 Hard cutoff or throttle at 100%",
+  "eli8": "# \ud83d\udcb0 Smart Spending with AI Models!\n\nImagine your mom sends you to buy groceries. She has three stores:\n- \ud83c\udfea **Corner store** \u2014 fast and close, but expensive\n- \ud83c\udfec **Regular supermarket** \u2014 pretty good price and quality\n- \ud83c\udfed **Bulk warehouse** \u2014 massive, best quality, but takes 30 minutes to drive there\n\nWould you drive to the warehouse just to buy a single apple? No way! You'd use the corner store for small stuff and only go to the warehouse for big shopping trips.\n\n**Model routing** works exactly like this! \ud83d\uded2\n\n## \ud83c\udfaf The Three Tiers of AI Models\n\n- \u26a1 **Fast & Cheap** (like the corner store): Claude Haiku, GPT-4o mini\n  - Great for: simple questions, checking if text is spam, short summaries\n  - Cost: tiny! (fractions of a cent)\n\n- \u2696\ufe0f **Balanced** (the supermarket): Claude Sonnet, GPT-4o\n  - Great for: most everyday tasks \u2014 answering questions, writing help\n  - Cost: moderate\n\n- \ud83e\udde0 **Powerful** (the warehouse): Claude Opus, GPT-4\n  - Great for: really hard problems, complex coding, deep reasoning\n  - Cost: expensive! Use sparingly.\n\n## \ud83d\udd00 How Does Routing Work?\n\nA router looks at your question and decides which model to use:\n- \"Is this email spam?\" \u2192 cheap model \u2705\n- \"Write me a haiku\" \u2192 cheap model \u2705\n- \"Debug this complex Rust code\" \u2192 expensive model \u2705\n- \"Explain quantum physics step by step\" \u2192 expensive model \u2705\n\n## \ud83c\udf81 Bonus: Prompt Caching\n\nIf you always start every conversation with the same long instructions (\"You are a helpful assistant for Acme Corp...\"), why pay for that every time? **Prompt caching** remembers the instructions and charges 90% less for repeated use. Huge savings! \ud83d\udcb8",
+  "detail": "## Cost Management and Model Routing\n\nAs LLM API costs scale with usage, intelligent routing between model tiers is one of the highest-ROI optimizations available to AI application developers.\n\n### Model Tier Overview (Approximate 2024 Pricing per Million Tokens)\n\n| Tier | Model | Input | Output | Best For |\n|------|-------|-------|--------|----------|\n| Fast | Claude Haiku 3 | $0.25 | $1.25 | Classification, extraction, short QA |\n| Fast | GPT-4o mini | $0.15 | $0.60 | Same as above |\n| Balanced | Claude Sonnet 3.5 | $3.00 | $15.00 | Most production tasks |\n| Balanced | GPT-4o | $5.00 | $15.00 | General purpose |\n| Powerful | Claude Opus 3 | $15.00 | $75.00 | Complex reasoning, nuanced writing |\n| Powerful | GPT-4 | $30.00 | $60.00 | Advanced reasoning |\n\n*Prices change frequently \u2014 always check provider documentation.*\n\n### Cost Calculation\n\n```python\ndef estimate_cost(input_tokens: int, output_tokens: int, model: str) -> float:\n    pricing = {\n        \"claude-haiku-3\": (0.25, 1.25),\n        \"claude-sonnet-3-5\": (3.00, 15.00),\n        \"claude-opus-3\": (15.00, 75.00),\n    }\n    price_in, price_out = pricing[model]\n    return (input_tokens * price_in + output_tokens * price_out) / 1_000_000\n```\n\n### Routing Strategies\n\n**1. Rule-based routing** \u2014 fast, predictable:\n```python\ndef route_by_task(task_type: str) -> str:\n    cheap_tasks = {\"classification\", \"spam_check\", \"extraction\", \"translation\"}\n    expensive_tasks = {\"complex_reasoning\", \"code_review\", \"creative_writing\"}\n    if task_type in cheap_tasks:\n        return \"claude-haiku-3\"\n    elif task_type in expensive_tasks:\n        return \"claude-opus-3\"\n    return \"claude-sonnet-3-5\"  # default\n```\n\n**2. Complexity scoring** \u2014 heuristic-based:\n```python\ndef score_complexity(prompt: str) -> float:\n    score = 0\n    score += min(len(prompt.split()) / 100, 3)  # length signal\n    score += sum(1 for w in [\"explain\",\"analyze\",\"compare\",\"debug\"] if w in prompt.lower())\n    score += 2 if any(c in prompt for c in ['```', 'def ', 'class '])  else 0\n    return score\n\ndef route_by_complexity(prompt: str) -> str:\n    score = score_complexity(prompt)\n    if score < 2: return \"claude-haiku-3\"\n    if score < 5: return \"claude-sonnet-3-5\"\n    return \"claude-opus-3\"\n```\n\n**3. LLM-based classifier** \u2014 most accurate, small overhead:\n```python\ndef classify_complexity(prompt: str) -> str:\n    response = haiku_client.messages.create(\n        model=\"claude-haiku-3\",\n        max_tokens=10,\n        system=\"Classify query complexity. Respond with exactly one word: simple, medium, or complex.\",\n        messages=[{\"role\": \"user\", \"content\": prompt}]\n    )\n    return response.content[0].text.strip().lower()\n```\n\n### Prompt Caching (Anthropic)\n\nAnthropic's prompt caching saves up to 90% on repeated system prompt tokens:\n\n```python\nimport anthropic\nclient = anthropic.Anthropic()\n\nresponse = client.messages.create(\n    model=\"claude-sonnet-3-5\",\n    max_tokens=1024,\n    system=[\n        {\n            \"type\": \"text\",\n            \"text\": very_long_system_prompt,  # e.g., 10,000 token company knowledge base\n            \"cache_control\": {\"type\": \"ephemeral\"}  # cache this prefix\n        }\n    ],\n    messages=[{\"role\": \"user\", \"content\": user_question}]\n)\n# First call: full price. Subsequent calls with same prefix: ~90% discount on cached tokens\n```\n\n### Latency Budgets\n\nModel selection must account for latency requirements:\n- **Real-time** (<500ms): Haiku or cached Sonnet only\n- **Interactive** (<2s): Sonnet, small Opus prompts\n- **Batch** (minutes): any model, maximize quality\n- **Overnight** (hours): Opus with large context, complex reasoning\n\n### Cost Monitoring\n\n```python\nfrom dataclasses import dataclass\nfrom datetime import datetime\n\n@dataclass\nclass UsageRecord:\n    user_id: str\n    endpoint: str\n    model: str\n    input_tokens: int\n    output_tokens: int\n    cost_usd: float\n    timestamp: datetime\n\n# Track per-user, per-feature costs\n# Alert when hourly cost > 2\u00d7 rolling average\n# Set hard limits per user tier (free/paid/enterprise)\n```\n\n### Budget Alerts\n\nSet tiered alerts:\n- \ud83d\udfe1 Warning at 70% of monthly budget\n- \ud83d\udd34 Alert at 90% of monthly budget\n- \ud83d\uded1 Hard cutoff or throttle at 100%",
   "mcqs": [
     {
       "id": "q1",
       "question": "A user wants to classify customer support emails into 5 categories (billing, technical, general, refund, escalation). Which model tier is most appropriate?",
       "options": [
         "The most powerful available model (e.g., Claude Opus) for maximum accuracy",
-        "A fast, cheap model (e.g., Claude Haiku) — classification is a simple, structured task",
+        "A fast, cheap model (e.g., Claude Haiku) \u2014 classification is a simple, structured task",
         "A balanced model (e.g., Claude Sonnet) because the stakes are high",
         "Always use the same model for all tasks to keep code simple"
       ],
@@ -31,7 +31,7 @@
         "Remove the system prompt entirely and put instructions in each user message"
       ],
       "correct": 1,
-      "explanation": "Prompt caching (available on Anthropic and other providers) caches repeated system prompt prefixes at ~10% of the original cost. For a 10,000-token system prompt at 50,000 requests/day, this saves ~90% on system prompt tokens — potentially thousands of dollars per month."
+      "explanation": "Prompt caching (available on Anthropic and other providers) caches repeated system prompt prefixes at ~10% of the original cost. For a 10,000-token system prompt at 50,000 requests/day, this saves ~90% on system prompt tokens \u2014 potentially thousands of dollars per month."
     },
     {
       "id": "q3",
@@ -43,7 +43,7 @@
         "Rule-based routing cannot be used with commercial LLM APIs"
       ],
       "correct": 2,
-      "explanation": "Rule-based routing is fast and cheap but brittle — it fails on queries that fall outside predefined patterns. An LLM-based classifier (even a cheap one like Haiku) understands nuance but adds a small latency/cost overhead."
+      "explanation": "Rule-based routing is fast and cheap but brittle \u2014 it fails on queries that fall outside predefined patterns. An LLM-based classifier (even a cheap one like Haiku) understands nuance but adds a small latency/cost overhead."
     },
     {
       "id": "q4",
@@ -63,11 +63,11 @@
       "options": [
         "A weekly email report of total API costs",
         "A daily cost alert if daily spend exceeds the weekly average",
-        "Hourly cost monitoring with an alert when hourly spend exceeds 2× the rolling hourly average",
+        "Hourly cost monitoring with an alert when hourly spend exceeds 2\u00d7 the rolling hourly average",
         "Reviewing billing statements at end of month"
       ],
       "correct": 2,
-      "explanation": "Hourly monitoring with anomaly detection (alert when >2× rolling average) catches runaway costs within hours rather than days or weeks. A doubling in a single day would trigger an alert within the first hour of abnormal spend."
+      "explanation": "Hourly monitoring with anomaly detection (alert when >2\u00d7 rolling average) catches runaway costs within hours rather than days or weeks. A doubling in a single day would trigger an alert within the first hour of abnormal spend."
     },
     {
       "id": "q6",
@@ -86,7 +86,7 @@
     {
       "id": "f1",
       "front": "Model routing",
-      "back": "Dynamically selecting which LLM (from different tiers of capability and cost) to use for a given request based on its complexity, latency requirements, or task type — balancing cost and quality."
+      "back": "Dynamically selecting which LLM (from different tiers of capability and cost) to use for a given request based on its complexity, latency requirements, or task type \u2014 balancing cost and quality."
     },
     {
       "id": "f2",
@@ -96,12 +96,12 @@
     {
       "id": "f3",
       "front": "Prompt caching",
-      "back": "A feature on Anthropic (and other providers) that caches repeated system prompt prefixes. Subsequent calls reusing the same prefix pay ~10% of the normal input token cost — up to 90% savings on cached tokens."
+      "back": "A feature on Anthropic (and other providers) that caches repeated system prompt prefixes. Subsequent calls reusing the same prefix pay ~10% of the normal input token cost \u2014 up to 90% savings on cached tokens."
     },
     {
       "id": "f4",
       "front": "Cost per token",
-      "back": "LLM API pricing is measured in cost per million tokens. Input and output tokens are priced separately, with output typically 4-6× more expensive than input."
+      "back": "LLM API pricing is measured in cost per million tokens. Input and output tokens are priced separately, with output typically 4-6\u00d7 more expensive than input."
     },
     {
       "id": "f5",
@@ -111,7 +111,7 @@
     {
       "id": "f6",
       "front": "Budget alert",
-      "back": "An automated notification triggered when API spending crosses a threshold (e.g., 70%, 90%, 100% of budget) or when spend anomalies are detected (e.g., hourly cost > 2× rolling average)."
+      "back": "An automated notification triggered when API spending crosses a threshold (e.g., 70%, 90%, 100% of budget) or when spend anomalies are detected (e.g., hourly cost > 2\u00d7 rolling average)."
     },
     {
       "id": "f7",
@@ -132,5 +132,18 @@
     }
   ],
   "has_practical": false,
-  "practical_description": ""
+  "practical_description": "",
+  "diagram": {
+    "type": "flow",
+    "title": "Routing Requests to the Right Model",
+    "steps": [
+      "Incoming Request",
+      "Classify Complexity",
+      [
+        "Route to Small/Cheap Model",
+        "Route to Large Model"
+      ],
+      "Response"
+    ]
+  }
 }

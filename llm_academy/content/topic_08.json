@@ -4,10 +4,10 @@
   "level_name": "How LLMs Work",
   "order": 3,
   "title": "Transformers & Attention",
-  "emoji": "🔦",
+  "emoji": "\ud83d\udd26",
   "duration_minutes": 25,
-  "eli8": "# Paying Attention Like a Detective 🔦\n\nImagine reading this sentence: *\"The bank by the river was muddy.\"*\n\nWhen you read the word **\"bank\"**, how do you know it means a riverbank and not a money bank? You look at **\"river\"**! Your brain pays *attention* to the right word to understand the meaning.\n\nThis is exactly what a **Transformer** does — it lets every word pay attention to every other word at the same time!\n\n## The Attention Spotlight 🔦\n\nThink of attention like a spotlight:\n\n- When processing the word **\"bank\"**, the model shines its spotlight on the word **\"river\"** (very bright!) and a little on **\"muddy\"** (dim), and almost nothing on **\"the\"** (off)\n- When processing **\"muddy\"**, the spotlight shines bright on **\"river\"** and **\"bank\"\n- Every word gets its own spotlight, shining on all the other words!\n\nThis is why transformers are so good at understanding context — they can connect words that are far apart in a sentence.\n\n## Why Are Transformers Special? 🚀\n\nBefore transformers (around 2017), AI models had to read text like you read a book — one word at a time, left to right. If the important clue was at the beginning of a very long sentence, the model would \"forget\" it by the end.\n\nTransformers solve this by looking at **all words at once**! It's like reading a whole page in one glance instead of word by word.\n\n## Many Spotlights at Once 💡\n\nTransformers actually have **multiple attention heads** — imagine 8 or 16 spotlights, each looking for different things:\n\n- 🔍 One spotlight looks for **who is doing what** (subject-verb relationships)\n- 🏷️ Another looks for **what describes what** (adjective-noun pairs)\n- 📍 Another tracks **positions and order**\n\nTogether, they paint a rich picture of what the text means! That's the magic of multi-head attention.",
-  "detail": "# Transformers & Attention\n\n## The Attention Mechanism\n\nThe transformer attention mechanism, introduced in \"Attention Is All You Need\" (Vaswani et al., 2017), computes relationships between all positions in a sequence simultaneously.\n\nFor each position, three vectors are computed from the input embedding:\n- **Query (Q)**: What am I looking for?\n- **Key (K)**: What information do I contain?\n- **Value (V)**: What information will I contribute?\n\n**Scaled dot-product attention**:\n```\nAttention(Q, K, V) = softmax(QKᵀ / √dₖ) · V\n```\n\nThe scaling factor `√dₖ` (where dₖ is the key dimension) prevents dot products from growing large enough to push softmax into regions of extremely small gradients.\n\n```python\nimport torch\nimport torch.nn.functional as F\n\ndef scaled_dot_product_attention(Q, K, V, mask=None):\n    d_k = Q.size(-1)\n    scores = torch.matmul(Q, K.transpose(-2, -1)) / (d_k ** 0.5)\n    if mask is not None:\n        scores = scores.masked_fill(mask == 0, float('-inf'))\n    attn_weights = F.softmax(scores, dim=-1)\n    return torch.matmul(attn_weights, V), attn_weights\n```\n\n## Multi-Head Attention\n\nInstead of one attention function, multi-head attention runs h parallel attention operations (\"heads\") on linearly projected versions of Q, K, V:\n\n```\nMultiHead(Q, K, V) = Concat(head₁, ..., headₕ) Wᴼ\nwhere headᵢ = Attention(Q Wᵢᑫ, K Wᵢᴷ, V Wᵢᵛ)\n```\n\nEach head learns to attend to different types of relationships:\n- Syntactic dependencies (subject-verb)\n- Coreference (pronoun to antecedent)\n- Positional patterns\n- Semantic similarity\n\nGPT-2 has 12 heads; GPT-3 has 96 heads per layer.\n\n## The Transformer Block\n\nA single transformer block contains:\n\n1. **Multi-Head Self-Attention**: Each token attends to all other tokens\n2. **Residual connection**: Add input back to attention output (stabilizes training)\n3. **Layer Normalization**: Normalize activations (before or after, depending on architecture)\n4. **Feed-Forward Network**: 2-layer MLP applied independently to each position\n5. **Another residual + LayerNorm**\n\nModern LLMs stack 12–96+ of these blocks (GPT-2: 12, GPT-3: 96, LLaMA 3 70B: 80).\n\n## Positional Encoding\n\nSince attention is permutation-invariant (it treats tokens as a set, not a sequence), positional information must be injected explicitly.\n\n**Sinusoidal positional encoding** (original paper): Fixed sin/cos functions at different frequencies\n**Learned absolute positional embeddings**: Trainable position vectors (GPT-2, GPT-3)\n**RoPE** (Rotary Position Embedding): Relative positions encoded in attention (LLaMA, Mistral) — see Topic 9\n\n## Encoder vs Decoder vs Encoder-Decoder\n\n**Encoder-only (BERT, RoBERTa)**:\n- Bidirectional attention: each token sees all other tokens\n- Used for classification, NER, semantic search\n- Cannot generate text autoregressively\n\n**Decoder-only (GPT family, LLaMA, Claude)**:\n- Causal (masked) attention: each token sees only previous tokens\n- Naturally suited to autoregressive text generation\n- The dominant architecture for modern LLMs\n\n**Encoder-decoder (T5, BART)**:\n- Encoder processes input with full attention\n- Decoder generates output attending to encoder states + its own past\n- Used for translation, summarization\n\n## Why Transformers Replaced RNNs\n\n**Parallelism during training**: RNNs must process tokens sequentially (token N depends on N-1). Transformers compute all positions simultaneously, enabling efficient GPU parallelism.\n\n**Long-range dependencies**: RNN hidden states degrade over long sequences. Attention directly connects any two positions in O(1) steps (vs O(n) for RNNs).\n\n**Scaling**: Transformers scale predictably — more parameters + more data = better performance (Chinchilla scaling laws).",
+  "eli8": "# Paying Attention Like a Detective \ud83d\udd26\n\nImagine reading this sentence: *\"The bank by the river was muddy.\"*\n\nWhen you read the word **\"bank\"**, how do you know it means a riverbank and not a money bank? You look at **\"river\"**! Your brain pays *attention* to the right word to understand the meaning.\n\nThis is exactly what a **Transformer** does \u2014 it lets every word pay attention to every other word at the same time!\n\n## The Attention Spotlight \ud83d\udd26\n\nThink of attention like a spotlight:\n\n- When processing the word **\"bank\"**, the model shines its spotlight on the word **\"river\"** (very bright!) and a little on **\"muddy\"** (dim), and almost nothing on **\"the\"** (off)\n- When processing **\"muddy\"**, the spotlight shines bright on **\"river\"** and **\"bank\"\n- Every word gets its own spotlight, shining on all the other words!\n\nThis is why transformers are so good at understanding context \u2014 they can connect words that are far apart in a sentence.\n\n## Why Are Transformers Special? \ud83d\ude80\n\nBefore transformers (around 2017), AI models had to read text like you read a book \u2014 one word at a time, left to right. If the important clue was at the beginning of a very long sentence, the model would \"forget\" it by the end.\n\nTransformers solve this by looking at **all words at once**! It's like reading a whole page in one glance instead of word by word.\n\n## Many Spotlights at Once \ud83d\udca1\n\nTransformers actually have **multiple attention heads** \u2014 imagine 8 or 16 spotlights, each looking for different things:\n\n- \ud83d\udd0d One spotlight looks for **who is doing what** (subject-verb relationships)\n- \ud83c\udff7\ufe0f Another looks for **what describes what** (adjective-noun pairs)\n- \ud83d\udccd Another tracks **positions and order**\n\nTogether, they paint a rich picture of what the text means! That's the magic of multi-head attention.",
+  "detail": "# Transformers & Attention\n\n## The Attention Mechanism\n\nThe transformer attention mechanism, introduced in \"Attention Is All You Need\" (Vaswani et al., 2017), computes relationships between all positions in a sequence simultaneously.\n\nFor each position, three vectors are computed from the input embedding:\n- **Query (Q)**: What am I looking for?\n- **Key (K)**: What information do I contain?\n- **Value (V)**: What information will I contribute?\n\n**Scaled dot-product attention**:\n```\nAttention(Q, K, V) = softmax(QK\u1d40 / \u221ad\u2096) \u00b7 V\n```\n\nThe scaling factor `\u221ad\u2096` (where d\u2096 is the key dimension) prevents dot products from growing large enough to push softmax into regions of extremely small gradients.\n\n```python\nimport torch\nimport torch.nn.functional as F\n\ndef scaled_dot_product_attention(Q, K, V, mask=None):\n    d_k = Q.size(-1)\n    scores = torch.matmul(Q, K.transpose(-2, -1)) / (d_k ** 0.5)\n    if mask is not None:\n        scores = scores.masked_fill(mask == 0, float('-inf'))\n    attn_weights = F.softmax(scores, dim=-1)\n    return torch.matmul(attn_weights, V), attn_weights\n```\n\n## Multi-Head Attention\n\nInstead of one attention function, multi-head attention runs h parallel attention operations (\"heads\") on linearly projected versions of Q, K, V:\n\n```\nMultiHead(Q, K, V) = Concat(head\u2081, ..., head\u2095) W\u1d3c\nwhere head\u1d62 = Attention(Q W\u1d62\u146b, K W\u1d62\u1d37, V W\u1d62\u1d5b)\n```\n\nEach head learns to attend to different types of relationships:\n- Syntactic dependencies (subject-verb)\n- Coreference (pronoun to antecedent)\n- Positional patterns\n- Semantic similarity\n\nGPT-2 has 12 heads; GPT-3 has 96 heads per layer.\n\n## The Transformer Block\n\nA single transformer block contains:\n\n1. **Multi-Head Self-Attention**: Each token attends to all other tokens\n2. **Residual connection**: Add input back to attention output (stabilizes training)\n3. **Layer Normalization**: Normalize activations (before or after, depending on architecture)\n4. **Feed-Forward Network**: 2-layer MLP applied independently to each position\n5. **Another residual + LayerNorm**\n\nModern LLMs stack 12\u201396+ of these blocks (GPT-2: 12, GPT-3: 96, LLaMA 3 70B: 80).\n\n## Positional Encoding\n\nSince attention is permutation-invariant (it treats tokens as a set, not a sequence), positional information must be injected explicitly.\n\n**Sinusoidal positional encoding** (original paper): Fixed sin/cos functions at different frequencies\n**Learned absolute positional embeddings**: Trainable position vectors (GPT-2, GPT-3)\n**RoPE** (Rotary Position Embedding): Relative positions encoded in attention (LLaMA, Mistral) \u2014 see Topic 9\n\n## Encoder vs Decoder vs Encoder-Decoder\n\n**Encoder-only (BERT, RoBERTa)**:\n- Bidirectional attention: each token sees all other tokens\n- Used for classification, NER, semantic search\n- Cannot generate text autoregressively\n\n**Decoder-only (GPT family, LLaMA, Claude)**:\n- Causal (masked) attention: each token sees only previous tokens\n- Naturally suited to autoregressive text generation\n- The dominant architecture for modern LLMs\n\n**Encoder-decoder (T5, BART)**:\n- Encoder processes input with full attention\n- Decoder generates output attending to encoder states + its own past\n- Used for translation, summarization\n\n## Why Transformers Replaced RNNs\n\n**Parallelism during training**: RNNs must process tokens sequentially (token N depends on N-1). Transformers compute all positions simultaneously, enabling efficient GPU parallelism.\n\n**Long-range dependencies**: RNN hidden states degrade over long sequences. Attention directly connects any two positions in O(1) steps (vs O(n) for RNNs).\n\n**Scaling**: Transformers scale predictably \u2014 more parameters + more data = better performance (Chinchilla scaling laws).",
   "mcqs": [
     {
       "id": "q1",
@@ -23,7 +23,7 @@
     },
     {
       "id": "q2",
-      "question": "Why is the dot product in scaled dot-product attention divided by √dₖ?",
+      "question": "Why is the dot product in scaled dot-product attention divided by \u221ad\u2096?",
       "options": [
         "To ensure the output values are always between 0 and 1",
         "To prevent dot products from growing large and pushing softmax into regions with vanishing gradients",
@@ -31,7 +31,7 @@
         "To account for different vocabulary sizes"
       ],
       "correct": 1,
-      "explanation": "As the dimension dₖ grows, dot products grow proportionally in magnitude, causing softmax to produce extremely peaked distributions (near-zero gradients). Dividing by √dₖ counteracts this scaling effect."
+      "explanation": "As the dimension d\u2096 grows, dot products grow proportionally in magnitude, causing softmax to produce extremely peaked distributions (near-zero gradients). Dividing by \u221ad\u2096 counteracts this scaling effect."
     },
     {
       "id": "q3",
@@ -55,7 +55,7 @@
         "GPT uses sinusoidal positional encoding; BERT uses learned embeddings"
       ],
       "correct": 1,
-      "explanation": "Encoder-only models use bidirectional (full) self-attention — every token attends to every other. This captures rich context for classification/understanding tasks but prevents autoregressive generation. Decoder-only models use causal masking so each token only sees previous tokens, enabling next-token prediction."
+      "explanation": "Encoder-only models use bidirectional (full) self-attention \u2014 every token attends to every other. This captures rich context for classification/understanding tasks but prevents autoregressive generation. Decoder-only models use causal masking so each token only sees previous tokens, enabling next-token prediction."
     },
     {
       "id": "q5",
@@ -84,7 +84,12 @@
     {
       "id": "q7",
       "question": "How many transformer layers does GPT-3 have?",
-      "options": ["12", "24", "48", "96"],
+      "options": [
+        "12",
+        "24",
+        "48",
+        "96"
+      ],
       "correct": 3,
       "explanation": "GPT-3 (175B parameters) has 96 transformer layers. For comparison, GPT-2 has 12 layers (small) to 48 layers (XL), and LLaMA 3 70B has 80 layers."
     }
@@ -93,12 +98,12 @@
     {
       "id": "f1",
       "front": "Self-attention",
-      "back": "An attention mechanism where a sequence attends to itself — each position in the sequence computes attention over all other positions. Enables the model to relate tokens to each other regardless of distance."
+      "back": "An attention mechanism where a sequence attends to itself \u2014 each position in the sequence computes attention over all other positions. Enables the model to relate tokens to each other regardless of distance."
     },
     {
       "id": "f2",
       "front": "Query, Key, Value (Q, K, V)",
-      "back": "Three learned linear projections of token embeddings used in attention. Q asks 'what am I looking for?', K signals 'what do I contain?', V is 'what information I provide'. Attention score = softmax(QKᵀ/√dₖ) · V."
+      "back": "Three learned linear projections of token embeddings used in attention. Q asks 'what am I looking for?', K signals 'what do I contain?', V is 'what information I provide'. Attention score = softmax(QK\u1d40/\u221ad\u2096) \u00b7 V."
     },
     {
       "id": "f3",
@@ -113,36 +118,50 @@
     {
       "id": "f5",
       "front": "Transformer block",
-      "back": "The repeating unit of a transformer: Multi-Head Self-Attention → Add & LayerNorm → Feed-Forward Network → Add & LayerNorm. Modern LLMs stack 12–96+ of these blocks."
+      "back": "The repeating unit of a transformer: Multi-Head Self-Attention \u2192 Add & LayerNorm \u2192 Feed-Forward Network \u2192 Add & LayerNorm. Modern LLMs stack 12\u201396+ of these blocks."
     },
     {
       "id": "f6",
       "front": "Encoder (transformer)",
-      "back": "A transformer component using bidirectional (full) self-attention — every token attends to every other token. Used in BERT for understanding/classification tasks. Cannot generate text autoregressively."
+      "back": "A transformer component using bidirectional (full) self-attention \u2014 every token attends to every other token. Used in BERT for understanding/classification tasks. Cannot generate text autoregressively."
     },
     {
       "id": "f7",
       "front": "Decoder (transformer)",
-      "back": "A transformer component using causal (masked) self-attention — each token can only attend to previous tokens. The architecture used by GPT, LLaMA, Claude. Enables autoregressive text generation."
+      "back": "A transformer component using causal (masked) self-attention \u2014 each token can only attend to previous tokens. The architecture used by GPT, LLaMA, Claude. Enables autoregressive text generation."
     },
     {
       "id": "f8",
       "front": "Causal masking",
-      "back": "An attention mask applied in decoder-only transformers that sets future-position attention scores to -∞ before softmax, preventing each token from 'seeing' future tokens during training and generation."
+      "back": "An attention mask applied in decoder-only transformers that sets future-position attention scores to -\u221e before softmax, preventing each token from 'seeing' future tokens during training and generation."
     }
   ],
   "videos": [
     {
-      "title": "The Illustrated Transformer — explained visually",
+      "title": "The Illustrated Transformer \u2014 explained visually",
       "youtube_id": "4Bdc55j80l8",
       "description": "A highly visual walkthrough of the complete transformer architecture: encoder, decoder, multi-head attention, positional encoding, and how all components connect. Based on Jay Alammar's classic blog post."
     },
     {
-      "title": "Transformer Neural Networks, ChatGPT's foundation — StatQuest",
+      "title": "Transformer Neural Networks, ChatGPT's foundation \u2014 StatQuest",
       "youtube_id": "zxQyTK8quyY",
       "description": "StatQuest's accessible step-by-step explanation of the transformer, building intuition for attention weights and why transformers are so effective at modeling sequential data."
     }
   ],
   "has_practical": false,
-  "practical_description": ""
+  "practical_description": "",
+  "diagram": {
+    "type": "layered",
+    "title": "Inside a Transformer Block",
+    "layers": [
+      "Input Embeddings + Positions",
+      [
+        "Multi-Head Self-Attention"
+      ],
+      [
+        "Feed-Forward Network"
+      ],
+      "Output to Next Layer"
+    ]
+  }
 }

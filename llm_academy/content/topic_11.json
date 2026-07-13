@@ -4,10 +4,10 @@
   "level_name": "How LLMs Work",
   "order": 6,
   "title": "Context Windows & Memory",
-  "emoji": "🧠",
+  "emoji": "\ud83e\udde0",
   "duration_minutes": 15,
-  "eli8": "# How Much Can AI Hold in Its Head? 🧠\n\nWhen you're reading a mystery novel, you can remember important clues from earlier in the story. But if the book is *really* long, you might forget what was on page 1 by the time you reach page 500!\n\nAI models have the same challenge — they can only \"remember\" a limited amount of text at once.\n\n## The Context Window 📖\n\nThe **context window** is like the AI's short-term memory — everything it can see and think about at once:\n\n- 📝 Your question\n- 💬 The whole conversation so far\n- 📄 Any documents you shared\n- 🤖 The AI's previous answers\n\nAll of this has to fit inside the context window! If it's too long... the early parts get *forgotten*.\n\n## How Big Are Context Windows?\n\n| AI Model | Context Window | Like reading... |\n|----------|---------------|------------------|\n| GPT-3.5 | 4K tokens | A short essay |\n| GPT-4o | 128K tokens | A short novel |\n| Claude 3.5 | 200K tokens | A full novel |\n| Gemini 1.5 | 1M tokens | 10 novels! |\n\n## Three Types of Memory 🗂️\n\nAI systems actually have three different kinds of memory:\n\n- **Working memory** (context window): What it's actively thinking about right now\n- **Trained memory** (model weights): Facts it learned during training — baked into the brain!\n- **External memory** (databases): Looking things up in a file or database, like using a search engine\n\nFun fact: Bigger context windows are *expensive* — processing 1M tokens costs much more than processing 1K tokens. It's like paying for a bigger whiteboard! 💰",
-  "detail": "# Context Windows & Memory\n\n## What Is the Context Window?\n\nThe context window (also called **context length** or **sequence length**) is the maximum number of tokens a model can process in a single forward pass. It includes all input tokens (system prompt, conversation history, documents) plus all output tokens generated so far.\n\n**Evolution of context lengths:**\n\n| Model | Year | Context Length |\n|-------|------|----------------|\n| GPT-2 | 2019 | 1,024 tokens |\n| GPT-3 | 2020 | 4,096 tokens |\n| GPT-4 | 2023 | 8K → 128K tokens |\n| Claude 3.5 Sonnet | 2024 | 200K tokens |\n| Gemini 1.5 Pro | 2024 | 1M tokens |\n| Gemini 1.5 Flash | 2024 | 1M tokens |\n\n## Computational Cost of Long Contexts\n\nStandard self-attention has **O(n²) time and memory complexity** in sequence length:\n- Doubling the context length → 4× the attention compute\n- 128K context → 128× more attention compute than 8K context\n\nThis makes long-context inference expensive. Flash Attention (O(n) memory with tiled computation) and other efficient attention variants are critical for practical long-context deployment.\n\n## The Lost-in-the-Middle Problem\n\nLiu et al. (2023) demonstrated that LLM performance on long-context tasks degrades significantly for information placed in the **middle** of the context window:\n\n- Models attend most strongly to text at the **beginning** (primacy effect) and **end** (recency effect) of the context\n- Information buried in the middle is recalled less reliably\n- Performance on needle-in-a-haystack (NIAH) tests shows this U-shaped curve\n\nImplication: When building RAG or long-context applications, place the most critical information at the start or end of the context, not the middle.\n\n## Types of Memory in LLM Systems\n\n**1. In-context memory (working memory)**\n- Everything currently in the context window\n- Temporary — lost when the conversation ends\n- Fast and precise — exact verbatim recall\n- Limited by context window size and cost\n\n**2. Parametric memory (trained weights)**\n- Knowledge encoded in the model's 7B–405B parameters during training\n- Permanent — unchangeable without fine-tuning\n- Fuzzy — models confabulate (hallucinate) when probed on specific facts\n- Cannot be updated with new information without retraining\n\n**3. External memory (RAG / databases)**\n- Documents, structured databases, vector stores\n- Retrieved at query time and injected into context\n- Updatable — can add new documents without touching model weights\n- Limited by retrieval quality and context window capacity\n\n## Long-Context Evaluation Benchmarks\n\n**RULER** (What's the Real Limit of Long-Context Language Models?): Tests retrieval, multi-hop reasoning, and aggregation over long contexts. Most models degrade significantly beyond 32K tokens.\n\n**NIAH (Needle in a Haystack)**: Hides a specific fact (\"the password is 12345\") at various positions within long filler text, tests whether the model can retrieve it. Reveals position-dependent recall failures.\n\n## Sliding Window Attention\n\nFor very long sequences, some models use **sliding window attention**: each token only attends to a local window of W preceding tokens (e.g., W=4096) rather than the full sequence. Reduces attention from O(n²) to O(n·W).\n\nMistral uses sliding window attention (window=4096) combined with rolling buffer KV cache. The trade-off: long-range dependencies beyond the window are not captured directly (though multi-layer stacking extends the effective receptive field).\n\n## Token Cost Implications\n\nContext length directly determines API cost. For Claude 3.5 Sonnet at $3/1M input tokens:\n- 1,000 token query: $0.003\n- 100K token context (large document): $0.30\n- 200K token context (max): $0.60 per query\n\nFor high-volume applications, context window management (summarization, selective retrieval, context compression) is a meaningful cost optimization lever.",
+  "eli8": "# How Much Can AI Hold in Its Head? \ud83e\udde0\n\nWhen you're reading a mystery novel, you can remember important clues from earlier in the story. But if the book is *really* long, you might forget what was on page 1 by the time you reach page 500!\n\nAI models have the same challenge \u2014 they can only \"remember\" a limited amount of text at once.\n\n## The Context Window \ud83d\udcd6\n\nThe **context window** is like the AI's short-term memory \u2014 everything it can see and think about at once:\n\n- \ud83d\udcdd Your question\n- \ud83d\udcac The whole conversation so far\n- \ud83d\udcc4 Any documents you shared\n- \ud83e\udd16 The AI's previous answers\n\nAll of this has to fit inside the context window! If it's too long... the early parts get *forgotten*.\n\n## How Big Are Context Windows?\n\n| AI Model | Context Window | Like reading... |\n|----------|---------------|------------------|\n| GPT-3.5 | 4K tokens | A short essay |\n| GPT-4o | 128K tokens | A short novel |\n| Claude 3.5 | 200K tokens | A full novel |\n| Gemini 1.5 | 1M tokens | 10 novels! |\n\n## Three Types of Memory \ud83d\uddc2\ufe0f\n\nAI systems actually have three different kinds of memory:\n\n- **Working memory** (context window): What it's actively thinking about right now\n- **Trained memory** (model weights): Facts it learned during training \u2014 baked into the brain!\n- **External memory** (databases): Looking things up in a file or database, like using a search engine\n\nFun fact: Bigger context windows are *expensive* \u2014 processing 1M tokens costs much more than processing 1K tokens. It's like paying for a bigger whiteboard! \ud83d\udcb0",
+  "detail": "# Context Windows & Memory\n\n## What Is the Context Window?\n\nThe context window (also called **context length** or **sequence length**) is the maximum number of tokens a model can process in a single forward pass. It includes all input tokens (system prompt, conversation history, documents) plus all output tokens generated so far.\n\n**Evolution of context lengths:**\n\n| Model | Year | Context Length |\n|-------|------|----------------|\n| GPT-2 | 2019 | 1,024 tokens |\n| GPT-3 | 2020 | 4,096 tokens |\n| GPT-4 | 2023 | 8K \u2192 128K tokens |\n| Claude 3.5 Sonnet | 2024 | 200K tokens |\n| Gemini 1.5 Pro | 2024 | 1M tokens |\n| Gemini 1.5 Flash | 2024 | 1M tokens |\n\n## Computational Cost of Long Contexts\n\nStandard self-attention has **O(n\u00b2) time and memory complexity** in sequence length:\n- Doubling the context length \u2192 4\u00d7 the attention compute\n- 128K context \u2192 128\u00d7 more attention compute than 8K context\n\nThis makes long-context inference expensive. Flash Attention (O(n) memory with tiled computation) and other efficient attention variants are critical for practical long-context deployment.\n\n## The Lost-in-the-Middle Problem\n\nLiu et al. (2023) demonstrated that LLM performance on long-context tasks degrades significantly for information placed in the **middle** of the context window:\n\n- Models attend most strongly to text at the **beginning** (primacy effect) and **end** (recency effect) of the context\n- Information buried in the middle is recalled less reliably\n- Performance on needle-in-a-haystack (NIAH) tests shows this U-shaped curve\n\nImplication: When building RAG or long-context applications, place the most critical information at the start or end of the context, not the middle.\n\n## Types of Memory in LLM Systems\n\n**1. In-context memory (working memory)**\n- Everything currently in the context window\n- Temporary \u2014 lost when the conversation ends\n- Fast and precise \u2014 exact verbatim recall\n- Limited by context window size and cost\n\n**2. Parametric memory (trained weights)**\n- Knowledge encoded in the model's 7B\u2013405B parameters during training\n- Permanent \u2014 unchangeable without fine-tuning\n- Fuzzy \u2014 models confabulate (hallucinate) when probed on specific facts\n- Cannot be updated with new information without retraining\n\n**3. External memory (RAG / databases)**\n- Documents, structured databases, vector stores\n- Retrieved at query time and injected into context\n- Updatable \u2014 can add new documents without touching model weights\n- Limited by retrieval quality and context window capacity\n\n## Long-Context Evaluation Benchmarks\n\n**RULER** (What's the Real Limit of Long-Context Language Models?): Tests retrieval, multi-hop reasoning, and aggregation over long contexts. Most models degrade significantly beyond 32K tokens.\n\n**NIAH (Needle in a Haystack)**: Hides a specific fact (\"the password is 12345\") at various positions within long filler text, tests whether the model can retrieve it. Reveals position-dependent recall failures.\n\n## Sliding Window Attention\n\nFor very long sequences, some models use **sliding window attention**: each token only attends to a local window of W preceding tokens (e.g., W=4096) rather than the full sequence. Reduces attention from O(n\u00b2) to O(n\u00b7W).\n\nMistral uses sliding window attention (window=4096) combined with rolling buffer KV cache. The trade-off: long-range dependencies beyond the window are not captured directly (though multi-layer stacking extends the effective receptive field).\n\n## Token Cost Implications\n\nContext length directly determines API cost. For Claude 3.5 Sonnet at $3/1M input tokens:\n- 1,000 token query: $0.003\n- 100K token context (large document): $0.30\n- 200K token context (max): $0.60 per query\n\nFor high-volume applications, context window management (summarization, selective retrieval, context compression) is a meaningful cost optimization lever.",
   "mcqs": [
     {
       "id": "q1",
@@ -19,19 +19,19 @@
         "The number of documents a RAG system retrieves"
       ],
       "correct": 1,
-      "explanation": "The context window is the maximum number of tokens (input + output) an LLM can process in one forward pass. Everything outside this window is invisible to the model — it has no access to earlier parts of a conversation or document that have been truncated."
+      "explanation": "The context window is the maximum number of tokens (input + output) an LLM can process in one forward pass. Everything outside this window is invisible to the model \u2014 it has no access to earlier parts of a conversation or document that have been truncated."
     },
     {
       "id": "q2",
       "question": "Why does standard self-attention become expensive for long contexts?",
       "options": [
         "Longer contexts require larger vocabulary sizes",
-        "Standard self-attention has O(n²) time and memory complexity in sequence length, so doubling context length quadruples compute",
+        "Standard self-attention has O(n\u00b2) time and memory complexity in sequence length, so doubling context length quadruples compute",
         "Long contexts exceed the precision limit of floating-point arithmetic",
         "The tokenizer slows down significantly for long inputs"
       ],
       "correct": 1,
-      "explanation": "In standard attention, each token attends to every other token, producing an n×n attention matrix. This scales quadratically: a 128K context requires 256× more attention compute than a 8K context, making long-context inference very expensive without algorithmic optimizations."
+      "explanation": "In standard attention, each token attends to every other token, producing an n\u00d7n attention matrix. This scales quadratically: a 128K context requires 256\u00d7 more attention compute than a 8K context, making long-context inference very expensive without algorithmic optimizations."
     },
     {
       "id": "q3",
@@ -50,7 +50,7 @@
       "question": "What is parametric memory in an LLM?",
       "options": [
         "A database of facts the model queries at inference time",
-        "Knowledge encoded in the model's weights during pre-training — baked into the model and unchangeable without retraining",
+        "Knowledge encoded in the model's weights during pre-training \u2014 baked into the model and unchangeable without retraining",
         "The conversation history stored in the context window",
         "Cached KV states from previous inference runs"
       ],
@@ -72,9 +72,14 @@
     {
       "id": "q6",
       "question": "Claude 3.5 Sonnet supports a context window of approximately:",
-      "options": ["32K tokens", "64K tokens", "128K tokens", "200K tokens"],
+      "options": [
+        "32K tokens",
+        "64K tokens",
+        "128K tokens",
+        "200K tokens"
+      ],
       "correct": 3,
-      "explanation": "Claude 3.5 Sonnet has a 200K token context window — one of the largest among major commercial models. For reference, 200K tokens is roughly 150,000 words, equivalent to a full-length novel."
+      "explanation": "Claude 3.5 Sonnet has a 200K token context window \u2014 one of the largest among major commercial models. For reference, 200K tokens is roughly 150,000 words, equivalent to a full-length novel."
     }
   ],
   "flashcards": [
@@ -91,12 +96,12 @@
     {
       "id": "f3",
       "front": "In-context memory",
-      "back": "Working memory for LLMs: everything currently in the context window. Temporary (lost when the session ends), but fast and exact — the model can precisely recall anything in-context."
+      "back": "Working memory for LLMs: everything currently in the context window. Temporary (lost when the session ends), but fast and exact \u2014 the model can precisely recall anything in-context."
     },
     {
       "id": "f4",
       "front": "Parametric memory",
-      "back": "Knowledge encoded in the model's weights during pre-training. Always available but fixed — cannot be updated without retraining. Models sometimes hallucinate when recalling specific facts from parametric memory."
+      "back": "Knowledge encoded in the model's weights during pre-training. Always available but fixed \u2014 cannot be updated without retraining. Models sometimes hallucinate when recalling specific facts from parametric memory."
     },
     {
       "id": "f5",
@@ -106,7 +111,7 @@
     {
       "id": "f6",
       "front": "Sliding window attention",
-      "back": "An efficient attention variant where each token only attends to a local window of W preceding tokens rather than the full sequence. Reduces attention complexity from O(n²) to O(n·W). Used in Mistral's architecture."
+      "back": "An efficient attention variant where each token only attends to a local window of W preceding tokens rather than the full sequence. Reduces attention complexity from O(n\u00b2) to O(n\u00b7W). Used in Mistral's architecture."
     },
     {
       "id": "f7",
@@ -121,11 +126,24 @@
       "description": "Clear explanation of what context windows are, why they matter, how different models compare, and the practical implications for building LLM-powered applications including cost and truncation handling."
     },
     {
-      "title": "Intro to Large Language Models — Andrej Karpathy",
+      "title": "Intro to Large Language Models \u2014 Andrej Karpathy",
       "youtube_id": "zjkBMFhNj_g",
       "description": "Karpathy covers the three types of memory in LLM systems (in-context, weights, external) and how context windows relate to the full LLM stack. A strong conceptual foundation for understanding memory limitations."
     }
   ],
   "has_practical": false,
-  "practical_description": ""
+  "practical_description": "",
+  "diagram": {
+    "type": "flow",
+    "title": "What Fills the Context Window",
+    "steps": [
+      [
+        "System Prompt",
+        "Chat History",
+        "New Message"
+      ],
+      "Combined Context",
+      "Model's Working Memory"
+    ]
+  }
 }

@@ -4,17 +4,17 @@
   "level_name": "Fine-tuning, SLMs & Local Models",
   "order": 1,
   "title": "Fine-tuning vs RAG vs Prompting",
-  "emoji": "🔀",
+  "emoji": "\ud83d\udd00",
   "duration_minutes": 20,
-  "eli8": "# Three Ways to Customize Your AI 🤖\n\nImagine you have a super-smart robot friend who already knows **tons** of stuff. But you want it to be extra good at *your* specific job. How do you do that? You've got three choices!\n\n## 🗣️ Prompting — Give It Instructions\n\nThis is the easiest one! You just **tell** the robot what you want each time it helps you.\n\n- Like writing instructions on a sticky note 📝\n- \"Be a pirate when you talk to me!\" or \"Always answer in 3 bullet points\"\n- Super cheap — you only pay for the words you type\n- But you have to repeat your instructions **every single time**\n- Works great for most everyday tasks!\n\n## 📚 RAG — Give It a Reference Book\n\nRAG stands for Retrieval-Augmented Generation. Big words, simple idea!\n\n- Imagine you give your robot friend a **huge library** 📖 it can look things up in\n- When you ask a question, it first searches the library, then answers\n- Great for company documents, recent news, or anything that changes a lot\n- The robot can say \"I found this on page 42 of your handbook!\" — very trustworthy!\n- Like open-book homework vs closed-book homework\n\n## 🎓 Fine-tuning — Actually Re-Teach It\n\nThis is the most powerful option — you actually **train the robot's brain** to be different!\n\n- Like sending your robot to school for a few weeks to learn a new skill\n- After training, it naturally speaks your company's style, knows your jargon, and follows your format\n- Much more expensive — needs lots of computer power 💻\n- The new skills are **baked in forever** — no need for long instructions\n- But if you teach it too hard, it might forget some old stuff!\n\n## 🛠️ Which One Should You Pick?\n\n| Situation | Best Choice |\n|-----------|-------------|\n| General help tasks | Prompting |\n| Your company's private docs | RAG |\n| Specific tone/style/domain | Fine-tuning |\n| Save money | Prompting first! |\n\n**The golden rule:** Always try prompting first. If that's not good enough, try RAG. Only fine-tune when you really need to! 🏆",
-  "detail": "# Fine-tuning vs RAG vs Prompting: A Decision Framework\n\n## Overview\n\nThree primary strategies exist for adapting LLMs to specific use cases: prompt engineering, retrieval-augmented generation (RAG), and fine-tuning. Choosing the wrong approach wastes money, time, or both. This topic provides a systematic decision framework.\n\n## Strategy 1: Prompt Engineering\n\nPrompt engineering shapes model behavior purely through the input — system prompts, few-shot examples, chain-of-thought instructions, and output format directives.\n\n**When it works:**\n- General-purpose tasks where the base model already has relevant knowledge\n- Few-shot learning is sufficient (3–10 examples in context)\n- Rapid iteration is needed (zero infrastructure overhead)\n- Budget constraints are tight\n\n**Techniques:** zero-shot, few-shot, chain-of-thought (CoT), role prompting, output format constraints.\n\n**Cost:** Tokens only. A complex system prompt with 10 few-shot examples ≈ 1,000–3,000 tokens per request.\n\n**Limits:** Context window capped; can't inject proprietary knowledge at scale; style consistency degrades over long conversations.\n\n## Strategy 2: Retrieval-Augmented Generation (RAG)\n\nRAG separates the *knowledge store* from the *reasoning engine*. Documents are embedded and stored in a vector database; at inference time, relevant chunks are retrieved and injected into the prompt.\n\n**When it works:**\n- Proprietary or recent knowledge the model doesn't have (post-cutoff events, internal docs)\n- Source attribution is required (\"per section 4.2 of the handbook...\")\n- Data changes frequently — reindexing is cheaper than retraining\n- Reducing hallucinations on factual lookups\n\n**Infrastructure cost:** Embedding model + vector DB (Pinecone, pgvector, Chroma) + retrieval latency (~50–200ms). Higher per-query cost than pure prompting, but far cheaper than fine-tuning.\n\n**Limits:** Retrieval quality depends on chunking strategy and embedding alignment; multi-hop reasoning across documents is hard; latency adds up at scale.\n\n## Strategy 3: Fine-tuning\n\nFine-tuning updates model weights on a curated dataset, permanently changing how the model behaves — without any runtime retrieval or lengthy prompts.\n\n**When it works:**\n- Specific output format must be consistent at scale (JSON schemas, structured reports)\n- Specialized domain language the base model doesn't speak fluently (medical, legal, niche coding)\n- Consistent persona or brand voice without per-request system prompts\n- Task-specific performance that few-shot examples alone can't reach\n- Latency reduction — replacing a 2,000-token system prompt with a fine-tuned model\n\n**Cost breakdown:**\n```\nFull fine-tuning 7B model:\n  Compute:   ~$50–200 on cloud GPUs (A100 hours)\n  Storage:   ~14GB for FP16 weights\n  Inference: ~$0.0002–0.001 per 1K tokens (self-hosted)\n\nPrompting equivalent:\n  No compute cost\n  ~$0.002–0.01 per 1K tokens (API)\n```\n\n## The Risk: Catastrophic Forgetting\n\nFine-tuning on a narrow dataset can cause the model to degrade on tasks it previously handled well — a phenomenon called **catastrophic forgetting**. The model's general instruction-following ability can erode if the training data doesn't include diverse examples.\n\n**Mitigations:** mix in general-purpose data (5–10%); use parameter-efficient methods (LoRA) that preserve base weights; evaluate on a held-out general benchmark alongside your task benchmark.\n\n## Data Quality Requirements\n\nFine-tuning is unforgiving of noisy labels. 500 high-quality, diverse, correctly formatted examples typically outperform 50,000 scraped pairs with inconsistent formatting.\n\nChecklist:\n- Consistent output format across all examples\n- No contradictions within the dataset\n- Covers edge cases and failure modes\n- Held-out eval set (10–20% of data)\n\n## Decision Tree\n\n```\nIs the base model already capable of the task format?\n  YES → Try zero-shot or few-shot prompting first\n        Still not good enough?\n          Is the issue: missing knowledge?\n            YES → RAG\n          Is the issue: wrong style/format/tone?\n            YES → Fine-tuning\n  NO  → Is the issue data recency or proprietary knowledge?\n          YES → RAG\n          NO  → Fine-tuning\n```\n\n## Hybrid Approaches\n\nThe strategies compose. A common production pattern: fine-tune a model for format/style consistency, then add RAG for live knowledge retrieval. The fine-tuned model handles persona and structure; RAG handles facts. This gives you the best of both at the cost of both.\n\n## Summary Comparison\n\n| Dimension | Prompting | RAG | Fine-tuning |\n|-----------|-----------|-----|-------------|\n| Upfront cost | Low | Medium | High |\n| Per-query cost | Medium | Medium-High | Low (self-hosted) |\n| Knowledge update | Instant | Reindex | Retrain |\n| Style consistency | Variable | Variable | High |\n| Source attribution | No | Yes | No |\n| Setup time | Minutes | Hours-Days | Days-Weeks |",
+  "eli8": "# Three Ways to Customize Your AI \ud83e\udd16\n\nImagine you have a super-smart robot friend who already knows **tons** of stuff. But you want it to be extra good at *your* specific job. How do you do that? You've got three choices!\n\n## \ud83d\udde3\ufe0f Prompting \u2014 Give It Instructions\n\nThis is the easiest one! You just **tell** the robot what you want each time it helps you.\n\n- Like writing instructions on a sticky note \ud83d\udcdd\n- \"Be a pirate when you talk to me!\" or \"Always answer in 3 bullet points\"\n- Super cheap \u2014 you only pay for the words you type\n- But you have to repeat your instructions **every single time**\n- Works great for most everyday tasks!\n\n## \ud83d\udcda RAG \u2014 Give It a Reference Book\n\nRAG stands for Retrieval-Augmented Generation. Big words, simple idea!\n\n- Imagine you give your robot friend a **huge library** \ud83d\udcd6 it can look things up in\n- When you ask a question, it first searches the library, then answers\n- Great for company documents, recent news, or anything that changes a lot\n- The robot can say \"I found this on page 42 of your handbook!\" \u2014 very trustworthy!\n- Like open-book homework vs closed-book homework\n\n## \ud83c\udf93 Fine-tuning \u2014 Actually Re-Teach It\n\nThis is the most powerful option \u2014 you actually **train the robot's brain** to be different!\n\n- Like sending your robot to school for a few weeks to learn a new skill\n- After training, it naturally speaks your company's style, knows your jargon, and follows your format\n- Much more expensive \u2014 needs lots of computer power \ud83d\udcbb\n- The new skills are **baked in forever** \u2014 no need for long instructions\n- But if you teach it too hard, it might forget some old stuff!\n\n## \ud83d\udee0\ufe0f Which One Should You Pick?\n\n| Situation | Best Choice |\n|-----------|-------------|\n| General help tasks | Prompting |\n| Your company's private docs | RAG |\n| Specific tone/style/domain | Fine-tuning |\n| Save money | Prompting first! |\n\n**The golden rule:** Always try prompting first. If that's not good enough, try RAG. Only fine-tune when you really need to! \ud83c\udfc6",
+  "detail": "# Fine-tuning vs RAG vs Prompting: A Decision Framework\n\n## Overview\n\nThree primary strategies exist for adapting LLMs to specific use cases: prompt engineering, retrieval-augmented generation (RAG), and fine-tuning. Choosing the wrong approach wastes money, time, or both. This topic provides a systematic decision framework.\n\n## Strategy 1: Prompt Engineering\n\nPrompt engineering shapes model behavior purely through the input \u2014 system prompts, few-shot examples, chain-of-thought instructions, and output format directives.\n\n**When it works:**\n- General-purpose tasks where the base model already has relevant knowledge\n- Few-shot learning is sufficient (3\u201310 examples in context)\n- Rapid iteration is needed (zero infrastructure overhead)\n- Budget constraints are tight\n\n**Techniques:** zero-shot, few-shot, chain-of-thought (CoT), role prompting, output format constraints.\n\n**Cost:** Tokens only. A complex system prompt with 10 few-shot examples \u2248 1,000\u20133,000 tokens per request.\n\n**Limits:** Context window capped; can't inject proprietary knowledge at scale; style consistency degrades over long conversations.\n\n## Strategy 2: Retrieval-Augmented Generation (RAG)\n\nRAG separates the *knowledge store* from the *reasoning engine*. Documents are embedded and stored in a vector database; at inference time, relevant chunks are retrieved and injected into the prompt.\n\n**When it works:**\n- Proprietary or recent knowledge the model doesn't have (post-cutoff events, internal docs)\n- Source attribution is required (\"per section 4.2 of the handbook...\")\n- Data changes frequently \u2014 reindexing is cheaper than retraining\n- Reducing hallucinations on factual lookups\n\n**Infrastructure cost:** Embedding model + vector DB (Pinecone, pgvector, Chroma) + retrieval latency (~50\u2013200ms). Higher per-query cost than pure prompting, but far cheaper than fine-tuning.\n\n**Limits:** Retrieval quality depends on chunking strategy and embedding alignment; multi-hop reasoning across documents is hard; latency adds up at scale.\n\n## Strategy 3: Fine-tuning\n\nFine-tuning updates model weights on a curated dataset, permanently changing how the model behaves \u2014 without any runtime retrieval or lengthy prompts.\n\n**When it works:**\n- Specific output format must be consistent at scale (JSON schemas, structured reports)\n- Specialized domain language the base model doesn't speak fluently (medical, legal, niche coding)\n- Consistent persona or brand voice without per-request system prompts\n- Task-specific performance that few-shot examples alone can't reach\n- Latency reduction \u2014 replacing a 2,000-token system prompt with a fine-tuned model\n\n**Cost breakdown:**\n```\nFull fine-tuning 7B model:\n  Compute:   ~$50\u2013200 on cloud GPUs (A100 hours)\n  Storage:   ~14GB for FP16 weights\n  Inference: ~$0.0002\u20130.001 per 1K tokens (self-hosted)\n\nPrompting equivalent:\n  No compute cost\n  ~$0.002\u20130.01 per 1K tokens (API)\n```\n\n## The Risk: Catastrophic Forgetting\n\nFine-tuning on a narrow dataset can cause the model to degrade on tasks it previously handled well \u2014 a phenomenon called **catastrophic forgetting**. The model's general instruction-following ability can erode if the training data doesn't include diverse examples.\n\n**Mitigations:** mix in general-purpose data (5\u201310%); use parameter-efficient methods (LoRA) that preserve base weights; evaluate on a held-out general benchmark alongside your task benchmark.\n\n## Data Quality Requirements\n\nFine-tuning is unforgiving of noisy labels. 500 high-quality, diverse, correctly formatted examples typically outperform 50,000 scraped pairs with inconsistent formatting.\n\nChecklist:\n- Consistent output format across all examples\n- No contradictions within the dataset\n- Covers edge cases and failure modes\n- Held-out eval set (10\u201320% of data)\n\n## Decision Tree\n\n```\nIs the base model already capable of the task format?\n  YES \u2192 Try zero-shot or few-shot prompting first\n        Still not good enough?\n          Is the issue: missing knowledge?\n            YES \u2192 RAG\n          Is the issue: wrong style/format/tone?\n            YES \u2192 Fine-tuning\n  NO  \u2192 Is the issue data recency or proprietary knowledge?\n          YES \u2192 RAG\n          NO  \u2192 Fine-tuning\n```\n\n## Hybrid Approaches\n\nThe strategies compose. A common production pattern: fine-tune a model for format/style consistency, then add RAG for live knowledge retrieval. The fine-tuned model handles persona and structure; RAG handles facts. This gives you the best of both at the cost of both.\n\n## Summary Comparison\n\n| Dimension | Prompting | RAG | Fine-tuning |\n|-----------|-----------|-----|-------------|\n| Upfront cost | Low | Medium | High |\n| Per-query cost | Medium | Medium-High | Low (self-hosted) |\n| Knowledge update | Instant | Reindex | Retrain |\n| Style consistency | Variable | Variable | High |\n| Source attribution | No | Yes | No |\n| Setup time | Minutes | Hours-Days | Days-Weeks |",
   "mcqs": [
     {
       "id": "q1",
       "question": "A startup needs to answer questions about their 500-page internal product handbook. The handbook is updated monthly. Which approach is most appropriate?",
       "options": [
         "Fine-tune the model on the handbook contents",
-        "RAG — embed the handbook into a vector database and retrieve relevant chunks at query time",
+        "RAG \u2014 embed the handbook into a vector database and retrieve relevant chunks at query time",
         "Include the entire handbook in every system prompt",
         "Use chain-of-thought prompting without any external knowledge"
       ],
@@ -38,7 +38,7 @@
       "question": "You want a model to always respond in a very specific JSON schema for a production API, with zero variance across millions of calls. Fine-tuning is the best choice because:",
       "options": [
         "Fine-tuning is always cheaper than prompting at scale",
-        "The desired behavior (strict format) is structural and consistent — fine-tuning bakes it into weights, eliminating per-request format instructions",
+        "The desired behavior (strict format) is structural and consistent \u2014 fine-tuning bakes it into weights, eliminating per-request format instructions",
         "RAG cannot produce JSON outputs",
         "Prompting cannot enforce output schemas"
       ],
@@ -55,7 +55,7 @@
         "A larger context window license fee"
       ],
       "correct": 2,
-      "explanation": "RAG requires an embedding model to encode documents, a vector database (e.g., Pinecone, pgvector, Chroma) to store and search embeddings, and retrieval latency (typically 50–200ms) added to each request."
+      "explanation": "RAG requires an embedding model to encode documents, a vector database (e.g., Pinecone, pgvector, Chroma) to store and search embeddings, and retrieval latency (typically 50\u2013200ms) added to each request."
     },
     {
       "id": "q5",
@@ -63,18 +63,18 @@
       "options": [
         "RAG with the 800 examples as retrieval documents",
         "Zero-shot prompting with no examples",
-        "Fine-tuning a 7B model using LoRA/QLoRA — $200 is enough for several training runs on a small dataset",
+        "Fine-tuning a 7B model using LoRA/QLoRA \u2014 $200 is enough for several training runs on a small dataset",
         "Full fine-tuning of a 70B model"
       ],
       "correct": 2,
-      "explanation": "Brand voice and vocabulary are style/format tasks — exactly where fine-tuning shines. 800 quality examples is a reasonable dataset, and LoRA/QLoRA fine-tuning of a 7B model fits well within $200. Full 70B fine-tuning would vastly exceed the budget."
+      "explanation": "Brand voice and vocabulary are style/format tasks \u2014 exactly where fine-tuning shines. 800 quality examples is a reasonable dataset, and LoRA/QLoRA fine-tuning of a 7B model fits well within $200. Full 70B fine-tuning would vastly exceed the budget."
     },
     {
       "id": "q6",
       "question": "What is the primary advantage of a hybrid fine-tuning + RAG approach over either method alone?",
       "options": [
         "It eliminates the need for GPU hardware entirely",
-        "The fine-tuned model handles style and format while RAG provides current factual knowledge — combining structural consistency with live data access",
+        "The fine-tuned model handles style and format while RAG provides current factual knowledge \u2014 combining structural consistency with live data access",
         "It removes the need for an embedding model",
         "It makes the model immune to catastrophic forgetting"
       ],
@@ -85,10 +85,10 @@
       "id": "q7",
       "question": "Which of the following is the correct order to try approaches before escalating to fine-tuning?",
       "options": [
-        "Fine-tuning → RAG → Prompting",
-        "RAG → Fine-tuning → Prompting",
-        "Prompting → RAG → Fine-tuning",
-        "Prompting → Fine-tuning → RAG"
+        "Fine-tuning \u2192 RAG \u2192 Prompting",
+        "RAG \u2192 Fine-tuning \u2192 Prompting",
+        "Prompting \u2192 RAG \u2192 Fine-tuning",
+        "Prompting \u2192 Fine-tuning \u2192 RAG"
       ],
       "correct": 2,
       "explanation": "The standard decision ladder is Prompting first (cheapest, fastest), then RAG if knowledge is the gap, then Fine-tuning if style/format/domain adaptation is the remaining gap. Escalate only when the previous step is insufficient."
@@ -98,7 +98,7 @@
     {
       "id": "f1",
       "front": "Prompt engineering",
-      "back": "Shaping model behavior by crafting the input — system prompts, few-shot examples, CoT instructions — without modifying model weights. Cheapest customization strategy; effective for general tasks."
+      "back": "Shaping model behavior by crafting the input \u2014 system prompts, few-shot examples, CoT instructions \u2014 without modifying model weights. Cheapest customization strategy; effective for general tasks."
     },
     {
       "id": "f2",
@@ -108,7 +108,7 @@
     {
       "id": "f3",
       "front": "Fine-tuning",
-      "back": "Updating model weights on a curated task-specific dataset so the model permanently behaves differently. Best for style consistency, domain language, and structured output — but requires compute and high-quality data."
+      "back": "Updating model weights on a curated task-specific dataset so the model permanently behaves differently. Best for style consistency, domain language, and structured output \u2014 but requires compute and high-quality data."
     },
     {
       "id": "f4",
@@ -128,17 +128,17 @@
     {
       "id": "f7",
       "front": "Decision framework for LLM customization",
-      "back": "Ordered escalation: 1) Prompting (free, instant) → 2) RAG (knowledge gap, dynamic data) → 3) Fine-tuning (style/format gap, domain language). Always try the cheaper option first."
+      "back": "Ordered escalation: 1) Prompting (free, instant) \u2192 2) RAG (knowledge gap, dynamic data) \u2192 3) Fine-tuning (style/format gap, domain language). Always try the cheaper option first."
     },
     {
       "id": "f8",
       "front": "Source attribution in RAG",
-      "back": "The ability of RAG systems to cite which retrieved chunk or document an answer came from. Improves trust and auditability — the model can say 'according to section 4.2...' rather than generating uncited claims."
+      "back": "The ability of RAG systems to cite which retrieved chunk or document an answer came from. Improves trust and auditability \u2014 the model can say 'according to section 4.2...' rather than generating uncited claims."
     }
   ],
   "videos": [
     {
-      "title": "Fine-tuning vs RAG — When to Use Each",
+      "title": "Fine-tuning vs RAG \u2014 When to Use Each",
       "youtube_id": "1bUy-1hGZpI",
       "description": "A practical breakdown comparing fine-tuning and RAG, covering cost, use cases, and real-world decision criteria."
     },
@@ -149,5 +149,17 @@
     }
   ],
   "has_practical": false,
-  "practical_description": ""
+  "practical_description": "",
+  "diagram": {
+    "type": "flow",
+    "title": "Which Approach Do You Need?",
+    "steps": [
+      "Your Need",
+      [
+        "Need Knowledge \u2192 RAG",
+        "Need New Behavior \u2192 Fine-tune",
+        "Quick Iteration \u2192 Prompting"
+      ]
+    ]
+  }
 }

@@ -4,10 +4,10 @@
   "level_name": "Production & Cloud",
   "order": 1,
   "title": "Productionizing AI Apps",
-  "emoji": "🚀",
+  "emoji": "\ud83d\ude80",
   "duration_minutes": 25,
-  "eli8": "# 🚀 Going from Laptop to the World!\n\nImagine you baked the most amazing pizza on your home oven. Your family loved it! But what if a million people wanted that pizza **right now**? Your oven would explode! 😅\n\nThat's exactly the problem when you build an AI app on your laptop and try to share it with the world.\n\n## 📦 Packing Your App in a Box (Docker)\n\nDocker is like a **lunchbox for your code**. You put your app, all its ingredients (libraries), and instructions inside the box. Then anyone can open that box on *any* computer and your app works perfectly — no \"but it worked on MY laptop!\" problems!\n\n- 🐋 Docker **packages** your app so it runs the same everywhere\n- Think of it like a recipe card + all the ingredients already measured out\n- The app starts in seconds, always the same way\n\n## 🔄 The Magic Pipeline (CI/CD)\n\nCI/CD stands for **Continuous Integration / Continuous Deployment**. Big words, simple idea:\n\n- Every time you fix a bug or add a feature, a robot automatically:\n  1. Tests your code (\"does it still work?\")\n  2. Packages it up\n  3. Ships it to users — safely!\n- It's like having a **robot assistant** who double-checks your homework before turning it in\n\n## 👀 Watching Your App (Monitoring)\n\nOnce your app is live, you need to watch it:\n\n- 🏥 **Health checks** — is the app still breathing?\n- 🐢 **Latency** — is it slow? Users hate waiting!\n- 💥 **Errors** — did something break at 3am?\n- 💰 **Cost** — are you spending too much on AI calls?\n\n## 🧊 Remember Answers (Caching)\n\nIf 1000 people ask \"What is photosynthesis?\" you don't need to ask the AI 1000 times! **Caching** saves the first answer and reuses it — like remembering your homework answers for next time. This saves money AND makes things faster! ⚡\n\nProduction is hard, but these tools make it manageable. Real engineers use all of these every day!",
-  "detail": "## Productionizing AI Applications\n\nMoving an LLM-powered application from a local prototype to a reliable production service requires attention to infrastructure, reliability, observability, and cost. This topic covers the essential checklist.\n\n### API Design\n\n**FastAPI** is the standard for Python ML services — async-first, auto-generated OpenAPI docs, Pydantic validation:\n\n```python\nfrom fastapi import FastAPI, HTTPException\nfrom pydantic import BaseModel\nimport asyncio\n\napp = FastAPI()\n\nclass QueryRequest(BaseModel):\n    question: str\n    max_tokens: int = 512\n\n# Load model once at startup — never per-request\n@app.on_event(\"startup\")\nasync def load_model():\n    app.state.client = init_llm_client()\n\n@app.post(\"/query\")\nasync def query(req: QueryRequest):\n    try:\n        response = await app.state.client.generate(req.question)\n        return {\"answer\": response}\n    except LLMUnavailableError:\n        raise HTTPException(503, \"LLM service unavailable\")\n```\n\n### Containerization with Docker\n\nA minimal production Dockerfile for an LLM API:\n\n```dockerfile\nFROM python:3.11-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\nCOPY . .\n# Non-root user for security\nRUN useradd -m appuser && chown -R appuser /app\nUSER appuser\nCMD [\"uvicorn\", \"main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]\n```\n\nKey practices: pin dependency versions, use `.dockerignore`, multi-stage builds to reduce image size.\n\n### Environment & Secrets Management\n\n- **Development**: `.env` files loaded by `python-dotenv`\n- **Production**: secrets injected via environment variables from a vault (AWS Secrets Manager, HashiCorp Vault, GCP Secret Manager)\n- Never commit API keys to git — use `pre-commit` hooks to scan for secrets\n\n### Health Checks & Graceful Shutdown\n\n```python\n@app.get(\"/health\")\nasync def health():\n    return {\"status\": \"ok\", \"model_loaded\": app.state.model_loaded}\n\nimport signal\ndef handle_shutdown(sig, frame):\n    # Drain in-flight requests before exiting\n    app.state.shutting_down = True\n```\n\nLoad balancers use `/health` to route traffic; graceful shutdown prevents dropped requests during deploys.\n\n### CI/CD with GitHub Actions\n\n```yaml\non: [push]\njobs:\n  deploy:\n    steps:\n      - run: pytest tests/\n      - run: docker build -t myapp .\n      - run: docker push registry/myapp:${{ github.sha }}\n      - run: kubectl rollout update deployment/myapp\n```\n\n**Staging vs Production**: always deploy to staging first; run smoke tests; promote to production.\n\n### Caching Strategies\n\n- **Response cache (Redis)**: cache exact input→output pairs. Effective for FAQ bots.\n- **Semantic cache (GPTCache)**: embed the query, find similar past queries above a similarity threshold, return cached response. Reduces LLM calls by 20-60% on repetitive workloads.\n\n### Deployment Strategies\n\n- **Rolling deployment**: replace instances one at a time — zero downtime, easy rollback\n- **Blue/green deployment**: spin up a complete new environment (green), switch traffic instantly, keep old (blue) for instant rollback\n- **Canary**: route 5% of traffic to new version, watch metrics, then promote\n\n### Load Testing\n\nUse **Locust** to simulate concurrent users before going live:\n\n```python\nfrom locust import HttpUser, task\nclass LLMUser(HttpUser):\n    @task\n    def query(self):\n        self.client.post(\"/query\", json={\"question\": \"What is ML?\"})\n```\n\nKey metrics to test: requests/second, P95 latency under load, error rate at 2x expected traffic.",
+  "eli8": "# \ud83d\ude80 Going from Laptop to the World!\n\nImagine you baked the most amazing pizza on your home oven. Your family loved it! But what if a million people wanted that pizza **right now**? Your oven would explode! \ud83d\ude05\n\nThat's exactly the problem when you build an AI app on your laptop and try to share it with the world.\n\n## \ud83d\udce6 Packing Your App in a Box (Docker)\n\nDocker is like a **lunchbox for your code**. You put your app, all its ingredients (libraries), and instructions inside the box. Then anyone can open that box on *any* computer and your app works perfectly \u2014 no \"but it worked on MY laptop!\" problems!\n\n- \ud83d\udc0b Docker **packages** your app so it runs the same everywhere\n- Think of it like a recipe card + all the ingredients already measured out\n- The app starts in seconds, always the same way\n\n## \ud83d\udd04 The Magic Pipeline (CI/CD)\n\nCI/CD stands for **Continuous Integration / Continuous Deployment**. Big words, simple idea:\n\n- Every time you fix a bug or add a feature, a robot automatically:\n  1. Tests your code (\"does it still work?\")\n  2. Packages it up\n  3. Ships it to users \u2014 safely!\n- It's like having a **robot assistant** who double-checks your homework before turning it in\n\n## \ud83d\udc40 Watching Your App (Monitoring)\n\nOnce your app is live, you need to watch it:\n\n- \ud83c\udfe5 **Health checks** \u2014 is the app still breathing?\n- \ud83d\udc22 **Latency** \u2014 is it slow? Users hate waiting!\n- \ud83d\udca5 **Errors** \u2014 did something break at 3am?\n- \ud83d\udcb0 **Cost** \u2014 are you spending too much on AI calls?\n\n## \ud83e\uddca Remember Answers (Caching)\n\nIf 1000 people ask \"What is photosynthesis?\" you don't need to ask the AI 1000 times! **Caching** saves the first answer and reuses it \u2014 like remembering your homework answers for next time. This saves money AND makes things faster! \u26a1\n\nProduction is hard, but these tools make it manageable. Real engineers use all of these every day!",
+  "detail": "## Productionizing AI Applications\n\nMoving an LLM-powered application from a local prototype to a reliable production service requires attention to infrastructure, reliability, observability, and cost. This topic covers the essential checklist.\n\n### API Design\n\n**FastAPI** is the standard for Python ML services \u2014 async-first, auto-generated OpenAPI docs, Pydantic validation:\n\n```python\nfrom fastapi import FastAPI, HTTPException\nfrom pydantic import BaseModel\nimport asyncio\n\napp = FastAPI()\n\nclass QueryRequest(BaseModel):\n    question: str\n    max_tokens: int = 512\n\n# Load model once at startup \u2014 never per-request\n@app.on_event(\"startup\")\nasync def load_model():\n    app.state.client = init_llm_client()\n\n@app.post(\"/query\")\nasync def query(req: QueryRequest):\n    try:\n        response = await app.state.client.generate(req.question)\n        return {\"answer\": response}\n    except LLMUnavailableError:\n        raise HTTPException(503, \"LLM service unavailable\")\n```\n\n### Containerization with Docker\n\nA minimal production Dockerfile for an LLM API:\n\n```dockerfile\nFROM python:3.11-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\nCOPY . .\n# Non-root user for security\nRUN useradd -m appuser && chown -R appuser /app\nUSER appuser\nCMD [\"uvicorn\", \"main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]\n```\n\nKey practices: pin dependency versions, use `.dockerignore`, multi-stage builds to reduce image size.\n\n### Environment & Secrets Management\n\n- **Development**: `.env` files loaded by `python-dotenv`\n- **Production**: secrets injected via environment variables from a vault (AWS Secrets Manager, HashiCorp Vault, GCP Secret Manager)\n- Never commit API keys to git \u2014 use `pre-commit` hooks to scan for secrets\n\n### Health Checks & Graceful Shutdown\n\n```python\n@app.get(\"/health\")\nasync def health():\n    return {\"status\": \"ok\", \"model_loaded\": app.state.model_loaded}\n\nimport signal\ndef handle_shutdown(sig, frame):\n    # Drain in-flight requests before exiting\n    app.state.shutting_down = True\n```\n\nLoad balancers use `/health` to route traffic; graceful shutdown prevents dropped requests during deploys.\n\n### CI/CD with GitHub Actions\n\n```yaml\non: [push]\njobs:\n  deploy:\n    steps:\n      - run: pytest tests/\n      - run: docker build -t myapp .\n      - run: docker push registry/myapp:${{ github.sha }}\n      - run: kubectl rollout update deployment/myapp\n```\n\n**Staging vs Production**: always deploy to staging first; run smoke tests; promote to production.\n\n### Caching Strategies\n\n- **Response cache (Redis)**: cache exact input\u2192output pairs. Effective for FAQ bots.\n- **Semantic cache (GPTCache)**: embed the query, find similar past queries above a similarity threshold, return cached response. Reduces LLM calls by 20-60% on repetitive workloads.\n\n### Deployment Strategies\n\n- **Rolling deployment**: replace instances one at a time \u2014 zero downtime, easy rollback\n- **Blue/green deployment**: spin up a complete new environment (green), switch traffic instantly, keep old (blue) for instant rollback\n- **Canary**: route 5% of traffic to new version, watch metrics, then promote\n\n### Load Testing\n\nUse **Locust** to simulate concurrent users before going live:\n\n```python\nfrom locust import HttpUser, task\nclass LLMUser(HttpUser):\n    @task\n    def query(self):\n        self.client.post(\"/query\", json={\"question\": \"What is ML?\"})\n```\n\nKey metrics to test: requests/second, P95 latency under load, error rate at 2x expected traffic.",
   "mcqs": [
     {
       "id": "q1",
@@ -19,19 +19,19 @@
         "To encrypt API keys and secrets at rest"
       ],
       "correct": 1,
-      "explanation": "Docker packages your app, runtime, and all dependencies into a container image that runs identically on any machine — eliminating 'works on my laptop' problems."
+      "explanation": "Docker packages your app, runtime, and all dependencies into a container image that runs identically on any machine \u2014 eliminating 'works on my laptop' problems."
     },
     {
       "id": "q2",
       "question": "In a CI/CD pipeline for an AI application, what is the correct order of stages?",
       "options": [
-        "Deploy → Build → Test",
-        "Build → Deploy → Test",
-        "Test → Build → Deploy",
-        "Build → Test → Rollback"
+        "Deploy \u2192 Build \u2192 Test",
+        "Build \u2192 Deploy \u2192 Test",
+        "Test \u2192 Build \u2192 Deploy",
+        "Build \u2192 Test \u2192 Rollback"
       ],
       "correct": 2,
-      "explanation": "The correct order is Test (validate correctness) → Build (create Docker image) → Deploy (push to staging then production). Testing before building prevents deploying broken code."
+      "explanation": "The correct order is Test (validate correctness) \u2192 Build (create Docker image) \u2192 Deploy (push to staging then production). Testing before building prevents deploying broken code."
     },
     {
       "id": "q3",
@@ -103,12 +103,12 @@
     {
       "id": "f2",
       "front": "CI/CD",
-      "back": "Continuous Integration / Continuous Deployment — automated pipelines that test, build, and deploy code changes. CI runs tests on every commit; CD automates the release to staging and production."
+      "back": "Continuous Integration / Continuous Deployment \u2014 automated pipelines that test, build, and deploy code changes. CI runs tests on every commit; CD automates the release to staging and production."
     },
     {
       "id": "f3",
       "front": "Staging environment",
-      "back": "A pre-production environment that mirrors production configuration. New code is deployed here first, smoke-tested, then promoted to production — preventing untested changes from reaching users."
+      "back": "A pre-production environment that mirrors production configuration. New code is deployed here first, smoke-tested, then promoted to production \u2014 preventing untested changes from reaching users."
     },
     {
       "id": "f4",
@@ -149,5 +149,16 @@
     }
   ],
   "has_practical": false,
-  "practical_description": ""
+  "practical_description": "",
+  "diagram": {
+    "type": "flow",
+    "title": "From Notebook to Production",
+    "steps": [
+      "Notebook Prototype",
+      "API Wrapper",
+      "Docker Container",
+      "CI/CD Pipeline",
+      "Production"
+    ]
+  }
 }

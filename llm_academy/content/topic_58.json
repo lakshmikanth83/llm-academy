@@ -4,10 +4,10 @@
   "level_name": "Production & Cloud",
   "order": 3,
   "title": "Observability & Monitoring",
-  "emoji": "👁️",
+  "emoji": "\ud83d\udc41\ufe0f",
   "duration_minutes": 20,
-  "eli8": "# 👁️ Watching Your AI Like a Hawk!\n\nImagine you built a lemonade stand robot. It makes lemonade automatically! But what if:\n- It starts making lemonade **super slowly** and customers get angry? 🐢\n- It starts making lemonade that **tastes wrong** because the recipe changed? 😖\n- It **runs out of lemons** at 3am and nobody notices? 🍋\n\nObservability means setting up cameras, sensors, and alarms so you ALWAYS know what's happening — even when you're asleep!\n\n## 📊 What Do We Watch?\n\nFor AI apps, the most important things to watch are:\n\n- ⏱️ **Speed (Latency)** — how long does it take to answer? Under 2 seconds is good. Over 10 seconds = customers leaving!\n- 💥 **Errors** — what % of requests are failing? Even 1% matters when you have a million users\n- 💰 **Cost** — how many dollars are you spending on AI calls each hour?\n- 🤥 **Quality** — is the AI giving good answers or making stuff up?\n\n## 🔍 Tracing: Following Every Request\n\nImagine putting a tiny GPS tracker on every single question that enters your AI app:\n- You can see exactly what happened: \"User asked X → retrieved documents A, B, C → AI answered Y\"\n- If something went wrong, you can rewind and see exactly where it broke!\n- Tools like **LangSmith** and **Langfuse** do this for LLM apps\n\nIt's like having a flight recorder in an airplane — you always know what happened! ✈️\n\n## 🚨 Alerts: Automatic Alarms\n\nYou set up rules like:\n- 🔴 \"If more than 1% of requests fail → send me a text message\"\n- 🟡 \"If the AI is taking more than 5 seconds → send a warning\"\n- 💸 \"If we spend $100 in one hour → something is very wrong!\"\n\nThis way you sleep peacefully and only wake up when something actually needs fixing! 😴",
-  "detail": "## Observability & Monitoring for LLM Applications\n\nLLM applications have unique observability requirements beyond standard web services — you need to monitor not just infrastructure health but the quality and behavior of AI-generated outputs.\n\n### Infrastructure Metrics\n\n**The golden signals** (adapt for LLM services):\n- **Latency**: Time to first token (TTFT), total response time. Track P50/P95/P99 — P99 reveals worst-case user experience\n- **Throughput**: Requests per second, tokens per second generated\n- **Error rate**: 4xx (client errors), 5xx (server/LLM errors), timeout rate\n- **Saturation**: Queue depth, GPU memory utilization, concurrent request count\n\n```python\n# Example: tracking latency with prometheus_client\nfrom prometheus_client import Histogram, Counter\nimport time\n\nREQUEST_LATENCY = Histogram('llm_request_duration_seconds',\n                             'LLM request latency', ['endpoint'])\nERROR_COUNTER = Counter('llm_errors_total', 'LLM error count', ['type'])\n\nasync def handle_query(request):\n    with REQUEST_LATENCY.labels(endpoint='/query').time():\n        try:\n            return await call_llm(request)\n        except LLMError as e:\n            ERROR_COUNTER.labels(type=str(e)).inc()\n            raise\n```\n\n### LLM-Specific Metrics\n\n- **Hallucination rate**: detected via automated evaluation (RAGAS faithfulness < threshold)\n- **Refusal rate**: % of requests where the model declined to answer (over-refusal is a product problem)\n- **User satisfaction**: thumbs up/down ratings, session continuation rate\n- **Cost per request**: (input_tokens × price_in + output_tokens × price_out)\n- **Context utilization**: what % of the context window is being used\n\n### Distributed Tracing with LangSmith / Langfuse\n\nTracing captures the full execution graph of an LLM call — inputs, retrieved documents, intermediate chain steps, and outputs:\n\n```python\nimport langsmith\nfrom langsmith import traceable\n\n@traceable(name=\"rag_pipeline\")\ndef rag_query(question: str) -> dict:\n    docs = retrieve(question)           # traced as child span\n    prompt = format_prompt(question, docs)\n    answer = llm.invoke(prompt)         # tokens, latency logged\n    return {\"answer\": answer, \"sources\": docs}\n```\n\n**Langfuse** (open-source alternative) supports self-hosting, dataset management, and prompt versioning:\n\n```python\nfrom langfuse import Langfuse\nlangfuse = Langfuse()\ntrace = langfuse.trace(name=\"chat_session\", user_id=user_id)\nspan = trace.span(name=\"retrieval\")\n# ... your logic ...\nspan.end(output={\"chunks_retrieved\": 5})\n```\n\n### Dashboards and Alerting\n\n**Stack**: Prometheus (metrics collection) → Grafana (dashboards) → PagerDuty/Slack (alerts)\n\nAlternatively: **Datadog** (all-in-one, more expensive) or **Arize Phoenix** (LLM-specialized).\n\nKey alerts to configure:\n- Latency P95 > 5s for 5 consecutive minutes\n- Error rate > 1% over 10 minutes\n- Cost anomaly: hourly cost > 2× rolling average\n- LLM API error rate > 5% (could indicate rate limiting or outage)\n\n### Feedback Loops\n\nUser feedback is your most valuable evaluation signal:\n\n```python\n@app.post(\"/feedback\")\ndef record_feedback(trace_id: str, rating: int, comment: str = None):\n    # Store in DB\n    db.save_feedback(trace_id, rating, comment)\n    # Low-rated examples become evaluation dataset\n    if rating <= 2:\n        eval_dataset.add(get_trace(trace_id))\n```\n\n### Model Drift Detection\n\nModel behavior can shift when: the underlying model is updated, your data distribution changes, or prompt templates are modified. Monitor rolling-window metrics:\n- Average faithfulness score week-over-week\n- Refusal rate trend\n- Response length distribution changes\n\n### Sampling Strategy\n\n- Low traffic (<1K req/day): log 100% of traces\n- Medium traffic (1K-100K/day): log 10-20%, always log errors\n- High traffic (>100K/day): log 1-5%, oversample errors and low ratings\n\nLogging 100% at high volume becomes cost-prohibitive and creates storage challenges.",
+  "eli8": "# \ud83d\udc41\ufe0f Watching Your AI Like a Hawk!\n\nImagine you built a lemonade stand robot. It makes lemonade automatically! But what if:\n- It starts making lemonade **super slowly** and customers get angry? \ud83d\udc22\n- It starts making lemonade that **tastes wrong** because the recipe changed? \ud83d\ude16\n- It **runs out of lemons** at 3am and nobody notices? \ud83c\udf4b\n\nObservability means setting up cameras, sensors, and alarms so you ALWAYS know what's happening \u2014 even when you're asleep!\n\n## \ud83d\udcca What Do We Watch?\n\nFor AI apps, the most important things to watch are:\n\n- \u23f1\ufe0f **Speed (Latency)** \u2014 how long does it take to answer? Under 2 seconds is good. Over 10 seconds = customers leaving!\n- \ud83d\udca5 **Errors** \u2014 what % of requests are failing? Even 1% matters when you have a million users\n- \ud83d\udcb0 **Cost** \u2014 how many dollars are you spending on AI calls each hour?\n- \ud83e\udd25 **Quality** \u2014 is the AI giving good answers or making stuff up?\n\n## \ud83d\udd0d Tracing: Following Every Request\n\nImagine putting a tiny GPS tracker on every single question that enters your AI app:\n- You can see exactly what happened: \"User asked X \u2192 retrieved documents A, B, C \u2192 AI answered Y\"\n- If something went wrong, you can rewind and see exactly where it broke!\n- Tools like **LangSmith** and **Langfuse** do this for LLM apps\n\nIt's like having a flight recorder in an airplane \u2014 you always know what happened! \u2708\ufe0f\n\n## \ud83d\udea8 Alerts: Automatic Alarms\n\nYou set up rules like:\n- \ud83d\udd34 \"If more than 1% of requests fail \u2192 send me a text message\"\n- \ud83d\udfe1 \"If the AI is taking more than 5 seconds \u2192 send a warning\"\n- \ud83d\udcb8 \"If we spend $100 in one hour \u2192 something is very wrong!\"\n\nThis way you sleep peacefully and only wake up when something actually needs fixing! \ud83d\ude34",
+  "detail": "## Observability & Monitoring for LLM Applications\n\nLLM applications have unique observability requirements beyond standard web services \u2014 you need to monitor not just infrastructure health but the quality and behavior of AI-generated outputs.\n\n### Infrastructure Metrics\n\n**The golden signals** (adapt for LLM services):\n- **Latency**: Time to first token (TTFT), total response time. Track P50/P95/P99 \u2014 P99 reveals worst-case user experience\n- **Throughput**: Requests per second, tokens per second generated\n- **Error rate**: 4xx (client errors), 5xx (server/LLM errors), timeout rate\n- **Saturation**: Queue depth, GPU memory utilization, concurrent request count\n\n```python\n# Example: tracking latency with prometheus_client\nfrom prometheus_client import Histogram, Counter\nimport time\n\nREQUEST_LATENCY = Histogram('llm_request_duration_seconds',\n                             'LLM request latency', ['endpoint'])\nERROR_COUNTER = Counter('llm_errors_total', 'LLM error count', ['type'])\n\nasync def handle_query(request):\n    with REQUEST_LATENCY.labels(endpoint='/query').time():\n        try:\n            return await call_llm(request)\n        except LLMError as e:\n            ERROR_COUNTER.labels(type=str(e)).inc()\n            raise\n```\n\n### LLM-Specific Metrics\n\n- **Hallucination rate**: detected via automated evaluation (RAGAS faithfulness < threshold)\n- **Refusal rate**: % of requests where the model declined to answer (over-refusal is a product problem)\n- **User satisfaction**: thumbs up/down ratings, session continuation rate\n- **Cost per request**: (input_tokens \u00d7 price_in + output_tokens \u00d7 price_out)\n- **Context utilization**: what % of the context window is being used\n\n### Distributed Tracing with LangSmith / Langfuse\n\nTracing captures the full execution graph of an LLM call \u2014 inputs, retrieved documents, intermediate chain steps, and outputs:\n\n```python\nimport langsmith\nfrom langsmith import traceable\n\n@traceable(name=\"rag_pipeline\")\ndef rag_query(question: str) -> dict:\n    docs = retrieve(question)           # traced as child span\n    prompt = format_prompt(question, docs)\n    answer = llm.invoke(prompt)         # tokens, latency logged\n    return {\"answer\": answer, \"sources\": docs}\n```\n\n**Langfuse** (open-source alternative) supports self-hosting, dataset management, and prompt versioning:\n\n```python\nfrom langfuse import Langfuse\nlangfuse = Langfuse()\ntrace = langfuse.trace(name=\"chat_session\", user_id=user_id)\nspan = trace.span(name=\"retrieval\")\n# ... your logic ...\nspan.end(output={\"chunks_retrieved\": 5})\n```\n\n### Dashboards and Alerting\n\n**Stack**: Prometheus (metrics collection) \u2192 Grafana (dashboards) \u2192 PagerDuty/Slack (alerts)\n\nAlternatively: **Datadog** (all-in-one, more expensive) or **Arize Phoenix** (LLM-specialized).\n\nKey alerts to configure:\n- Latency P95 > 5s for 5 consecutive minutes\n- Error rate > 1% over 10 minutes\n- Cost anomaly: hourly cost > 2\u00d7 rolling average\n- LLM API error rate > 5% (could indicate rate limiting or outage)\n\n### Feedback Loops\n\nUser feedback is your most valuable evaluation signal:\n\n```python\n@app.post(\"/feedback\")\ndef record_feedback(trace_id: str, rating: int, comment: str = None):\n    # Store in DB\n    db.save_feedback(trace_id, rating, comment)\n    # Low-rated examples become evaluation dataset\n    if rating <= 2:\n        eval_dataset.add(get_trace(trace_id))\n```\n\n### Model Drift Detection\n\nModel behavior can shift when: the underlying model is updated, your data distribution changes, or prompt templates are modified. Monitor rolling-window metrics:\n- Average faithfulness score week-over-week\n- Refusal rate trend\n- Response length distribution changes\n\n### Sampling Strategy\n\n- Low traffic (<1K req/day): log 100% of traces\n- Medium traffic (1K-100K/day): log 10-20%, always log errors\n- High traffic (>100K/day): log 1-5%, oversample errors and low ratings\n\nLogging 100% at high volume becomes cost-prohibitive and creates storage challenges.",
   "mcqs": [
     {
       "id": "q1",
@@ -26,19 +26,19 @@
       "question": "What is the primary purpose of LangSmith and Langfuse in LLM applications?",
       "options": [
         "To fine-tune language models on custom datasets",
-        "To trace and log every step of an LLM pipeline — inputs, retrieval, prompts, and outputs — for debugging and evaluation",
+        "To trace and log every step of an LLM pipeline \u2014 inputs, retrieval, prompts, and outputs \u2014 for debugging and evaluation",
         "To automatically optimize prompt templates for cost and latency",
         "To serve LLM models at scale with load balancing"
       ],
       "correct": 1,
-      "explanation": "LangSmith and Langfuse are LLM observability platforms. They capture full execution traces — every retrieval, every prompt sent to the LLM, and every response — enabling debugging, evaluation, and prompt versioning."
+      "explanation": "LangSmith and Langfuse are LLM observability platforms. They capture full execution traces \u2014 every retrieval, every prompt sent to the LLM, and every response \u2014 enabling debugging, evaluation, and prompt versioning."
     },
     {
       "id": "q3",
       "question": "Why is monitoring 'refusal rate' an important LLM-specific metric?",
       "options": [
         "High refusal rates indicate the model is too expensive to run",
-        "Over-refusing is a product quality problem — if the model declines too many legitimate requests, users can't accomplish their goals",
+        "Over-refusing is a product quality problem \u2014 if the model declines too many legitimate requests, users can't accomplish their goals",
         "Refusal rate is only relevant for content moderation systems",
         "High refusal rates always indicate a security breach"
       ],
@@ -50,7 +50,7 @@
       "question": "What is model drift in the context of LLM applications?",
       "options": [
         "When the model weights gradually shift during inference due to hardware errors",
-        "Gradual changes in model output behavior over time — due to model updates, data distribution shifts, or prompt changes — that degrade application quality",
+        "Gradual changes in model output behavior over time \u2014 due to model updates, data distribution shifts, or prompt changes \u2014 that degrade application quality",
         "The tendency of LLMs to give longer responses over time",
         "Cost increases due to growing context window sizes"
       ],
@@ -79,19 +79,19 @@
         "They are sent directly to the LLM provider to improve the base model"
       ],
       "correct": 1,
-      "explanation": "Low-rated responses from production are captured into an evaluation dataset. Future prompt or model changes can then be tested against these real failure cases before deployment — closing the quality loop."
+      "explanation": "Low-rated responses from production are captured into an evaluation dataset. Future prompt or model changes can then be tested against these real failure cases before deployment \u2014 closing the quality loop."
     }
   ],
   "flashcards": [
     {
       "id": "f1",
       "front": "P95 / P99 latency",
-      "back": "Percentile latency metrics: P95 means 95% of requests complete within this time. P99 reveals the experience of your slowest 1% of users — important for detecting tail latency issues that averages hide."
+      "back": "Percentile latency metrics: P95 means 95% of requests complete within this time. P99 reveals the experience of your slowest 1% of users \u2014 important for detecting tail latency issues that averages hide."
     },
     {
       "id": "f2",
       "front": "Throughput",
-      "back": "The rate at which a system processes requests — measured in requests per second (req/s) or tokens per second (tok/s) for LLM applications. A key metric for capacity planning."
+      "back": "The rate at which a system processes requests \u2014 measured in requests per second (req/s) or tokens per second (tok/s) for LLM applications. A key metric for capacity planning."
     },
     {
       "id": "f3",
@@ -111,7 +111,7 @@
     {
       "id": "f6",
       "front": "Model drift",
-      "back": "Gradual degradation or behavioral shift in an LLM application over time — caused by upstream model updates, changing user query patterns, or data distribution shifts. Detected by monitoring rolling evaluation metrics."
+      "back": "Gradual degradation or behavioral shift in an LLM application over time \u2014 caused by upstream model updates, changing user query patterns, or data distribution shifts. Detected by monitoring rolling evaluation metrics."
     },
     {
       "id": "f7",
@@ -128,7 +128,7 @@
     {
       "title": "LLM Observability: Monitoring AI Applications in Production",
       "youtube_id": "NEreVeHGKgo",
-      "description": "Deep dive into the unique monitoring challenges of LLM applications — tracing, hallucination detection, cost tracking, and building feedback loops with LangSmith and Langfuse."
+      "description": "Deep dive into the unique monitoring challenges of LLM applications \u2014 tracing, hallucination detection, cost tracking, and building feedback loops with LangSmith and Langfuse."
     },
     {
       "title": "Monitoring AI Apps End-to-End",
@@ -137,5 +137,16 @@
     }
   ],
   "has_practical": false,
-  "practical_description": ""
+  "practical_description": "",
+  "diagram": {
+    "type": "flow",
+    "title": "Observing an AI App in Production",
+    "steps": [
+      "Request",
+      "Logging",
+      "Tracing",
+      "Metrics",
+      "Alerting Dashboard"
+    ]
+  }
 }

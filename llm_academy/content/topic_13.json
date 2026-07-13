@@ -4,10 +4,10 @@
   "level_name": "How LLMs Work",
   "order": 8,
   "title": "Inference & Latency",
-  "emoji": "⚡",
+  "emoji": "\u26a1",
   "duration_minutes": 15,
-  "eli8": "# Why Does AI Sometimes Feel Slow? ⚡\n\nWhen you ask an AI a question, it doesn't think of the whole answer at once and then type it — it types **one word at a time**, as fast as it can!\n\n## Two Phases of Answering 🔄\n\nThink of the AI answering like a chef at a restaurant:\n\n**Phase 1: Reading Your Order (Prefill) 📖**\n- The AI reads your entire question at once\n- This is fast — it can read all words in parallel!\n- Like the chef reading the full order ticket at once\n\n**Phase 2: Cooking the Food (Decoding) 🍳**\n- Now the AI generates each word one by one\n- Each word takes a little time\n- Like cooking — you have to finish one dish before starting the next!\n\nThis is why you see that blinking cursor — the AI is generating tokens in real time!\n\n## Measuring How Fast 📊\n\nWe measure AI speed in a few ways:\n\n- **TTFT** (Time To First Token): How long until the first word appears? 🕐\n- **TBT** (Time Between Tokens): How quickly does each next word come? ⏱️\n- **Throughput**: How many words per second total? 💨\n\nA fast AI might produce **50-100 tokens per second** — faster than you can read!\n\n## Why Does Bigger = Slower? 🐘\n\nBigger models have more \"brain cells\" (parameters), so they:\n- Take more memory (need bigger GPUs!)\n- Do more math per token\n- Are slower but smarter\n\nRunning a tiny 7B model is like driving a sports car ⚡\nRunning a giant 405B model is like driving a bus 🚌 — more capacity, but slower!\n\nCompanies use tricks like **quantization** (making the numbers smaller) to make big models faster and cheaper to run.",
-  "detail": "# Inference & Latency\n\n## The Two Phases of LLM Inference\n\nLLM inference has two distinct computational phases with very different characteristics:\n\n### Phase 1: Prefill\n- All input tokens are processed **in parallel** in a single forward pass\n- Computes Q, K, V for every input token simultaneously\n- GPU-compute-bound: can leverage full matrix multiplication parallelism\n- Time scales roughly linearly with input length (but with efficient batching)\n- Produces the KV cache for all input tokens\n\n### Phase 2: Decode (Autoregressive Generation)\n- Generates tokens **one at a time** — each token depends on all previous tokens\n- Each decode step is a single forward pass computing one new token\n- **Memory-bandwidth-bound**: the bottleneck is loading model weights from GPU HBM (High Bandwidth Memory), not computation\n- Time scales with output length × latency-per-token\n\n```\nTotal inference time ≈ prefill_time + num_output_tokens × time_per_token\n```\n\n## Key Latency Metrics\n\n**TTFT (Time to First Token)**: Time from request submission to the first token appearing in the response. Dominated by prefill time for long prompts.\n- Good TTFT: < 500ms for interactive applications\n- Cloud APIs: typically 200–2000ms depending on load and context length\n\n**TBT (Time Between Tokens)**: Time between successive output tokens during decode phase. Determines how fast text streams to the user.\n- Target for smooth streaming: < 50ms TBT (> 20 tokens/sec)\n- Typical range: 10–100ms per token\n\n**Throughput**: Total tokens generated per second across all concurrent requests. Measured as tokens/sec (generation throughput) or requests/sec.\n\n**End-to-end latency**: Total time from request to complete response = TTFT + (output_tokens × TBT)\n\n## Why Decode is Memory-Bandwidth-Bound\n\nDuring decode, each step generates only 1 new token — a tiny matrix-vector multiply rather than a large matrix-matrix multiply. The GPU computation finishes quickly, but must wait for model weights to be loaded from HBM:\n\n- NVIDIA A100 HBM bandwidth: ~2 TB/s\n- LLaMA 3 70B in FP16: ~140 GB weights\n- Minimum load time: 140 GB / 2 TB/s = 70ms per token → ~14 tokens/sec\n- Batching 8 requests: same bandwidth, 8× throughput = ~112 tokens/sec\n\nThis is why **batching** is the primary throughput optimization for decode: amortize the weight-loading cost across multiple concurrent requests.\n\n## Quantization and Its Latency Impact\n\nQuantization reduces the precision of model weights, shrinking memory footprint and reducing bandwidth requirements:\n\n| Precision | Bits/param | LLaMA 3 70B size | Approx. tokens/sec (A100) |\n|-----------|------------|-------------------|---------------------------|\n| BF16/FP16 | 16 bits | ~140 GB | ~14 |\n| INT8 | 8 bits | ~70 GB | ~25–30 |\n| INT4/GPTQ | 4 bits | ~35 GB | ~45–60 |\n| 2-bit | 2 bits | ~18 GB | experimental |\n\nModern quantization methods (GPTQ, AWQ, GGUF) maintain most model quality at INT4 precision.\n\n## vLLM and PagedAttention\n\n**vLLM** (Kwon et al., 2023) is an open-source inference server that achieves high throughput through **PagedAttention** — a KV cache memory management system inspired by OS virtual memory:\n\n- Divides KV cache into fixed-size \"pages\" that can be allocated/freed dynamically\n- Enables near-zero memory waste (standard systems waste 60–80% of KV cache memory due to fragmentation)\n- Enables continuous batching: new requests join a running batch as soon as capacity frees up\n- Achieves 2–24× higher throughput than naive HuggingFace inference\n\n## Hardware: GPU HBM as the Bottleneck\n\nFor LLM inference, **GPU HBM (High Bandwidth Memory)** is the critical resource:\n\n- **Capacity**: Determines max model size and KV cache at a given batch size\n  - A100 80GB: fits LLaMA 3 8B (FP16) with large KV cache, or 70B with quantization\n  - H100 80GB: similar capacity but 2× memory bandwidth\n- **Bandwidth**: Determines decode speed (weights must be loaded each token)\n- Multiple GPUs needed for large models (tensor parallelism)\n\n## Cost: $/1M Tokens\n\nCloud LLM pricing (approximate, July 2025):\n\n| Model | Input ($/1M tokens) | Output ($/1M tokens) |\n|-------|--------------------|-----------------------|\n| GPT-4o | $5 | $15 |\n| GPT-4o-mini | $0.15 | $0.60 |\n| Claude 3.5 Sonnet | $3 | $15 |\n| Claude 3 Haiku | $0.25 | $1.25 |\n| Gemini 1.5 Flash | $0.075 | $0.30 |\n\nOutput tokens cost more than input tokens because each output token requires a separate forward pass during decode, while input tokens are processed in parallel.\n\n## Latency Budget for Production Apps\n\n- **Interactive chat**: Total latency < 3s, TTFT < 500ms\n- **Autocomplete / copilot**: TTFT < 100ms, TBT < 30ms\n- **Batch summarization**: Total throughput matters, individual latency is secondary\n- **Agentic pipelines**: Latency multiplies across chained calls — each hop adds cost",
+  "eli8": "# Why Does AI Sometimes Feel Slow? \u26a1\n\nWhen you ask an AI a question, it doesn't think of the whole answer at once and then type it \u2014 it types **one word at a time**, as fast as it can!\n\n## Two Phases of Answering \ud83d\udd04\n\nThink of the AI answering like a chef at a restaurant:\n\n**Phase 1: Reading Your Order (Prefill) \ud83d\udcd6**\n- The AI reads your entire question at once\n- This is fast \u2014 it can read all words in parallel!\n- Like the chef reading the full order ticket at once\n\n**Phase 2: Cooking the Food (Decoding) \ud83c\udf73**\n- Now the AI generates each word one by one\n- Each word takes a little time\n- Like cooking \u2014 you have to finish one dish before starting the next!\n\nThis is why you see that blinking cursor \u2014 the AI is generating tokens in real time!\n\n## Measuring How Fast \ud83d\udcca\n\nWe measure AI speed in a few ways:\n\n- **TTFT** (Time To First Token): How long until the first word appears? \ud83d\udd50\n- **TBT** (Time Between Tokens): How quickly does each next word come? \u23f1\ufe0f\n- **Throughput**: How many words per second total? \ud83d\udca8\n\nA fast AI might produce **50-100 tokens per second** \u2014 faster than you can read!\n\n## Why Does Bigger = Slower? \ud83d\udc18\n\nBigger models have more \"brain cells\" (parameters), so they:\n- Take more memory (need bigger GPUs!)\n- Do more math per token\n- Are slower but smarter\n\nRunning a tiny 7B model is like driving a sports car \u26a1\nRunning a giant 405B model is like driving a bus \ud83d\ude8c \u2014 more capacity, but slower!\n\nCompanies use tricks like **quantization** (making the numbers smaller) to make big models faster and cheaper to run.",
+  "detail": "# Inference & Latency\n\n## The Two Phases of LLM Inference\n\nLLM inference has two distinct computational phases with very different characteristics:\n\n### Phase 1: Prefill\n- All input tokens are processed **in parallel** in a single forward pass\n- Computes Q, K, V for every input token simultaneously\n- GPU-compute-bound: can leverage full matrix multiplication parallelism\n- Time scales roughly linearly with input length (but with efficient batching)\n- Produces the KV cache for all input tokens\n\n### Phase 2: Decode (Autoregressive Generation)\n- Generates tokens **one at a time** \u2014 each token depends on all previous tokens\n- Each decode step is a single forward pass computing one new token\n- **Memory-bandwidth-bound**: the bottleneck is loading model weights from GPU HBM (High Bandwidth Memory), not computation\n- Time scales with output length \u00d7 latency-per-token\n\n```\nTotal inference time \u2248 prefill_time + num_output_tokens \u00d7 time_per_token\n```\n\n## Key Latency Metrics\n\n**TTFT (Time to First Token)**: Time from request submission to the first token appearing in the response. Dominated by prefill time for long prompts.\n- Good TTFT: < 500ms for interactive applications\n- Cloud APIs: typically 200\u20132000ms depending on load and context length\n\n**TBT (Time Between Tokens)**: Time between successive output tokens during decode phase. Determines how fast text streams to the user.\n- Target for smooth streaming: < 50ms TBT (> 20 tokens/sec)\n- Typical range: 10\u2013100ms per token\n\n**Throughput**: Total tokens generated per second across all concurrent requests. Measured as tokens/sec (generation throughput) or requests/sec.\n\n**End-to-end latency**: Total time from request to complete response = TTFT + (output_tokens \u00d7 TBT)\n\n## Why Decode is Memory-Bandwidth-Bound\n\nDuring decode, each step generates only 1 new token \u2014 a tiny matrix-vector multiply rather than a large matrix-matrix multiply. The GPU computation finishes quickly, but must wait for model weights to be loaded from HBM:\n\n- NVIDIA A100 HBM bandwidth: ~2 TB/s\n- LLaMA 3 70B in FP16: ~140 GB weights\n- Minimum load time: 140 GB / 2 TB/s = 70ms per token \u2192 ~14 tokens/sec\n- Batching 8 requests: same bandwidth, 8\u00d7 throughput = ~112 tokens/sec\n\nThis is why **batching** is the primary throughput optimization for decode: amortize the weight-loading cost across multiple concurrent requests.\n\n## Quantization and Its Latency Impact\n\nQuantization reduces the precision of model weights, shrinking memory footprint and reducing bandwidth requirements:\n\n| Precision | Bits/param | LLaMA 3 70B size | Approx. tokens/sec (A100) |\n|-----------|------------|-------------------|---------------------------|\n| BF16/FP16 | 16 bits | ~140 GB | ~14 |\n| INT8 | 8 bits | ~70 GB | ~25\u201330 |\n| INT4/GPTQ | 4 bits | ~35 GB | ~45\u201360 |\n| 2-bit | 2 bits | ~18 GB | experimental |\n\nModern quantization methods (GPTQ, AWQ, GGUF) maintain most model quality at INT4 precision.\n\n## vLLM and PagedAttention\n\n**vLLM** (Kwon et al., 2023) is an open-source inference server that achieves high throughput through **PagedAttention** \u2014 a KV cache memory management system inspired by OS virtual memory:\n\n- Divides KV cache into fixed-size \"pages\" that can be allocated/freed dynamically\n- Enables near-zero memory waste (standard systems waste 60\u201380% of KV cache memory due to fragmentation)\n- Enables continuous batching: new requests join a running batch as soon as capacity frees up\n- Achieves 2\u201324\u00d7 higher throughput than naive HuggingFace inference\n\n## Hardware: GPU HBM as the Bottleneck\n\nFor LLM inference, **GPU HBM (High Bandwidth Memory)** is the critical resource:\n\n- **Capacity**: Determines max model size and KV cache at a given batch size\n  - A100 80GB: fits LLaMA 3 8B (FP16) with large KV cache, or 70B with quantization\n  - H100 80GB: similar capacity but 2\u00d7 memory bandwidth\n- **Bandwidth**: Determines decode speed (weights must be loaded each token)\n- Multiple GPUs needed for large models (tensor parallelism)\n\n## Cost: $/1M Tokens\n\nCloud LLM pricing (approximate, July 2025):\n\n| Model | Input ($/1M tokens) | Output ($/1M tokens) |\n|-------|--------------------|-----------------------|\n| GPT-4o | $5 | $15 |\n| GPT-4o-mini | $0.15 | $0.60 |\n| Claude 3.5 Sonnet | $3 | $15 |\n| Claude 3 Haiku | $0.25 | $1.25 |\n| Gemini 1.5 Flash | $0.075 | $0.30 |\n\nOutput tokens cost more than input tokens because each output token requires a separate forward pass during decode, while input tokens are processed in parallel.\n\n## Latency Budget for Production Apps\n\n- **Interactive chat**: Total latency < 3s, TTFT < 500ms\n- **Autocomplete / copilot**: TTFT < 100ms, TBT < 30ms\n- **Batch summarization**: Total throughput matters, individual latency is secondary\n- **Agentic pipelines**: Latency multiplies across chained calls \u2014 each hop adds cost",
   "mcqs": [
     {
       "id": "q1",
@@ -19,7 +19,7 @@
         "Prefill uses attention; decode uses the feed-forward network only"
       ],
       "correct": 1,
-      "explanation": "Prefill processes all input tokens simultaneously in a single parallel forward pass — it's compute-bound and fast. Decode generates each output token in a separate forward pass, one at a time (autoregressive), and is memory-bandwidth-bound because model weights must be loaded for each token."
+      "explanation": "Prefill processes all input tokens simultaneously in a single parallel forward pass \u2014 it's compute-bound and fast. Decode generates each output token in a separate forward pass, one at a time (autoregressive), and is memory-bandwidth-bound because model weights must be loaded for each token."
     },
     {
       "id": "q2",
@@ -38,7 +38,7 @@
       "question": "Why is the decode phase described as memory-bandwidth-bound rather than compute-bound?",
       "options": [
         "Decoding uses no GPU and relies entirely on CPU memory",
-        "Each decode step generates only one token, requiring a tiny matrix-vector multiply — the GPU finishes quickly but must wait for model weights to load from HBM",
+        "Each decode step generates only one token, requiring a tiny matrix-vector multiply \u2014 the GPU finishes quickly but must wait for model weights to load from HBM",
         "The attention computation during decode exceeds the GPU's compute capacity",
         "Decode is limited by the speed of the tokenizer, not the GPU"
       ],
@@ -50,12 +50,12 @@
       "question": "What is the primary inference optimization that vLLM introduces?",
       "options": [
         "Quantizing model weights to INT4 to reduce computation",
-        "PagedAttention — OS-virtual-memory-inspired KV cache management that eliminates memory fragmentation and enables continuous batching",
-        "Using flash attention to reduce the attention computation from O(n²) to O(n)",
+        "PagedAttention \u2014 OS-virtual-memory-inspired KV cache management that eliminates memory fragmentation and enables continuous batching",
+        "Using flash attention to reduce the attention computation from O(n\u00b2) to O(n)",
         "Replacing the transformer decoder with a more efficient RNN"
       ],
       "correct": 1,
-      "explanation": "vLLM's key innovation is PagedAttention, which manages the KV cache in fixed-size pages (like OS page tables). This eliminates the 60–80% memory waste from pre-allocation fragmentation and enables continuous batching, achieving 2–24× higher throughput than naive implementations."
+      "explanation": "vLLM's key innovation is PagedAttention, which manages the KV cache in fixed-size pages (like OS page tables). This eliminates the 60\u201380% memory waste from pre-allocation fragmentation and enables continuous batching, achieving 2\u201324\u00d7 higher throughput than naive implementations."
     },
     {
       "id": "q5",
@@ -67,7 +67,7 @@
         "Batching reduces tokenization overhead"
       ],
       "correct": 1,
-      "explanation": "Since decode is memory-bandwidth-bound, model weights must be loaded regardless of how many tokens are generated. Processing 8 requests in a single batch loads the weights once but generates 8 tokens simultaneously — 8× the throughput for the same bandwidth cost."
+      "explanation": "Since decode is memory-bandwidth-bound, model weights must be loaded regardless of how many tokens are generated. Processing 8 requests in a single batch loads the weights once but generates 8 tokens simultaneously \u2014 8\u00d7 the throughput for the same bandwidth cost."
     },
     {
       "id": "q6",
@@ -113,7 +113,7 @@
     {
       "id": "f4",
       "front": "Throughput (inference)",
-      "back": "The number of tokens generated per second, usually measured across all concurrent requests. Maximized by batching multiple requests together. Distinct from latency — high throughput may coexist with high per-request latency."
+      "back": "The number of tokens generated per second, usually measured across all concurrent requests. Maximized by batching multiple requests together. Distinct from latency \u2014 high throughput may coexist with high per-request latency."
     },
     {
       "id": "f5",
@@ -123,7 +123,7 @@
     {
       "id": "f6",
       "front": "FLOP (Floating Point Operation)",
-      "back": "A single arithmetic operation on floating-point numbers. LLM training/inference compute is measured in FLOPs or FLOPs/s (hardware throughput). GPT-3 training: 3.14×10²³ FLOPs. A100 GPU: ~312 TFLOP/s (BF16)."
+      "back": "A single arithmetic operation on floating-point numbers. LLM training/inference compute is measured in FLOPs or FLOPs/s (hardware throughput). GPT-3 training: 3.14\u00d710\u00b2\u00b3 FLOPs. A100 GPU: ~312 TFLOP/s (BF16)."
     },
     {
       "id": "f7",
@@ -133,21 +133,31 @@
     {
       "id": "f8",
       "front": "Latency budget",
-      "back": "The maximum tolerable latency for a production application. Interactive chat: < 3s total, TTFT < 500ms. Autocomplete: TTFT < 100ms. Agentic chains multiply per-call latency — each LLM hop adds to the total pipeline latency."
+      "back": "The maximum tolerable latency for a production application. Interactive chat: < 3s total, TTFT < 500ms. Autocomplete: TTFT < 100ms. Agentic chains multiply per-call latency \u2014 each LLM hop adds to the total pipeline latency."
     }
   ],
   "videos": [
     {
-      "title": "LLM Inference Explained — Prefill, Decode, and Throughput",
+      "title": "LLM Inference Explained \u2014 Prefill, Decode, and Throughput",
       "youtube_id": "Mn_9W1nCFLo",
       "description": "Detailed walkthrough of the two-phase LLM inference pipeline, why decode is memory-bandwidth-bound, and how batching and quantization improve throughput. Covers TTFT, TBT, and hardware considerations."
     },
     {
       "title": "vLLM: Easy, Fast, and Cheap LLM Serving",
       "youtube_id": "UPbi7bT5klk",
-      "description": "Overview of vLLM and PagedAttention — how managing the KV cache like OS virtual memory pages eliminates fragmentation and enables continuous batching for dramatically higher inference throughput."
+      "description": "Overview of vLLM and PagedAttention \u2014 how managing the KV cache like OS virtual memory pages eliminates fragmentation and enables continuous batching for dramatically higher inference throughput."
     }
   ],
   "has_practical": false,
-  "practical_description": ""
+  "practical_description": "",
+  "diagram": {
+    "type": "flow",
+    "title": "Answering a Prompt: Prefill vs Decode",
+    "steps": [
+      "Prompt Received",
+      "Prefill (read whole prompt at once)",
+      "Decode (generate one token at a time)",
+      "Response Streamed to User"
+    ]
+  }
 }

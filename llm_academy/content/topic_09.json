@@ -4,10 +4,10 @@
   "level_name": "How LLMs Work",
   "order": 4,
   "title": "Inside the Engine: FFN, RoPE, KV Cache, MoE",
-  "emoji": "⚙️",
+  "emoji": "\u2699\ufe0f",
   "duration_minutes": 25,
-  "eli8": "# The Transformer Engine Room ⚙️\n\nNow that we know the transformer uses attention spotlights, let's peek inside the engine room and meet the other parts that make modern AI models work!\n\n## The Fuel Injector: FFN 🔥\n\nAfter the attention part reads the words, each word goes through a **Feed-Forward Network (FFN)** — it's like a fuel injector that processes each word on its own and adds extra information.\n\n- The FFN takes the attention output and runs it through a mini brain\n- It processes each word *separately* (unlike attention which mixes them)\n- Think of it as: attention = \"talk to your neighbors\", FFN = \"think on your own\"\n\n## The GPS: RoPE 📍\n\n**RoPE** stands for Rotary Position Embedding. When you're telling a story, *order matters*: \"The cat chased the mouse\" is different from \"The mouse chased the cat\"!\n\nRoPE is the GPS system that tells the model *where* each word is in the sentence. It does this by spinning the word's numbers (rotating them) in a clever mathematical way, without needing extra parameters.\n\n## The Memory Trick: KV Cache 💾\n\nHere's a problem: every time the AI generates a new word, it has to re-read your entire conversation from scratch! That would be like re-reading this whole book every time you turn a page.\n\n**KV Cache** is the solution — the model *saves* the important information it already computed (the Keys and Values from attention) and reuses them. This makes generating tokens much faster!\n\n## The Expert Team: MoE 👥\n\n**Mixture of Experts (MoE)** is like having a team of specialists instead of one generalist. Imagine:\n\n- Expert A is great at coding questions 💻\n- Expert B handles creative writing 📝\n- Expert C knows about science 🔬\n\nFor each word, a smart **router** picks the 2 best experts and only activates those — saving energy! GPT-4 and Mixtral use this trick to be powerful without being slow.",
-  "detail": "# Inside the Engine: FFN, RoPE, KV Cache, MoE\n\n## Feed-Forward Network (FFN)\n\nEach transformer block contains a two-layer MLP (Feed-Forward Network) applied **independently and identically to each token position**:\n\n```\nFFN(x) = max(0, xW₁ + b₁)W₂ + b₂  [original paper]\nFFN(x) = SwiGLU(xW₁) · xW₃) W₂   [modern variant, e.g. LLaMA]\n```\n\nKey properties:\n- **4x expansion**: The intermediate (hidden) dimension is typically 4× the model dimension. GPT-3 (d_model=12288) has FFN hidden dim of 49,152\n- **Stores factual knowledge**: Research (Geva et al., 2021) shows FFN layers act as key-value memories, storing factual associations. \"Eiffel Tower\" → \"Paris\"\n- **Per-token, no cross-token interaction**: Unlike attention, the FFN treats each token position independently\n\nActivation functions have evolved: ReLU → GELU (GPT-2/3) → SwiGLU (LLaMA, PaLM) — SwiGLU empirically improves perplexity.\n\n## RoPE: Rotary Position Embedding\n\nIntroduced by Su et al. (2021), RoPE encodes **relative** positional information by rotating the Query and Key vectors before computing attention:\n\n```python\n# Conceptual implementation\ndef apply_rope(x, position):\n    # x: [seq_len, d_model]\n    # Rotate pairs of dimensions by an angle proportional to position\n    theta = position * (10000 ** (-2 * torch.arange(0, d_model//2) / d_model))\n    cos_theta = torch.cos(theta)\n    sin_theta = torch.sin(theta)\n    # Apply rotation matrix to pairs of dimensions\n    x_rotated = rotate_half(x) * sin_theta + x * cos_theta\n    return x_rotated\n```\n\n**Advantages over absolute positional embeddings:**\n- Naturally encodes *relative* distances between tokens\n- Better extrapolation to context lengths beyond training (with YaRN, LongRoPE)\n- No additional parameters\n- Used in: LLaMA, Mistral, Falcon, Qwen, Gemma\n\n## KV Cache: Avoiding Recomputation\n\nDuring autoregressive generation, the model generates tokens one at a time. Naively, processing token N requires recomputing attention over all N previous tokens — O(N²) recomputation.\n\n**KV Cache** stores the Key and Value tensors from all previous tokens so only the new token's Q/K/V needs to be computed:\n\n```\nWithout KV Cache (token 100): compute Q, K, V for ALL 100 tokens\nWith KV Cache (token 100):    compute Q, K, V for token 100 ONLY\n                               load cached K, V for tokens 1-99\n```\n\n**Memory cost**: For LLaMA 3 70B (32 layers, 8 KV heads, d=128), a 4K context window needs:\n- 2 × 32 × 8 × 128 × 4096 × 2 bytes ≈ 0.5 GB\n- At 100K tokens: ~12 GB\n\nThis is why KV cache memory is a primary constraint for long-context deployment. Techniques like **GQA** (Grouped Query Attention) and **MQA** (Multi-Query Attention) reduce KV cache size by sharing key/value heads.\n\n## Mixture of Experts (MoE)\n\nMoE replaces the dense FFN in each transformer block with N parallel expert FFNs, activating only the top-K for each token:\n\n```python\nclass MoELayer:\n    def forward(self, x):\n        # Router computes scores for each expert\n        router_logits = self.router(x)  # [batch, seq, n_experts]\n        # Select top-K experts per token\n        topk_weights, topk_indices = router_logits.topk(k=self.top_k)\n        topk_weights = F.softmax(topk_weights, dim=-1)\n        # Only activate selected experts (sparse computation)\n        output = sum(w * expert(x) for w, expert in zip(topk_weights, selected_experts))\n        return output\n```\n\n**Real-world MoE models:**\n- **Mixtral 8x7B**: 8 experts, top-2 activated per token. Active params: 13B out of 47B total\n- **GPT-4**: Reported to use MoE (8 experts, unconfirmed architecture)\n- **DeepSeek-V2**: 160 experts, top-6 activated\n- **Grok-1** (xAI): 8 experts, top-2\n\n**Benefits**: FLOP-efficient — same quality as a dense model at ~1/4 the compute per token. **Challenges**: Load balancing across experts, increased memory for all expert weights, communication overhead in distributed settings.\n\n## Flash Attention\n\nFlash Attention (Dao et al., 2022) is an IO-aware exact attention algorithm that reorders the attention computation to minimize GPU HBM (High Bandwidth Memory) reads/writes:\n\n- Standard attention: O(N²) memory for the N×N attention matrix\n- Flash Attention: O(N) memory via tiled computation that never materializes the full attention matrix\n- 2–4× speedup; essential for training on long contexts\n- Flash Attention 2 and 3 have further improved throughput (Flash Attention 3 achieves ~75% of A100 theoretical FLOP/s)",
+  "eli8": "# The Transformer Engine Room \u2699\ufe0f\n\nNow that we know the transformer uses attention spotlights, let's peek inside the engine room and meet the other parts that make modern AI models work!\n\n## The Fuel Injector: FFN \ud83d\udd25\n\nAfter the attention part reads the words, each word goes through a **Feed-Forward Network (FFN)** \u2014 it's like a fuel injector that processes each word on its own and adds extra information.\n\n- The FFN takes the attention output and runs it through a mini brain\n- It processes each word *separately* (unlike attention which mixes them)\n- Think of it as: attention = \"talk to your neighbors\", FFN = \"think on your own\"\n\n## The GPS: RoPE \ud83d\udccd\n\n**RoPE** stands for Rotary Position Embedding. When you're telling a story, *order matters*: \"The cat chased the mouse\" is different from \"The mouse chased the cat\"!\n\nRoPE is the GPS system that tells the model *where* each word is in the sentence. It does this by spinning the word's numbers (rotating them) in a clever mathematical way, without needing extra parameters.\n\n## The Memory Trick: KV Cache \ud83d\udcbe\n\nHere's a problem: every time the AI generates a new word, it has to re-read your entire conversation from scratch! That would be like re-reading this whole book every time you turn a page.\n\n**KV Cache** is the solution \u2014 the model *saves* the important information it already computed (the Keys and Values from attention) and reuses them. This makes generating tokens much faster!\n\n## The Expert Team: MoE \ud83d\udc65\n\n**Mixture of Experts (MoE)** is like having a team of specialists instead of one generalist. Imagine:\n\n- Expert A is great at coding questions \ud83d\udcbb\n- Expert B handles creative writing \ud83d\udcdd\n- Expert C knows about science \ud83d\udd2c\n\nFor each word, a smart **router** picks the 2 best experts and only activates those \u2014 saving energy! GPT-4 and Mixtral use this trick to be powerful without being slow.",
+  "detail": "# Inside the Engine: FFN, RoPE, KV Cache, MoE\n\n## Feed-Forward Network (FFN)\n\nEach transformer block contains a two-layer MLP (Feed-Forward Network) applied **independently and identically to each token position**:\n\n```\nFFN(x) = max(0, xW\u2081 + b\u2081)W\u2082 + b\u2082  [original paper]\nFFN(x) = SwiGLU(xW\u2081) \u00b7 xW\u2083) W\u2082   [modern variant, e.g. LLaMA]\n```\n\nKey properties:\n- **4x expansion**: The intermediate (hidden) dimension is typically 4\u00d7 the model dimension. GPT-3 (d_model=12288) has FFN hidden dim of 49,152\n- **Stores factual knowledge**: Research (Geva et al., 2021) shows FFN layers act as key-value memories, storing factual associations. \"Eiffel Tower\" \u2192 \"Paris\"\n- **Per-token, no cross-token interaction**: Unlike attention, the FFN treats each token position independently\n\nActivation functions have evolved: ReLU \u2192 GELU (GPT-2/3) \u2192 SwiGLU (LLaMA, PaLM) \u2014 SwiGLU empirically improves perplexity.\n\n## RoPE: Rotary Position Embedding\n\nIntroduced by Su et al. (2021), RoPE encodes **relative** positional information by rotating the Query and Key vectors before computing attention:\n\n```python\n# Conceptual implementation\ndef apply_rope(x, position):\n    # x: [seq_len, d_model]\n    # Rotate pairs of dimensions by an angle proportional to position\n    theta = position * (10000 ** (-2 * torch.arange(0, d_model//2) / d_model))\n    cos_theta = torch.cos(theta)\n    sin_theta = torch.sin(theta)\n    # Apply rotation matrix to pairs of dimensions\n    x_rotated = rotate_half(x) * sin_theta + x * cos_theta\n    return x_rotated\n```\n\n**Advantages over absolute positional embeddings:**\n- Naturally encodes *relative* distances between tokens\n- Better extrapolation to context lengths beyond training (with YaRN, LongRoPE)\n- No additional parameters\n- Used in: LLaMA, Mistral, Falcon, Qwen, Gemma\n\n## KV Cache: Avoiding Recomputation\n\nDuring autoregressive generation, the model generates tokens one at a time. Naively, processing token N requires recomputing attention over all N previous tokens \u2014 O(N\u00b2) recomputation.\n\n**KV Cache** stores the Key and Value tensors from all previous tokens so only the new token's Q/K/V needs to be computed:\n\n```\nWithout KV Cache (token 100): compute Q, K, V for ALL 100 tokens\nWith KV Cache (token 100):    compute Q, K, V for token 100 ONLY\n                               load cached K, V for tokens 1-99\n```\n\n**Memory cost**: For LLaMA 3 70B (32 layers, 8 KV heads, d=128), a 4K context window needs:\n- 2 \u00d7 32 \u00d7 8 \u00d7 128 \u00d7 4096 \u00d7 2 bytes \u2248 0.5 GB\n- At 100K tokens: ~12 GB\n\nThis is why KV cache memory is a primary constraint for long-context deployment. Techniques like **GQA** (Grouped Query Attention) and **MQA** (Multi-Query Attention) reduce KV cache size by sharing key/value heads.\n\n## Mixture of Experts (MoE)\n\nMoE replaces the dense FFN in each transformer block with N parallel expert FFNs, activating only the top-K for each token:\n\n```python\nclass MoELayer:\n    def forward(self, x):\n        # Router computes scores for each expert\n        router_logits = self.router(x)  # [batch, seq, n_experts]\n        # Select top-K experts per token\n        topk_weights, topk_indices = router_logits.topk(k=self.top_k)\n        topk_weights = F.softmax(topk_weights, dim=-1)\n        # Only activate selected experts (sparse computation)\n        output = sum(w * expert(x) for w, expert in zip(topk_weights, selected_experts))\n        return output\n```\n\n**Real-world MoE models:**\n- **Mixtral 8x7B**: 8 experts, top-2 activated per token. Active params: 13B out of 47B total\n- **GPT-4**: Reported to use MoE (8 experts, unconfirmed architecture)\n- **DeepSeek-V2**: 160 experts, top-6 activated\n- **Grok-1** (xAI): 8 experts, top-2\n\n**Benefits**: FLOP-efficient \u2014 same quality as a dense model at ~1/4 the compute per token. **Challenges**: Load balancing across experts, increased memory for all expert weights, communication overhead in distributed settings.\n\n## Flash Attention\n\nFlash Attention (Dao et al., 2022) is an IO-aware exact attention algorithm that reorders the attention computation to minimize GPU HBM (High Bandwidth Memory) reads/writes:\n\n- Standard attention: O(N\u00b2) memory for the N\u00d7N attention matrix\n- Flash Attention: O(N) memory via tiled computation that never materializes the full attention matrix\n- 2\u20134\u00d7 speedup; essential for training on long contexts\n- Flash Attention 2 and 3 have further improved throughput (Flash Attention 3 achieves ~75% of A100 theoretical FLOP/s)",
   "mcqs": [
     {
       "id": "q1",
@@ -38,7 +38,7 @@
       "question": "What problem does the KV Cache solve during text generation?",
       "options": [
         "It prevents the model from generating repetitive text",
-        "It avoids recomputing Key and Value tensors for all previous tokens at each generation step, reducing compute from O(N²) to nearly O(1) per new token",
+        "It avoids recomputing Key and Value tensors for all previous tokens at each generation step, reducing compute from O(N\u00b2) to nearly O(1) per new token",
         "It stores the model weights in a compressed format to reduce memory usage",
         "It caches the user's prompt to avoid re-tokenizing it"
       ],
@@ -48,7 +48,12 @@
     {
       "id": "q4",
       "question": "In Mixtral 8x7B (a Mixture of Experts model), how many experts are active per token during inference?",
-      "options": ["1", "2", "4", "8"],
+      "options": [
+        "1",
+        "2",
+        "4",
+        "8"
+      ],
       "correct": 1,
       "explanation": "Mixtral 8x7B uses 8 expert FFNs per transformer block but only activates the top-2 experts per token. This means ~13B parameters are active per forward pass out of ~47B total parameters, achieving a favorable quality/compute trade-off."
     },
@@ -70,11 +75,11 @@
       "options": [
         "Approximating the attention computation with a random projection",
         "Reducing the precision of attention weights from FP32 to INT8",
-        "Reordering computation to avoid materializing the full N×N attention matrix in GPU HBM, reducing memory IO",
+        "Reordering computation to avoid materializing the full N\u00d7N attention matrix in GPU HBM, reducing memory IO",
         "Using convolutional layers instead of attention for local context"
       ],
       "correct": 2,
-      "explanation": "Flash Attention is an IO-aware algorithm that tiles the attention computation into blocks that fit in GPU SRAM (fast cache), avoiding repeated reads/writes of the full O(N²) attention matrix to slow HBM. The math is identical to standard attention — no approximation."
+      "explanation": "Flash Attention is an IO-aware algorithm that tiles the attention computation into blocks that fit in GPU SRAM (fast cache), avoiding repeated reads/writes of the full O(N\u00b2) attention matrix to slow HBM. The math is identical to standard attention \u2014 no approximation."
     },
     {
       "id": "q7",
@@ -86,14 +91,14 @@
         "KV Cache can only be used during training, not inference"
       ],
       "correct": 1,
-      "explanation": "KV Cache size = 2 × layers × heads × head_dim × sequence_length × bytes. For LLaMA 3 70B at 100K context, this is ~12 GB per request. Serving many users with long contexts requires significant GPU memory, making KV cache management (paging, quantization) a critical engineering concern."
+      "explanation": "KV Cache size = 2 \u00d7 layers \u00d7 heads \u00d7 head_dim \u00d7 sequence_length \u00d7 bytes. For LLaMA 3 70B at 100K context, this is ~12 GB per request. Serving many users with long contexts requires significant GPU memory, making KV cache management (paging, quantization) a critical engineering concern."
     }
   ],
   "flashcards": [
     {
       "id": "f1",
       "front": "Feed-Forward Network (FFN)",
-      "back": "A two-layer MLP applied independently to each token position in a transformer block. Typically has a hidden dimension 4× the model dimension. Research suggests FFN layers store factual knowledge as implicit key-value memories."
+      "back": "A two-layer MLP applied independently to each token position in a transformer block. Typically has a hidden dimension 4\u00d7 the model dimension. Research suggests FFN layers store factual knowledge as implicit key-value memories."
     },
     {
       "id": "f2",
@@ -118,7 +123,7 @@
     {
       "id": "f6",
       "front": "Flash Attention",
-      "back": "An IO-aware exact attention algorithm (Dao et al., 2022) that tiles computation to avoid materializing the full N×N attention matrix in slow GPU HBM. Reduces memory from O(N²) to O(N) and achieves 2–4× speedup over standard attention."
+      "back": "An IO-aware exact attention algorithm (Dao et al., 2022) that tiles computation to avoid materializing the full N\u00d7N attention matrix in slow GPU HBM. Reduces memory from O(N\u00b2) to O(N) and achieves 2\u20134\u00d7 speedup over standard attention."
     },
     {
       "id": "f7",
@@ -133,9 +138,9 @@
   ],
   "videos": [
     {
-      "title": "Let's build GPT: from scratch, in code — Andrej Karpathy",
+      "title": "Let's build GPT: from scratch, in code \u2014 Andrej Karpathy",
       "youtube_id": "kCc8FmEb1nY",
-      "description": "Building a GPT model from the ground up — covers the transformer block architecture including attention and FFN in detail, with working code. The best practical reference for understanding these components."
+      "description": "Building a GPT model from the ground up \u2014 covers the transformer block architecture including attention and FFN in detail, with working code. The best practical reference for understanding these components."
     },
     {
       "title": "Mixture of Experts explained",
@@ -144,5 +149,19 @@
     }
   ],
   "has_practical": false,
-  "practical_description": ""
+  "practical_description": "",
+  "diagram": {
+    "type": "layered",
+    "title": "What Happens Inside Each Layer",
+    "layers": [
+      "Token + RoPE Positional Info",
+      [
+        "Self-Attention (using KV Cache)"
+      ],
+      [
+        "Feed-Forward Network / MoE Router"
+      ],
+      "Output Passed to Next Layer"
+    ]
+  }
 }

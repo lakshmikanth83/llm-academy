@@ -4,10 +4,10 @@
   "level_name": "Capstone & Interview Prep",
   "order": 3,
   "title": "System Design for AI Apps",
-  "emoji": "📐",
+  "emoji": "\ud83d\udcd0",
   "duration_minutes": 30,
-  "eli8": "# 📐 Drawing the Blueprint for AI Apps!\n\nBefore builders start building, an architect draws a blueprint. System design is like being the architect of an AI app!\n\nWhen an interviewer says \"Design a chatbot that can answer questions about our 10 million company documents\" — they want to see if you can THINK like an engineer. Not just code, but plan!\n\n## 🗺️ The 5-Step Blueprint\n\n**Step 1: Ask questions first!** 🙋\n- How many users? (10 or 10 million?)\n- How fast must it respond? (instant or okay to wait?)\n- How accurate must it be? (doctor? joke-teller?)\n- What's the budget?\n\n**Step 2: Draw the big picture** 🖼️\n- What are the main boxes? (database, API, model)\n- How does data flow between them?\n\n**Step 3: Data pipeline** 📊\n- Where do documents live? (S3 cloud storage)\n- How do we process them? (chunking, embedding)\n- Where do we search them? (vector database)\n\n**Step 4: The serving layer** 🍽️\n- What API handles requests? (FastAPI)\n- Do we cache answers? (Redis)\n- How many servers? (auto-scaling!)\n\n**Step 5: How do we know it's working?** 📏\n- How do we measure quality? (evaluation)\n- What do we watch in production? (monitoring)\n\n## 🎯 The Secret Weapon: Trade-offs\n\nInterviewers LOVE when you say \"We could do X, but the trade-off is Y. For this use case, I'd choose X because...\"\n\nThere's rarely one right answer in system design — they want to see you THINK! 🧠",
-  "detail": "## System Design for AI Applications\n\nSystem design interviews for AI/LLM engineer roles test your ability to architect complete, production-grade systems. The framework below applies to any AI system design question.\n\n### The 5-Step Framework\n\n**1. Clarify requirements (spend 3-5 minutes here)**\n- Scale: DAU, documents/queries per second, data volume\n- Latency: real-time (<500ms), interactive (<2s), batch (minutes)\n- Accuracy: what are acceptable hallucination/error rates?\n- Cost: compute budget, latency vs. cost trade-offs\n- Constraints: on-prem vs. cloud, data privacy, compliance\n\n**2. High-level architecture** — draw boxes and arrows:\n- Data stores (vector DB, relational DB, object storage)\n- Compute (API servers, embedding service, LLM)\n- Cross-cutting (cache, queue, monitoring)\n\n**3. Data pipeline**\n**4. Serving layer**\n**5. Evaluation & monitoring**\n\n---\n\n### Scenario 1: Company Knowledge Base Chatbot\n\n*\"Design a RAG chatbot for 10M internal company documents, 50K employees, P95 latency < 3s.\"*\n\n```\nIngestion Pipeline:\n  S3 → Chunker Service (ECS, parallel) → Embedding Service\n       → Pinecone (with org/dept metadata filters)\n\nQuery Pipeline:\n  Employee → React Frontend → FastAPI Gateway\n    → Embed query (text-embedding-3-small)\n    → Pinecone search (filter by user's department)\n    → Cross-encoder reranking (top-5 from top-20)\n    → Claude (Sonnet, prompt caching for system prompt)\n    → Streaming response\n\nInfrastructure:\n  - Redis: cache responses for common questions\n  - Auto-scaling API servers (ECS/EKS)\n  - LangSmith: trace every query\n\nMonitoring:\n  - P95 latency dashboard (Grafana)\n  - Faithfulness score weekly reports\n  - Cost per query tracking\n  - Thumbs up/down → evaluation dataset\n```\n\n**Key decisions to explain:**\n- Pinecone over Chroma: managed, horizontally scalable, metadata filtering\n- Streaming responses: perceived latency 5× better than waiting for full response\n- Prompt caching: same system prompt on every query → 90% savings on that prefix\n- Cross-encoder rerank: better precision than pure embedding similarity\n\n---\n\n### Scenario 2: AI Code Review System\n\n*\"Design an AI that reviews GitHub PRs for bugs and style issues.\"*\n\n```\n1. GitHub webhook → POST /review endpoint\n2. Extract: PR diff, repo context (relevant files)\n3. Per-file pipeline:\n   - Chunk the diff (by function/class, not arbitrary lines)\n   - Retrieve similar code from codebase for context\n   - Prompt: code_review_template.format(diff, context, guidelines)\n4. Aggregate per-file reviews → summary comment\n5. Post via GitHub API: inline comments + PR-level summary\n\nEvaluation signal:\n  - Developer acceptance rate of suggestions\n  - False positive rate (reported by developers)\n  - Time saved metric (survey)\n```\n\n---\n\n### Scenario 3: Customer Support AI\n\n*\"Design an AI handling 100K support tickets/day.\"*\n\n```\nTier 1 (automated):\n  Incoming message\n  → Intent classifier (Haiku — cheap, fast)\n  → Route: billing / technical / refund / escalate\n\nTier 2 (AI response):\n  → RAG over product docs + past resolutions\n  → Guardrails check (off-topic, PII, sentiment)\n  → Sonnet response generation\n\nTier 3 (human escalation):\n  → Confidence score < threshold → human queue\n  → Angry/sensitive sentiment → priority queue\n  → AI provides human with context summary\n\nMonitoring:\n  - Escalation rate (target: <15%)\n  - Resolution rate (closed without follow-up)\n  - CSAT score per AI-handled ticket\n```\n\n---\n\n### Build vs. Buy Decision Framework\n\n| Component | Build | Buy/Managed |\n|-----------|-------|-------------|\n| Embedding | sentence-transformers (free, offline) | OpenAI/Cohere API (quality, convenience) |\n| Vector DB | Chroma (dev), pgvector (existing PG) | Pinecone, Weaviate (scale, managed) |\n| LLM | vLLM + Llama (privacy, cost at scale) | Claude/GPT API (quality, simplicity) |\n| Monitoring | Prometheus + Grafana (control) | Datadog, LangSmith (convenience) |\n\n### Scalability Ladder\n\n- **100 users**: Single FastAPI + Chroma + LLM API call. Simple, cheap.\n- **10K users**: Add Redis cache, multiple API replicas, managed vector DB.\n- **1M users**: vLLM for self-hosted LLM, distributed vector DB, semantic cache, CDN.\n- **10M users**: Multi-region, async queue for non-real-time, dedicated embedding service, streaming.\n\n### Cost Estimation Worksheet\n\n```\nFor 100K queries/day:\n- Average tokens: 2000 input + 500 output\n- Model: Claude Sonnet ($3 in / $15 out per MTok)\n- Daily cost: 100K × (2000×$3 + 500×$15) / 1M\n             = 100K × ($6 + $7.5) / 1M\n             = 100K × $0.0135 = $1,350/day\n\nOptimizations:\n- Prompt caching system prompt (1000 tokens each):\n  Save 100K × 1000 × $3 × 0.9 / 1M = $270/day (20% savings)\n- Model routing 30% to Haiku:\n  ~$400/day savings\n```",
+  "eli8": "# \ud83d\udcd0 Drawing the Blueprint for AI Apps!\n\nBefore builders start building, an architect draws a blueprint. System design is like being the architect of an AI app!\n\nWhen an interviewer says \"Design a chatbot that can answer questions about our 10 million company documents\" \u2014 they want to see if you can THINK like an engineer. Not just code, but plan!\n\n## \ud83d\uddfa\ufe0f The 5-Step Blueprint\n\n**Step 1: Ask questions first!** \ud83d\ude4b\n- How many users? (10 or 10 million?)\n- How fast must it respond? (instant or okay to wait?)\n- How accurate must it be? (doctor? joke-teller?)\n- What's the budget?\n\n**Step 2: Draw the big picture** \ud83d\uddbc\ufe0f\n- What are the main boxes? (database, API, model)\n- How does data flow between them?\n\n**Step 3: Data pipeline** \ud83d\udcca\n- Where do documents live? (S3 cloud storage)\n- How do we process them? (chunking, embedding)\n- Where do we search them? (vector database)\n\n**Step 4: The serving layer** \ud83c\udf7d\ufe0f\n- What API handles requests? (FastAPI)\n- Do we cache answers? (Redis)\n- How many servers? (auto-scaling!)\n\n**Step 5: How do we know it's working?** \ud83d\udccf\n- How do we measure quality? (evaluation)\n- What do we watch in production? (monitoring)\n\n## \ud83c\udfaf The Secret Weapon: Trade-offs\n\nInterviewers LOVE when you say \"We could do X, but the trade-off is Y. For this use case, I'd choose X because...\"\n\nThere's rarely one right answer in system design \u2014 they want to see you THINK! \ud83e\udde0",
+  "detail": "## System Design for AI Applications\n\nSystem design interviews for AI/LLM engineer roles test your ability to architect complete, production-grade systems. The framework below applies to any AI system design question.\n\n### The 5-Step Framework\n\n**1. Clarify requirements (spend 3-5 minutes here)**\n- Scale: DAU, documents/queries per second, data volume\n- Latency: real-time (<500ms), interactive (<2s), batch (minutes)\n- Accuracy: what are acceptable hallucination/error rates?\n- Cost: compute budget, latency vs. cost trade-offs\n- Constraints: on-prem vs. cloud, data privacy, compliance\n\n**2. High-level architecture** \u2014 draw boxes and arrows:\n- Data stores (vector DB, relational DB, object storage)\n- Compute (API servers, embedding service, LLM)\n- Cross-cutting (cache, queue, monitoring)\n\n**3. Data pipeline**\n**4. Serving layer**\n**5. Evaluation & monitoring**\n\n---\n\n### Scenario 1: Company Knowledge Base Chatbot\n\n*\"Design a RAG chatbot for 10M internal company documents, 50K employees, P95 latency < 3s.\"*\n\n```\nIngestion Pipeline:\n  S3 \u2192 Chunker Service (ECS, parallel) \u2192 Embedding Service\n       \u2192 Pinecone (with org/dept metadata filters)\n\nQuery Pipeline:\n  Employee \u2192 React Frontend \u2192 FastAPI Gateway\n    \u2192 Embed query (text-embedding-3-small)\n    \u2192 Pinecone search (filter by user's department)\n    \u2192 Cross-encoder reranking (top-5 from top-20)\n    \u2192 Claude (Sonnet, prompt caching for system prompt)\n    \u2192 Streaming response\n\nInfrastructure:\n  - Redis: cache responses for common questions\n  - Auto-scaling API servers (ECS/EKS)\n  - LangSmith: trace every query\n\nMonitoring:\n  - P95 latency dashboard (Grafana)\n  - Faithfulness score weekly reports\n  - Cost per query tracking\n  - Thumbs up/down \u2192 evaluation dataset\n```\n\n**Key decisions to explain:**\n- Pinecone over Chroma: managed, horizontally scalable, metadata filtering\n- Streaming responses: perceived latency 5\u00d7 better than waiting for full response\n- Prompt caching: same system prompt on every query \u2192 90% savings on that prefix\n- Cross-encoder rerank: better precision than pure embedding similarity\n\n---\n\n### Scenario 2: AI Code Review System\n\n*\"Design an AI that reviews GitHub PRs for bugs and style issues.\"*\n\n```\n1. GitHub webhook \u2192 POST /review endpoint\n2. Extract: PR diff, repo context (relevant files)\n3. Per-file pipeline:\n   - Chunk the diff (by function/class, not arbitrary lines)\n   - Retrieve similar code from codebase for context\n   - Prompt: code_review_template.format(diff, context, guidelines)\n4. Aggregate per-file reviews \u2192 summary comment\n5. Post via GitHub API: inline comments + PR-level summary\n\nEvaluation signal:\n  - Developer acceptance rate of suggestions\n  - False positive rate (reported by developers)\n  - Time saved metric (survey)\n```\n\n---\n\n### Scenario 3: Customer Support AI\n\n*\"Design an AI handling 100K support tickets/day.\"*\n\n```\nTier 1 (automated):\n  Incoming message\n  \u2192 Intent classifier (Haiku \u2014 cheap, fast)\n  \u2192 Route: billing / technical / refund / escalate\n\nTier 2 (AI response):\n  \u2192 RAG over product docs + past resolutions\n  \u2192 Guardrails check (off-topic, PII, sentiment)\n  \u2192 Sonnet response generation\n\nTier 3 (human escalation):\n  \u2192 Confidence score < threshold \u2192 human queue\n  \u2192 Angry/sensitive sentiment \u2192 priority queue\n  \u2192 AI provides human with context summary\n\nMonitoring:\n  - Escalation rate (target: <15%)\n  - Resolution rate (closed without follow-up)\n  - CSAT score per AI-handled ticket\n```\n\n---\n\n### Build vs. Buy Decision Framework\n\n| Component | Build | Buy/Managed |\n|-----------|-------|-------------|\n| Embedding | sentence-transformers (free, offline) | OpenAI/Cohere API (quality, convenience) |\n| Vector DB | Chroma (dev), pgvector (existing PG) | Pinecone, Weaviate (scale, managed) |\n| LLM | vLLM + Llama (privacy, cost at scale) | Claude/GPT API (quality, simplicity) |\n| Monitoring | Prometheus + Grafana (control) | Datadog, LangSmith (convenience) |\n\n### Scalability Ladder\n\n- **100 users**: Single FastAPI + Chroma + LLM API call. Simple, cheap.\n- **10K users**: Add Redis cache, multiple API replicas, managed vector DB.\n- **1M users**: vLLM for self-hosted LLM, distributed vector DB, semantic cache, CDN.\n- **10M users**: Multi-region, async queue for non-real-time, dedicated embedding service, streaming.\n\n### Cost Estimation Worksheet\n\n```\nFor 100K queries/day:\n- Average tokens: 2000 input + 500 output\n- Model: Claude Sonnet ($3 in / $15 out per MTok)\n- Daily cost: 100K \u00d7 (2000\u00d7$3 + 500\u00d7$15) / 1M\n             = 100K \u00d7 ($6 + $7.5) / 1M\n             = 100K \u00d7 $0.0135 = $1,350/day\n\nOptimizations:\n- Prompt caching system prompt (1000 tokens each):\n  Save 100K \u00d7 1000 \u00d7 $3 \u00d7 0.9 / 1M = $270/day (20% savings)\n- Model routing 30% to Haiku:\n  ~$400/day savings\n```",
   "mcqs": [
     {
       "id": "q1",
@@ -27,7 +27,7 @@
       "options": [
         "Pinecone is always cheaper than Chroma",
         "Pinecone is open source while Chroma requires a license",
-        "Pinecone is a managed service that scales horizontally with metadata filtering, production SLAs, and no server management — Chroma is excellent for development but not optimized for this scale",
+        "Pinecone is a managed service that scales horizontally with metadata filtering, production SLAs, and no server management \u2014 Chroma is excellent for development but not optimized for this scale",
         "Pinecone supports more embedding model integrations than Chroma"
       ],
       "correct": 2,
@@ -50,7 +50,7 @@
       "question": "When designing an AI code review system, why should diffs be chunked by function/class rather than arbitrary line counts?",
       "options": [
         "GitHub API limits chunks to function-level granularity",
-        "Semantic chunking by function preserves code structure — the reviewer needs the full function context to understand a change, not arbitrary line windows",
+        "Semantic chunking by function preserves code structure \u2014 the reviewer needs the full function context to understand a change, not arbitrary line windows",
         "Line-count chunking is more expensive to compute",
         "Function-level chunking is required for embedding models to work correctly"
       ],
@@ -62,8 +62,8 @@
       "question": "What is the 'scalability ladder' concept in AI system design?",
       "options": [
         "A ranking of cloud providers by scalability performance",
-        "The progression of architecture complexity as user count increases — starting simple (single server) and adding components (cache, replicas, queues) only when the previous level can't handle load",
-        "A framework for scaling ML model size (7B → 13B → 70B)",
+        "The progression of architecture complexity as user count increases \u2014 starting simple (single server) and adding components (cache, replicas, queues) only when the previous level can't handle load",
+        "A framework for scaling ML model size (7B \u2192 13B \u2192 70B)",
         "A metric for measuring how quickly an auto-scaler responds to traffic spikes"
       ],
       "correct": 1,
@@ -91,17 +91,17 @@
     {
       "id": "f2",
       "front": "Ingestion pipeline",
-      "back": "The offline batch process that prepares data for a RAG system: source documents → text extraction → chunking → embedding → vector database storage. Runs when new data is added."
+      "back": "The offline batch process that prepares data for a RAG system: source documents \u2192 text extraction \u2192 chunking \u2192 embedding \u2192 vector database storage. Runs when new data is added."
     },
     {
       "id": "f3",
       "front": "Serving layer",
-      "back": "The real-time components that handle user requests: API gateway → query embedding → vector search → LLM generation → response. Includes load balancing, caching, and auto-scaling."
+      "back": "The real-time components that handle user requests: API gateway \u2192 query embedding \u2192 vector search \u2192 LLM generation \u2192 response. Includes load balancing, caching, and auto-scaling."
     },
     {
       "id": "f4",
       "front": "Human fallback",
-      "back": "The escalation path when an AI system cannot confidently handle a request — routing to a human agent with an AI-generated context summary. Critical for support systems to maintain quality and safety."
+      "back": "The escalation path when an AI system cannot confidently handle a request \u2014 routing to a human agent with an AI-generated context summary. Critical for support systems to maintain quality and safety."
     },
     {
       "id": "f5",
@@ -116,21 +116,36 @@
     {
       "id": "f7",
       "front": "Cost estimation in system design",
-      "back": "Estimate: queries/day × avg_tokens × price_per_token. Then calculate savings from optimizations (prompt caching, model routing). Showing this math in an interview demonstrates production-mindedness."
+      "back": "Estimate: queries/day \u00d7 avg_tokens \u00d7 price_per_token. Then calculate savings from optimizations (prompt caching, model routing). Showing this math in an interview demonstrates production-mindedness."
     }
   ],
   "videos": [
     {
       "title": "AI System Design: Building RAG from Scratch",
       "youtube_id": "T-D1OfcDW1M",
-      "description": "Architectural walkthrough of designing a production RAG system — covers data pipeline, serving layer, evaluation, and how to scale from prototype to millions of users."
+      "description": "Architectural walkthrough of designing a production RAG system \u2014 covers data pipeline, serving layer, evaluation, and how to scale from prototype to millions of users."
     },
     {
       "title": "Designing RAG Systems at Scale",
       "youtube_id": "ZqWXbG5_-oE",
-      "description": "Deep dive into system design decisions for large-scale RAG applications — vector database selection, hybrid search, re-ranking, caching strategies, and monitoring."
+      "description": "Deep dive into system design decisions for large-scale RAG applications \u2014 vector database selection, hybrid search, re-ranking, caching strategies, and monitoring."
     }
   ],
   "has_practical": false,
-  "practical_description": ""
+  "practical_description": "",
+  "diagram": {
+    "type": "layered",
+    "title": "Designing a Chatbot Over Company Docs",
+    "layers": [
+      "Client",
+      "API Gateway",
+      "Orchestrator",
+      [
+        "Retrieval Service",
+        "LLM Service",
+        "Tool Service"
+      ],
+      "Data Stores (Vector DB, SQL, Cache)"
+    ]
+  }
 }
