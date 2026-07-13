@@ -1,0 +1,158 @@
+{
+  "id": "topic_43",
+  "level": 7,
+  "level_name": "Evaluation & Testing",
+  "order": 3,
+  "title": "Benchmarks & Metrics",
+  "emoji": "📊",
+  "duration_minutes": 15,
+  "eli8": "## Standardized Tests for AI 📊\n\nYou know how schools give standardized tests to see how students compare? Math exams, reading comprehension tests, science quizzes — they let teachers compare students fairly because everyone takes the same test. AI researchers do the exact same thing for language models!\n\nThese standardized tests for AI are called **benchmarks**, and they help us answer: \"Is this AI actually getting smarter?\"\n\n## Famous AI Benchmarks 🏆\n\nHere are some of the most important ones:\n\n**MMLU** — The Mega Trivia Contest 🎓\n- 14,000 questions across 57 subjects: history, law, medicine, math, coding...\n- Like taking every subject exam all at once!\n- Tests whether an AI has broad general knowledge\n\n**HumanEval** — The Coding Challenge 💻\n- Gives the AI programming problems to solve\n- Doesn't just check if the code looks right — it actually RUNS the code\n- Measures how well AI can program\n\n**HellaSwag** — The Common Sense Test 🤔\n- \"A man walks into a barbershop. He sits in the chair. The barber picks up scissors. He...\" — which ending makes sense?\n- Tests if AI understands how everyday situations work\n\n**GSM8K** — The Math Word Problem Test ➕\n- Grade-school math problems written in English\n- \"Maria has 12 apples, gives 4 to her friend, then buys 7 more. How many does she have?\"\n\n## The Leaderboard Problem 🏅\n\nHere's a tricky issue: if AI companies know which questions are on the benchmark, they can accidentally (or on purpose) train on those exact questions! It's like a teacher accidentally giving students the exam questions to study.\n\nThis is called **benchmark contamination** — the test stops measuring real intelligence when the test answers have leaked into training data.\n\nThat's why researchers keep creating **new, harder benchmarks** — like GPQA which has PhD-level science questions that even experts struggle with!\n\n## The Community Leaderboard 🗳️\n\nLMSYS Chatbot Arena is different from all others — it's a **public voting competition**. Real users chat with two anonymous AI models and vote for which one they prefer. No fixed questions, just real conversations. The rankings are computed using **Elo scores** (the same system used in chess!).",
+  "detail": "## AI Benchmarks and Evaluation Metrics\n\nBenchmarks provide standardized, reproducible comparisons across models. A well-designed benchmark isolates specific capabilities, has a clear metric, and resists gaming. This topic surveys the major benchmarks, the metrics they use, and the pitfalls of benchmark-driven evaluation.\n\n### Knowledge and Reasoning Benchmarks\n\n**MMLU (Massive Multitask Language Understanding)**\n- 14,042 multiple-choice questions across 57 subjects (abstract algebra, medical genetics, professional law, etc.)\n- Designed to test breadth of knowledge and reasoning across academic and professional domains\n- Metric: accuracy (% correct)\n- State of the art has progressed from ~44% (GPT-3, 2020) to >90% (frontier models, 2024)\n\n**BIG-bench (Beyond the Imitation Game Benchmark)**\n- 200+ diverse tasks contributed by 450+ researchers\n- Covers linguistic tasks, logical reasoning, mathematical problems, social biases, and more\n- BIG-bench Hard: 23 particularly challenging tasks where models still lag humans\n\n**ARC-Challenge (AI2 Reasoning Challenge)**\n- Grade-school science questions partitioned into Easy and Challenge sets\n- Challenge set designed to defeat simple retrieval and co-occurrence heuristics\n\n### Coding Benchmarks\n\n**HumanEval**\n- 164 Python programming problems with docstring specifications\n- Metric: **pass@k** — probability that at least one of k generated samples passes all unit tests\n\n```\npass@1 = fraction of problems solved on first try\npass@10 = fraction of problems solved in any of 10 tries\n```\n\n- Functional correctness (does the code run and pass tests?) rather than surface similarity\n\n**MBPP (Mostly Basic Python Problems)**\n- 500 beginner-level Python problems\n- Complements HumanEval's more algorithmic focus\n\n### Commonsense and Truthfulness\n\n**HellaSwag**\n- Sentence completion requiring commonsense physical and social understanding\n- Adversarially filtered to defeat models that exploit statistical shortcuts\n- Metric: accuracy on correct ending selection\n\n**TruthfulQA**\n- 817 questions designed around misconceptions humans believe — models tend to mimic human falsehoods\n- Measures truthfulness (% correct) and informativeness (% non-abstaining)\n\n**WinoGrande**\n- Pronoun resolution requiring commonsense reasoning (scaled Winograd Schema)\n\n### Mathematics Benchmarks\n\n**GSM8K (Grade School Math)**\n- 8,500 grade-school math word problems requiring 2–8 reasoning steps\n- Metric: exact match on the final numerical answer\n- Chain-of-thought prompting dramatically improved performance (from ~17% to 80%+ for GPT-4)\n\n**MATH**\n- 12,500 competition math problems at AMC/AIME difficulty\n- 5 difficulty levels; even frontier models struggle with the hardest tier\n\n### PhD-Level and Expert Benchmarks\n\n**GPQA (Graduate-Level Google-Proof Q&A)**\n- Questions written by domain experts (biology, chemistry, physics) that require real expertise\n- Even PhD students in the field score ~65%; frontier models score ~50–75%\n- \"Google-proof\": answers cannot be looked up trivially\n\n**MMLU-Pro**\n- Harder variant of MMLU with 10-choice questions and more reasoning-heavy items\n\n### Human Preference: LMSYS Chatbot Arena\n\nChatbot Arena crowdsources human preferences:\n1. Users converse with two anonymous models simultaneously\n2. Vote for which response they prefer\n3. Votes aggregated into **Elo ratings** (same system as chess)\n\nAdvantage: captures open-ended conversational quality that fixed benchmarks miss. Limitation: subject to user population biases, preference for confident-sounding responses.\n\n### Key Metric Definitions\n\n| Metric | Definition | Used In |\n|---|---|---|\n| Accuracy | % correct answers | MMLU, HellaSwag |\n| pass@k | P(any of k samples passes tests) | HumanEval |\n| F1 | Harmonic mean of precision/recall | SQuAD, NER |\n| Perplexity | How surprised the model is by text | Language modeling |\n| Elo | Comparative rating from head-to-head results | Chatbot Arena |\n\n### Benchmark Contamination\n\nContamination occurs when benchmark test questions appear in the model's training data, inflating scores. Detection methods:\n- N-gram overlap analysis between training data and test sets\n- Canary strings (unique phrases embedded in benchmarks)\n- Held-out test sets released after training cutoff\n\nAs a result, the community continuously develops new, harder benchmarks. Leaderboard positions should always be interpreted with contamination risk in mind.",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "MMLU (Massive Multitask Language Understanding) evaluates models on:",
+      "options": [
+        "Code generation across 57 programming languages",
+        "Multiple-choice questions spanning 57 academic and professional subjects",
+        "Multi-turn conversation quality",
+        "Image understanding and captioning"
+      ],
+      "correct": 1,
+      "explanation": "MMLU contains ~14,000 multiple-choice questions across 57 subjects including abstract algebra, medicine, law, and history. It measures breadth of knowledge and reasoning rather than any single domain."
+    },
+    {
+      "id": "q2",
+      "question": "The pass@k metric used in HumanEval measures:",
+      "options": [
+        "The percentage of test cases each solution passes",
+        "The probability that at least one of k generated code samples passes all unit tests",
+        "The number of tokens needed to generate a correct solution",
+        "The accuracy of the model on the k hardest problems"
+      ],
+      "correct": 1,
+      "explanation": "pass@k is an unbiased estimator of whether at least one correct solution would be found in k samples. pass@1 measures the probability on a single attempt; pass@10 allows ten attempts. This accounts for the stochastic nature of code generation."
+    },
+    {
+      "id": "q3",
+      "question": "LMSYS Chatbot Arena ranks models using Elo scores derived from:",
+      "options": [
+        "A fixed set of 1000 benchmark questions with expert-annotated answers",
+        "Head-to-head preference votes from real users on open-ended conversations",
+        "Automated GPT-4 judgments on standardized prompts",
+        "Speed and latency measurements"
+      ],
+      "correct": 1,
+      "explanation": "Chatbot Arena has users chat with two anonymous models simultaneously and vote for their preferred response. These pairwise outcomes are aggregated into Elo ratings — the same system used in chess — producing a continuously updated ranking."
+    },
+    {
+      "id": "q4",
+      "question": "Benchmark contamination refers to:",
+      "options": [
+        "Security vulnerabilities in benchmark evaluation infrastructure",
+        "Test questions appearing in the model's training data, artificially inflating scores",
+        "Benchmark datasets containing biased or offensive content",
+        "Multiple models being evaluated on the same benchmark simultaneously"
+      ],
+      "correct": 1,
+      "explanation": "Contamination occurs when benchmark test items appear in training data, effectively giving models the answers. This inflates reported performance without reflecting genuine generalization. It is a major concern as training data scales to internet-wide corpora."
+    },
+    {
+      "id": "q5",
+      "question": "GSM8K primarily evaluates:",
+      "options": [
+        "Graduate-level mathematical proofs",
+        "Grade-school arithmetic and multi-step math word problems",
+        "Geometry and spatial reasoning",
+        "Statistical analysis and data interpretation"
+      ],
+      "correct": 1,
+      "explanation": "GSM8K contains 8,500 grade-school math word problems requiring 2-8 reasoning steps. It became a key benchmark for measuring chain-of-thought reasoning improvements — performance jumped dramatically with CoT prompting."
+    },
+    {
+      "id": "q6",
+      "question": "GPQA (Graduate-Level Google-Proof Q&A) is notable because:",
+      "options": [
+        "It is the largest benchmark with over 1 million questions",
+        "It contains expert-level science questions that cannot be trivially answered by web search",
+        "It is the only benchmark that measures multilingual capability",
+        "It uses LLM-as-judge rather than exact match scoring"
+      ],
+      "correct": 1,
+      "explanation": "GPQA questions are written by PhD-level domain experts in biology, chemistry, and physics. They are designed to require genuine understanding — not just retrieval — making them robust to both model memorization and simple search strategies."
+    },
+    {
+      "id": "q7",
+      "question": "Chain-of-thought prompting had the most dramatic effect on which benchmark?",
+      "options": [
+        "MMLU",
+        "HellaSwag",
+        "GSM8K",
+        "HumanEval"
+      ],
+      "correct": 2,
+      "explanation": "GSM8K math word problems require multi-step reasoning. Chain-of-thought prompting (showing reasoning steps) improved GPT-3's GSM8K accuracy from ~17% to ~56% — one of the most dramatic benchmark improvements from a prompting change alone."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "MMLU (Massive Multitask Language Understanding)",
+      "back": "A benchmark of ~14,000 multiple-choice questions across 57 subjects (STEM, humanities, law, medicine). Measures breadth of knowledge and reasoning. Accuracy on MMLU is a standard indicator of general model capability."
+    },
+    {
+      "id": "f2",
+      "front": "HumanEval",
+      "back": "A code generation benchmark of 164 Python problems. Evaluated using pass@k: the probability that at least one of k sampled solutions passes all unit tests. Tests functional correctness rather than surface similarity."
+    },
+    {
+      "id": "f3",
+      "front": "HellaSwag",
+      "back": "A commonsense reasoning benchmark using adversarially filtered sentence completion. Models must pick the most plausible continuation of a scenario. Designed to defeat models that exploit surface-level statistical patterns."
+    },
+    {
+      "id": "f4",
+      "front": "TruthfulQA",
+      "back": "A benchmark of 817 questions designed around common human misconceptions. Measures the fraction of model answers that are both truthful (correct) and informative (not just abstaining). Used to quantify hallucination rates."
+    },
+    {
+      "id": "f5",
+      "front": "LMSYS Chatbot Arena",
+      "back": "A crowdsourced LLM evaluation platform where users chat with two anonymous models and vote for their preference. Rankings are computed with Elo scores (as in chess), producing a community-driven preference leaderboard."
+    },
+    {
+      "id": "f6",
+      "front": "pass@k",
+      "back": "A code evaluation metric: the estimated probability that at least one of k independently generated solutions passes all unit tests for a given problem. pass@1 is single-attempt accuracy; higher k allows the model more tries."
+    },
+    {
+      "id": "f7",
+      "front": "Benchmark contamination",
+      "back": "When benchmark test questions appear in a model's training data, artificially inflating its scores. Undermines benchmark validity; detected via n-gram overlap analysis or held-out test sets released after training cutoff."
+    },
+    {
+      "id": "f8",
+      "front": "GPQA (Graduate-Level Google-Proof Q&A)",
+      "back": "A hard science benchmark with expert-written questions (biology, chemistry, physics) requiring genuine domain expertise. Called 'Google-proof' because the answers cannot be trivially found by web search. Scores ~65% for domain PhD students."
+    },
+    {
+      "id": "f9",
+      "front": "GSM8K",
+      "back": "Grade School Math benchmark: 8,500 math word problems requiring 2–8 reasoning steps. Performance on GSM8K is the canonical measure of mathematical reasoning; chain-of-thought prompting dramatically improved scores."
+    }
+  ],
+  "videos": [
+    {
+      "title": "AI Benchmarks Explained",
+      "youtube_id": "NEreVeHGKgo",
+      "description": "A clear explanation of the major AI benchmarks used to evaluate language models, including MMLU, HumanEval, and leaderboard methodologies."
+    },
+    {
+      "title": "Andrej Karpathy: Intro to Large Language Models",
+      "youtube_id": "zjkBMFhNj_g",
+      "description": "Karpathy's comprehensive introduction covers how LLMs are evaluated and what benchmarks reveal about model capabilities and limitations."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

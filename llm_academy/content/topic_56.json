@@ -1,0 +1,153 @@
+{
+  "id": "topic_56",
+  "level": 10,
+  "level_name": "Production & Cloud",
+  "order": 1,
+  "title": "Productionizing AI Apps",
+  "emoji": "🚀",
+  "duration_minutes": 25,
+  "eli8": "# 🚀 Going from Laptop to the World!\n\nImagine you baked the most amazing pizza on your home oven. Your family loved it! But what if a million people wanted that pizza **right now**? Your oven would explode! 😅\n\nThat's exactly the problem when you build an AI app on your laptop and try to share it with the world.\n\n## 📦 Packing Your App in a Box (Docker)\n\nDocker is like a **lunchbox for your code**. You put your app, all its ingredients (libraries), and instructions inside the box. Then anyone can open that box on *any* computer and your app works perfectly — no \"but it worked on MY laptop!\" problems!\n\n- 🐋 Docker **packages** your app so it runs the same everywhere\n- Think of it like a recipe card + all the ingredients already measured out\n- The app starts in seconds, always the same way\n\n## 🔄 The Magic Pipeline (CI/CD)\n\nCI/CD stands for **Continuous Integration / Continuous Deployment**. Big words, simple idea:\n\n- Every time you fix a bug or add a feature, a robot automatically:\n  1. Tests your code (\"does it still work?\")\n  2. Packages it up\n  3. Ships it to users — safely!\n- It's like having a **robot assistant** who double-checks your homework before turning it in\n\n## 👀 Watching Your App (Monitoring)\n\nOnce your app is live, you need to watch it:\n\n- 🏥 **Health checks** — is the app still breathing?\n- 🐢 **Latency** — is it slow? Users hate waiting!\n- 💥 **Errors** — did something break at 3am?\n- 💰 **Cost** — are you spending too much on AI calls?\n\n## 🧊 Remember Answers (Caching)\n\nIf 1000 people ask \"What is photosynthesis?\" you don't need to ask the AI 1000 times! **Caching** saves the first answer and reuses it — like remembering your homework answers for next time. This saves money AND makes things faster! ⚡\n\nProduction is hard, but these tools make it manageable. Real engineers use all of these every day!",
+  "detail": "## Productionizing AI Applications\n\nMoving an LLM-powered application from a local prototype to a reliable production service requires attention to infrastructure, reliability, observability, and cost. This topic covers the essential checklist.\n\n### API Design\n\n**FastAPI** is the standard for Python ML services — async-first, auto-generated OpenAPI docs, Pydantic validation:\n\n```python\nfrom fastapi import FastAPI, HTTPException\nfrom pydantic import BaseModel\nimport asyncio\n\napp = FastAPI()\n\nclass QueryRequest(BaseModel):\n    question: str\n    max_tokens: int = 512\n\n# Load model once at startup — never per-request\n@app.on_event(\"startup\")\nasync def load_model():\n    app.state.client = init_llm_client()\n\n@app.post(\"/query\")\nasync def query(req: QueryRequest):\n    try:\n        response = await app.state.client.generate(req.question)\n        return {\"answer\": response}\n    except LLMUnavailableError:\n        raise HTTPException(503, \"LLM service unavailable\")\n```\n\n### Containerization with Docker\n\nA minimal production Dockerfile for an LLM API:\n\n```dockerfile\nFROM python:3.11-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\nCOPY . .\n# Non-root user for security\nRUN useradd -m appuser && chown -R appuser /app\nUSER appuser\nCMD [\"uvicorn\", \"main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]\n```\n\nKey practices: pin dependency versions, use `.dockerignore`, multi-stage builds to reduce image size.\n\n### Environment & Secrets Management\n\n- **Development**: `.env` files loaded by `python-dotenv`\n- **Production**: secrets injected via environment variables from a vault (AWS Secrets Manager, HashiCorp Vault, GCP Secret Manager)\n- Never commit API keys to git — use `pre-commit` hooks to scan for secrets\n\n### Health Checks & Graceful Shutdown\n\n```python\n@app.get(\"/health\")\nasync def health():\n    return {\"status\": \"ok\", \"model_loaded\": app.state.model_loaded}\n\nimport signal\ndef handle_shutdown(sig, frame):\n    # Drain in-flight requests before exiting\n    app.state.shutting_down = True\n```\n\nLoad balancers use `/health` to route traffic; graceful shutdown prevents dropped requests during deploys.\n\n### CI/CD with GitHub Actions\n\n```yaml\non: [push]\njobs:\n  deploy:\n    steps:\n      - run: pytest tests/\n      - run: docker build -t myapp .\n      - run: docker push registry/myapp:${{ github.sha }}\n      - run: kubectl rollout update deployment/myapp\n```\n\n**Staging vs Production**: always deploy to staging first; run smoke tests; promote to production.\n\n### Caching Strategies\n\n- **Response cache (Redis)**: cache exact input→output pairs. Effective for FAQ bots.\n- **Semantic cache (GPTCache)**: embed the query, find similar past queries above a similarity threshold, return cached response. Reduces LLM calls by 20-60% on repetitive workloads.\n\n### Deployment Strategies\n\n- **Rolling deployment**: replace instances one at a time — zero downtime, easy rollback\n- **Blue/green deployment**: spin up a complete new environment (green), switch traffic instantly, keep old (blue) for instant rollback\n- **Canary**: route 5% of traffic to new version, watch metrics, then promote\n\n### Load Testing\n\nUse **Locust** to simulate concurrent users before going live:\n\n```python\nfrom locust import HttpUser, task\nclass LLMUser(HttpUser):\n    @task\n    def query(self):\n        self.client.post(\"/query\", json={\"question\": \"What is ML?\"})\n```\n\nKey metrics to test: requests/second, P95 latency under load, error rate at 2x expected traffic.",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What is the primary purpose of Docker in an AI application deployment?",
+      "options": [
+        "To speed up model inference by using GPU acceleration",
+        "To package the application and its dependencies so it runs consistently across environments",
+        "To automatically scale the application based on traffic",
+        "To encrypt API keys and secrets at rest"
+      ],
+      "correct": 1,
+      "explanation": "Docker packages your app, runtime, and all dependencies into a container image that runs identically on any machine — eliminating 'works on my laptop' problems."
+    },
+    {
+      "id": "q2",
+      "question": "In a CI/CD pipeline for an AI application, what is the correct order of stages?",
+      "options": [
+        "Deploy → Build → Test",
+        "Build → Deploy → Test",
+        "Test → Build → Deploy",
+        "Build → Test → Rollback"
+      ],
+      "correct": 2,
+      "explanation": "The correct order is Test (validate correctness) → Build (create Docker image) → Deploy (push to staging then production). Testing before building prevents deploying broken code."
+    },
+    {
+      "id": "q3",
+      "question": "What distinguishes a semantic cache from a simple response cache?",
+      "options": [
+        "A semantic cache stores responses in a SQL database instead of Redis",
+        "A semantic cache matches queries by meaning/similarity rather than exact string match",
+        "A semantic cache only works with image-based AI models",
+        "A semantic cache invalidates entries every 60 seconds automatically"
+      ],
+      "correct": 1,
+      "explanation": "Semantic caches (like GPTCache) embed the query and find similar past queries above a similarity threshold. This lets 'What is ML?' and 'Can you explain Machine Learning?' share the same cached response."
+    },
+    {
+      "id": "q4",
+      "question": "When should you load your LLM client or model in a FastAPI application?",
+      "options": [
+        "Inside each request handler so the model is always fresh",
+        "Once at application startup using the startup event",
+        "When the first request arrives, then cache it in a global variable",
+        "In a background thread that re-loads every 5 minutes"
+      ],
+      "correct": 1,
+      "explanation": "Models and clients should be loaded once at startup using `@app.on_event('startup')`. Loading per-request adds seconds of latency and wastes memory."
+    },
+    {
+      "id": "q5",
+      "question": "In a blue/green deployment, what is the 'green' environment?",
+      "options": [
+        "The environment that handles only health check traffic",
+        "The currently live production environment serving all user traffic",
+        "The new environment being prepared to replace the current production",
+        "A monitoring environment that mirrors production traffic passively"
+      ],
+      "correct": 2,
+      "explanation": "In blue/green, 'blue' is the currently live environment, and 'green' is the newly deployed version. Once green is verified, traffic switches instantly from blue to green."
+    },
+    {
+      "id": "q6",
+      "question": "What tool is commonly used for load testing a Python web service?",
+      "options": [
+        "Pytest",
+        "Locust",
+        "Black",
+        "Pydantic"
+      ],
+      "correct": 1,
+      "explanation": "Locust is a Python-based load testing tool that lets you define user behavior as code and simulate thousands of concurrent users to find performance bottlenecks."
+    },
+    {
+      "id": "q7",
+      "question": "What is the purpose of a health check endpoint (e.g., /health)?",
+      "options": [
+        "To return the current version of the AI model being served",
+        "To allow load balancers and orchestrators to verify the service is running and ready for traffic",
+        "To provide usage statistics to the billing system",
+        "To run database migrations on startup"
+      ],
+      "correct": 1,
+      "explanation": "Health check endpoints are polled by load balancers (like ALB, nginx, k8s) to determine if an instance is healthy enough to receive traffic. Unhealthy instances are removed from rotation."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Docker",
+      "back": "A containerization platform that packages an application and all its dependencies into a portable container image, ensuring it runs consistently across development, staging, and production environments."
+    },
+    {
+      "id": "f2",
+      "front": "CI/CD",
+      "back": "Continuous Integration / Continuous Deployment — automated pipelines that test, build, and deploy code changes. CI runs tests on every commit; CD automates the release to staging and production."
+    },
+    {
+      "id": "f3",
+      "front": "Staging environment",
+      "back": "A pre-production environment that mirrors production configuration. New code is deployed here first, smoke-tested, then promoted to production — preventing untested changes from reaching users."
+    },
+    {
+      "id": "f4",
+      "front": "Semantic cache",
+      "back": "A caching layer that matches incoming queries by semantic similarity (using embeddings) rather than exact string match. Tools like GPTCache can reduce LLM API calls by 20-60% on repetitive workloads."
+    },
+    {
+      "id": "f5",
+      "front": "Health check",
+      "back": "A lightweight HTTP endpoint (e.g., GET /health) that returns the service status. Load balancers poll this endpoint to decide whether to route traffic to an instance."
+    },
+    {
+      "id": "f6",
+      "front": "Graceful degradation",
+      "back": "The pattern of returning a fallback response (e.g., 'Service temporarily unavailable, try again shortly') instead of crashing when a dependency like an LLM API is down."
+    },
+    {
+      "id": "f7",
+      "front": "Blue/green deployment",
+      "back": "A deployment strategy where two identical environments (blue=current, green=new) run simultaneously. Traffic switches instantly to green once it's validated, keeping blue as an instant rollback option."
+    },
+    {
+      "id": "f8",
+      "front": "Locust",
+      "back": "A Python-based open-source load testing tool where user behavior is defined as Python code. Used to simulate concurrent users and find performance bottlenecks before production launch."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Productionizing ML Models End-to-End",
+      "youtube_id": "nzG8jfqvKdQ",
+      "description": "A comprehensive walkthrough of taking an ML model from notebook to a robust production API with Docker, CI/CD, and monitoring."
+    },
+    {
+      "title": "Deploying AI Applications to the Cloud",
+      "youtube_id": "VPRSBzXzavo",
+      "description": "Step-by-step guide covering containerization, cloud deployment, environment management, and reliability best practices for AI-powered applications."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

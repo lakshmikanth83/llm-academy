@@ -1,0 +1,148 @@
+{
+  "id": "topic_40",
+  "level": 6,
+  "level_name": "Agents & Multi-Agent Systems",
+  "order": 8,
+  "title": "Agent-to-Agent Protocols (A2A)",
+  "emoji": "📡",
+  "duration_minutes": 15,
+  "eli8": "## When AI Agents Need to Call Each Other! 📞\n\nImagine you're at a big company. You ask the HR department a question about your paycheck. HR doesn't know the exact answer, so they call the Payroll department. Payroll needs budget approval, so they call Finance. Finance checks with Legal. Each department is a specialist, and they *talk to each other* to get your answer!\n\nNow imagine this with AI agents across different companies and computer systems. How does an HR agent from Company A *call* a Payroll agent from Company B if they're built by different teams using different software?\n\nThey need a **common phone standard**! 📱\n\n### A2A — The AI Phone Standard 📡\n\n**A2A** (Agent-to-Agent protocol, by Google, 2025) is exactly that standard. It lets AI agents from different companies and systems talk to each other, share tasks, and collaborate — even if they were built by completely different teams!\n\n### How It's Different From MCP 🔌\n\nThink of it this way:\n- **MCP** = How an AI agent connects to *tools* (like a robot plugging into a power outlet)\n- **A2A** = How an AI agent talks to *other AI agents* (like a phone call between two robots)\n\nThey work together! An agent might use MCP to access tools AND use A2A to call a specialized agent for complex tasks.\n\n### The Agent's Business Card — Agent Card 💼\n\nEvery A2A agent has an **Agent Card** — a JSON file that says:\n- \"Hi! I'm the Payroll Agent\"\n- \"I can calculate salaries, process payments, generate payslips\"\n- \"You can reach me at this web address\"\n- \"Here's how to authenticate with me\"\n\nIt's like a business card for AI agents! Any other agent can read the card and know exactly how to work with you. 📋",
+  "detail": "## Agent-to-Agent Protocol (A2A)\n\n**A2A** is an open protocol released by Google in 2025 designed for interoperability between AI agents across different vendors, frameworks, and enterprise systems. While MCP standardizes how agents connect to tools and data sources, A2A standardizes how agents communicate with *each other* — delegating tasks, streaming progress, and returning results.\n\n## The Interoperability Problem\n\nIn enterprise environments, different departments may use AI agents built on different platforms:\n- HR department: agents on Workday AI\n- IT department: agents on ServiceNow\n- Finance: custom LangGraph agents\n- Customer support: Salesforce AI\n\nWithout a standard, none of these can delegate work to each other. A2A solves this.\n\n## Core Architecture\n\n### Agent Card\nEvery A2A-capable agent publishes an **Agent Card** — a JSON document served at a well-known URL (e.g., `https://hr-agent.company.com/.well-known/agent.json`):\n\n```json\n{\n  \"name\": \"HR Onboarding Agent\",\n  \"description\": \"Handles employee onboarding tasks\",\n  \"url\": \"https://hr-agent.company.com/a2a\",\n  \"version\": \"1.0\",\n  \"capabilities\": {\n    \"streaming\": true,\n    \"pushNotifications\": false\n  },\n  \"skills\": [\n    {\n      \"id\": \"onboard_employee\",\n      \"name\": \"Onboard New Employee\",\n      \"description\": \"Initiates onboarding workflow for a new hire\",\n      \"inputModes\": [\"text\"],\n      \"outputModes\": [\"text\"]\n    }\n  ],\n  \"authentication\": {\n    \"schemes\": [\"Bearer\"]\n  }\n}\n```\n\nAny agent can discover another agent's capabilities by fetching its Agent Card, without any prior integration work.\n\n### Task Lifecycle\n\nA2A tasks move through defined states:\n\n```\ncreated → working → [input_required] → working → completed\n                                               ↘ failed\n                                               ↘ canceled\n```\n\n- **created**: client has submitted a task\n- **working**: agent is processing\n- **input_required**: agent needs additional information from the client\n- **completed**: task finished successfully with a result\n- **failed**: task encountered an unrecoverable error\n- **canceled**: client or server aborted the task\n\n### Message Format\n\n```json\n{\n  \"jsonrpc\": \"2.0\",\n  \"method\": \"tasks/send\",\n  \"params\": {\n    \"id\": \"task-abc-123\",\n    \"message\": {\n      \"role\": \"user\",\n      \"parts\": [\n        {\"type\": \"text\", \"text\": \"Onboard new employee John Doe, starting Monday\"}\n      ]\n    }\n  }\n}\n```\n\nMessage parts support: `text`, `data` (structured JSON), `file` (binary or URI reference).\n\n### Streaming with SSE\n\nFor long-running tasks, A2A supports Server-Sent Events for streaming progress updates:\n```\ntasks/sendSubscribe → SSE stream of TaskStatusUpdateEvent / TaskArtifactUpdateEvent\n```\n\nThe client receives incremental updates (partial results, status changes) without polling.\n\n## A2A vs. MCP\n\n| Aspect | MCP | A2A |\n|---|---|---|\n| **Connects** | Agent ↔ Tools/Data | Agent ↔ Agent |\n| **Role** | Tool provider standard | Agent interoperability |\n| **Unit** | Tool call (stateless) | Task (stateful, multi-turn) |\n| **Discovery** | Server capability list | Agent Card JSON |\n| **Streaming** | SSE | SSE |\n| **Author** | Anthropic (2024) | Google (2025) |\n\nThey are **complementary**: an agent might use MCP to access a database tool AND use A2A to delegate a subtask to a specialized agent.\n\n## Authentication\n\nA2A supports standard web authentication:\n- **OAuth2**: for enterprise SSO integration\n- **API Keys**: for simpler service-to-service calls\n- **Bearer tokens**: JWT-based auth\n\nAuthentication schemes are declared in the Agent Card.\n\n## Enterprise Agent Mesh\n\nA2A enables an **enterprise agent mesh** — a network of specialized agents that delegate work to each other:\n\n```\nUser → Orchestrator Agent\n         ├── HR Agent (onboarding) → Payroll Agent (via A2A)\n         ├── IT Agent (provisioning) → Security Agent (via A2A)\n         └── Finance Agent (budget) → Audit Agent (via A2A)\n```\n\nEach agent is an autonomous service with its own capabilities, discoverable via Agent Cards.\n\n## AgentSpace (Google)\n\nGoogle's AgentSpace is an enterprise agent marketplace built on A2A — a registry of pre-built, A2A-compatible agents that enterprises can deploy and connect. It demonstrates A2A as the foundation for a multi-vendor agent ecosystem.\n\n## Key Takeaway\n\nMCP and A2A together form the connective tissue of the agentic web: MCP for connecting agents to tools, A2A for connecting agents to agents. Together they enable a future where specialized agents from different vendors collaborate seamlessly on complex enterprise workflows.",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What is the primary purpose of the A2A (Agent-to-Agent) protocol?",
+      "options": [
+        "To standardize how agents connect to databases and file systems",
+        "To enable interoperability between AI agents from different vendors and systems",
+        "To define a training data format for fine-tuning specialized agents",
+        "To replace function calling in LLM APIs with a more secure alternative"
+      ],
+      "correct": 1,
+      "explanation": "A2A's purpose is agent-to-agent interoperability — enabling AI agents built on different platforms and by different vendors to discover each other's capabilities and delegate tasks to each other, without custom per-pair integrations."
+    },
+    {
+      "id": "q2",
+      "question": "What is an 'Agent Card' in A2A?",
+      "options": [
+        "A credit card-style authentication token used between agents",
+        "A JSON document an agent publishes describing its capabilities, skills, and endpoint",
+        "A UI component that displays the agent's activity to the user",
+        "A configuration file that specifies which LLM model the agent uses"
+      ],
+      "correct": 1,
+      "explanation": "An Agent Card is a JSON document served at a well-known URL that describes an agent's name, capabilities, skills, endpoint URL, and authentication requirements. Any other agent can discover and connect to an agent by fetching its Agent Card."
+    },
+    {
+      "id": "q3",
+      "question": "What is the correct order of A2A task lifecycle states for a successfully completed task?",
+      "options": [
+        "working → created → completed",
+        "created → working → completed",
+        "submitted → running → finished",
+        "pending → active → resolved"
+      ],
+      "correct": 1,
+      "explanation": "The A2A task lifecycle for a successful task is: created (client submitted the task) → working (agent is processing) → completed (task finished with a result). There are additional states for failures (failed), cancellations (canceled), and when the agent needs more information (input_required)."
+    },
+    {
+      "id": "q4",
+      "question": "How does A2A differ from MCP in terms of what they connect?",
+      "options": [
+        "MCP connects agents to other agents; A2A connects agents to tools",
+        "MCP connects agents to tools and data sources; A2A connects agents to other agents",
+        "Both MCP and A2A connect agents to tools — they are redundant protocols",
+        "MCP is for local connections; A2A is for the same connections over the internet"
+      ],
+      "correct": 1,
+      "explanation": "MCP standardizes agent-to-tool/data connections (filesystem, database, search API). A2A standardizes agent-to-agent connections (one agent delegating a task to another agent). They are complementary: an agent might use both simultaneously."
+    },
+    {
+      "id": "q5",
+      "question": "For a long-running A2A task, how does the server communicate progress to the client?",
+      "options": [
+        "The client must poll the server at regular intervals for status updates",
+        "The server sends a single response when the task is fully complete",
+        "Server-Sent Events (SSE) stream incremental progress updates to the client",
+        "The server calls back the client via a webhook specified in the initial request"
+      ],
+      "correct": 2,
+      "explanation": "A2A uses Server-Sent Events (SSE) for streaming long-running task updates. The client subscribes via tasks/sendSubscribe and receives a stream of TaskStatusUpdateEvent and TaskArtifactUpdateEvent messages as the agent makes progress."
+    },
+    {
+      "id": "q6",
+      "question": "What authentication mechanisms does A2A support?",
+      "options": [
+        "Only API keys for simplicity",
+        "Only proprietary token formats defined by the agent vendor",
+        "OAuth2, API keys, and Bearer tokens — declared in the Agent Card",
+        "Biometric authentication for secure enterprise deployments"
+      ],
+      "correct": 2,
+      "explanation": "A2A supports standard web authentication schemes including OAuth2 (for enterprise SSO), API keys (simple service-to-service), and Bearer tokens (JWT-based). The supported schemes are declared in the agent's Agent Card so connecting agents know how to authenticate."
+    },
+    {
+      "id": "q7",
+      "question": "What is an 'enterprise agent mesh'?",
+      "options": [
+        "A GPU cluster optimized for running many agent models simultaneously",
+        "A network of specialized agents that discover and delegate tasks to each other via A2A",
+        "A monitoring dashboard showing all active agent conversations",
+        "A vector database storing shared knowledge for multiple enterprise agents"
+      ],
+      "correct": 1,
+      "explanation": "An enterprise agent mesh is a network of specialized agents (HR, IT, Finance, Security) that can discover each other via Agent Cards and delegate tasks to each other via A2A — enabling complex cross-department workflows without manual integration for each pair."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "A2A (Agent-to-Agent Protocol)",
+      "back": "An open protocol by Google (2025) standardizing how AI agents from different vendors communicate, delegate tasks, and share results. Enables enterprise agent interoperability without custom per-pair integrations."
+    },
+    {
+      "id": "f2",
+      "front": "Agent Card",
+      "back": "A JSON document served at a well-known URL by every A2A-capable agent. Describes the agent's name, skills, endpoint URL, capabilities (streaming, push notifications), and authentication requirements. Enables automatic discovery."
+    },
+    {
+      "id": "f3",
+      "front": "Task Lifecycle (A2A)",
+      "back": "The states an A2A task moves through: created → working → completed (or failed, canceled, input_required). Each state transition represents the agent's progress on the delegated task."
+    },
+    {
+      "id": "f4",
+      "front": "AgentSpace (Google)",
+      "back": "Google's enterprise agent marketplace built on A2A — a registry of pre-built, A2A-compatible specialized agents that enterprises can deploy and interconnect. Demonstrates a multi-vendor agent ecosystem."
+    },
+    {
+      "id": "f5",
+      "front": "Agent Interoperability",
+      "back": "The ability for AI agents from different vendors, frameworks, and enterprise systems to discover each other's capabilities and collaborate on tasks without custom per-pair integration code."
+    },
+    {
+      "id": "f6",
+      "front": "Enterprise Agent Mesh",
+      "back": "A network of specialized enterprise agents (HR, IT, Finance, etc.) that delegate tasks to each other via A2A. Enables complex cross-department workflows where each agent is an autonomous expert service."
+    },
+    {
+      "id": "f7",
+      "front": "MCP vs. A2A",
+      "back": "MCP connects agents to tools and data sources. A2A connects agents to other agents. They are complementary: an agent might use MCP to call a database tool and A2A to delegate a complex subtask to a specialized peer agent."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Agent Protocols Explained — MCP and A2A",
+      "youtube_id": "J84e1L1_fMM",
+      "description": "A clear comparison of MCP and A2A — what each protocol does, how they complement each other, and what the emerging agentic web looks like when agents can discover and call each other."
+    },
+    {
+      "title": "Multi-Agent Communication — Building Agent Networks",
+      "youtube_id": "VPRSBzXzavo",
+      "description": "Practical walkthrough of agent-to-agent communication patterns, including task delegation, streaming progress, and building an enterprise agent mesh."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

@@ -1,0 +1,141 @@
+{
+  "id": "topic_53",
+  "level": 9,
+  "level_name": "Fine-tuning, SLMs & Local Models",
+  "order": 3,
+  "title": "Fine-tuning a Small Language Model",
+  "emoji": "🏋️",
+  "duration_minutes": 30,
+  "eli8": "# Teaching a Small AI New Tricks! 🦜\n\nImagine you have a very smart parrot 🦜. It already knows how to talk — it's been listening to people for years. But you want it to talk in a *pirate voice* 🏴‍☠️. You wouldn't teach it to talk all over again from scratch — that would take forever! Instead, you'd just spend a few weeks practicing pirates phrases with it.\n\nThat's **exactly** what fine-tuning a Small Language Model (SLM) is!\n\n## 🤏 What's a Small Language Model?\n\nNot all AI models are giant like GPT-4. There are smaller, friendlier ones that:\n\n- Have only **1–7 billion** parameters (vs 100B+ for the big ones)\n- Can run on your laptop or a cheap rented computer\n- Are still surprisingly smart at specific tasks\n- Examples: **Phi-3 Mini** (3.8B), **Llama 3.2** (1B), **Gemma** (2B)\n\n## 📝 How Do You Teach It?\n\nYou create a dataset of examples — like flashcards for the AI:\n\n```\n🗂️ Example card:\n  INSTRUCTION: Write a haiku about coding\n  INPUT: (none)\n  OUTPUT: \"Bugs in the debug / \n           Cursor blinks, coffee cools /\n           One more compile run\"\n```\n\nYou make **hundreds or thousands** of these cards, then feed them to the model during training. The model sees your examples over and over and gradually learns your pattern!\n\n## 🏃 The Training Process\n\n1. **Pick your base model** — start with something pre-trained\n2. **Prepare your examples** — in a special format (JSONL files)\n3. **Set up LoRA** — so you only train the tiny adapter parts\n4. **Hit train!** — the computer works through your examples\n5. **Test it** — does it do what you wanted?\n6. **Save and use** — deploy your custom model!\n\n## ⚠️ Watch Out For...\n\n- **Overfitting**: Learning your examples *too* perfectly, can't handle anything new (like memorizing test answers but not understanding)\n- **Bad data**: Garbage in = garbage out! Quality matters way more than quantity\n- **Not enough variety**: Make sure your examples cover different cases\n\nWith free tools like Google Colab, you can train your own model for **free** on a GPU! 🚀",
+  "detail": "# Fine-tuning a Small Language Model: End-to-End Walkthrough\n\n## Choosing a Base Model\n\nSmall models have become remarkably capable. Leading options for fine-tuning (as of 2024–2025):\n\n| Model | Params | VRAM (4-bit) | Strengths |\n|-------|--------|-------------|----------|\n| Llama 3.2 1B | 1B | ~1.5GB | Ultra-lightweight, fast |\n| Phi-3 Mini | 3.8B | ~2.5GB | Strong reasoning per param |\n| Llama 3.2 3B | 3B | ~2GB | Balanced capability/size |\n| Gemma 2 2B | 2B | ~1.5GB | Google-trained, multilingual |\n| Mistral 7B | 7B | ~4.5GB | Strong general capabilities |\n\n**Rule of thumb:** Start with the smallest model that can produce reasonable zero-shot output on your task. Fine-tuning amplifies existing capabilities — it doesn't create new ones from scratch.\n\n## Dataset Preparation\n\n### JSONL Format\nEach training example is a JSON object on its own line:\n\n```jsonl\n{\"instruction\": \"Classify the sentiment\", \"input\": \"The product broke on day one.\", \"output\": \"negative\"}\n{\"instruction\": \"Classify the sentiment\", \"input\": \"Best purchase I've made all year!\", \"output\": \"positive\"}\n```\n\n### Common Dataset Formats\n\n**Alpaca format** (instruction tuning):\n```json\n{\n  \"instruction\": \"Summarize this legal clause in plain English.\",\n  \"input\": \"The indemnifying party shall...\",\n  \"output\": \"The company promises to pay for any legal costs if...\"\n}\n```\n\n**ChatML format** (multi-turn conversations):\n```\n<|im_start|>system\nYou are a helpful customer support agent for Acme Corp.\n<|im_end|>\n<|im_start|>user\nHow do I reset my password?\n<|im_end|>\n<|im_start|>assistant\nTo reset your password, go to Settings > Security...\n<|im_end|>\n```\n\n**ShareGPT format:** Similar to ChatML, uses `{\"conversations\": [{\"from\": \"human\", \"value\": \"...\"}, {\"from\": \"gpt\", \"value\": \"...\"}]}`.\n\n### Data Quality Over Quantity\n\nEmpirical evidence consistently shows:\n- **500 high-quality, diverse examples** often outperform **50,000 scraped pairs** with inconsistent formatting\n- Deduplicate your dataset — repeated examples cause overfitting\n- Review at least 10% of examples manually before training\n- Ensure output format is 100% consistent across all examples\n\n## Training Configuration\n\n### Full QLoRA Setup\n\n```python\nfrom transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments\nfrom peft import LoraConfig\nfrom trl import SFTTrainer\nfrom datasets import load_dataset\nimport torch\nfrom transformers import BitsAndBytesConfig\n\n# 1. Load tokenizer\ntokenizer = AutoTokenizer.from_pretrained(\"microsoft/Phi-3-mini-4k-instruct\")\ntokenizer.pad_token = tokenizer.eos_token\n\n# 2. Load model with 4-bit quantization\nbnb_config = BitsAndBytesConfig(\n    load_in_4bit=True,\n    bnb_4bit_quant_type=\"nf4\",\n    bnb_4bit_compute_dtype=torch.bfloat16\n)\nmodel = AutoModelForCausalLM.from_pretrained(\n    \"microsoft/Phi-3-mini-4k-instruct\",\n    quantization_config=bnb_config,\n    device_map=\"auto\"\n)\n\n# 3. LoRA config\nlora_config = LoraConfig(\n    r=16,\n    lora_alpha=32,\n    target_modules=[\"q_proj\", \"v_proj\", \"k_proj\", \"o_proj\"],\n    lora_dropout=0.05,\n    bias=\"none\",\n    task_type=\"CAUSAL_LM\"\n)\n\n# 4. Training arguments\ntraining_args = TrainingArguments(\n    output_dir=\"./phi3-finetuned\",\n    num_train_epochs=3,\n    per_device_train_batch_size=4,\n    gradient_accumulation_steps=2,\n    learning_rate=2e-4,\n    lr_scheduler_type=\"cosine\",\n    warmup_ratio=0.03,\n    logging_steps=10,\n    save_steps=100,\n    fp16=False,\n    bf16=True,\n    evaluation_strategy=\"steps\",\n    eval_steps=50\n)\n\n# 5. Trainer\ndataset = load_dataset(\"json\", data_files=\"train.jsonl\", split=\"train\")\ntrainer = SFTTrainer(\n    model=model,\n    tokenizer=tokenizer,\n    args=training_args,\n    train_dataset=dataset,\n    peft_config=lora_config,\n    dataset_text_field=\"text\",\n    max_seq_length=2048\n)\n\ntrainer.train()\ntrainer.model.save_pretrained(\"./phi3-lora-adapter\")\n```\n\n## Key Hyperparameters\n\n| Parameter | Typical Value | Effect |\n|-----------|--------------|--------|\n| `learning_rate` | 1e-4 to 3e-4 | Too high = unstable; too low = slow |\n| `num_train_epochs` | 1–5 | More epochs → more overfitting risk |\n| `per_device_train_batch_size` | 2–8 | Larger = more stable gradients |\n| `gradient_accumulation_steps` | 2–8 | Effectively multiplies batch size |\n| `lora_r` | 8–64 | Higher = more capacity |\n| `warmup_ratio` | 0.03–0.1 | Prevents early training instability |\n\n## Evaluation\n\nAlways hold out 10–20% of data for evaluation. Watch:\n- **Training loss** vs **validation loss**: divergence = overfitting\n- **Task-specific metrics**: exact match, ROUGE, perplexity depending on task\n- **Manual spot-checks**: read 20–50 outputs yourself — numbers miss qualitative regressions\n\n## Common Issues and Fixes\n\n| Symptom | Likely Cause | Fix |\n|---------|-------------|-----|\n| Val loss rises while train loss drops | Overfitting | Reduce epochs, add data |\n| Loss barely moves | Learning rate too low or rank too low | Increase LR or LoRA rank |\n| CUDA OOM | Batch size too large | Reduce batch size, increase gradient accumulation |\n| Outputs ignore instructions | Wrong prompt template | Match fine-tuning template to model's expected format |\n| Garbled outputs | Tokenization mismatch | Ensure special tokens (EOS, PAD) are set correctly |\n\n## Unsloth: Faster Training\n\nUnsloth is an optimized fine-tuning library that provides 2–5x faster training and 60% less memory than vanilla Transformers + PEFT:\n\n```python\nfrom unsloth import FastLanguageModel\nmodel, tokenizer = FastLanguageModel.from_pretrained(\n    model_name=\"unsloth/Phi-3-mini-4k-instruct\",\n    max_seq_length=2048,\n    load_in_4bit=True\n)\nmodel = FastLanguageModel.get_peft_model(model, r=16, ...)\n```\n\n## Cloud Training Options\n\n| Platform | GPU | Cost | Notes |\n|----------|-----|------|-------|\n| Google Colab (free) | T4 16GB | Free | Limited runtime |\n| Google Colab Pro | A100 40GB | ~$10/mo | Best value |\n| RunPod | A100/A40 | ~$1–1.5/hr | On-demand |\n| Modal | A100 | Pay-per-second | Good for automation |",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "You want to fine-tune a model to classify customer support tickets into 5 categories. You have 200 labeled examples. What should you prioritize?",
+      "options": [
+        "Train for 50 epochs to maximize exposure to the examples",
+        "Choose a 70B model to ensure the highest possible quality",
+        "Ensure all 200 examples are high-quality and consistently formatted, hold out 20% for evaluation, and use 1–3 epochs with early stopping",
+        "Use the largest LoRA rank possible (r=256) for this small dataset"
+      ],
+      "correct": 2,
+      "explanation": "With a small dataset, data quality and consistent formatting are paramount. Training too many epochs on 200 examples causes severe overfitting — holding out eval data and using early stopping prevents this. A large rank on small data also overfits."
+    },
+    {
+      "id": "q2",
+      "question": "In JSONL training format, what does each line of the file contain?",
+      "options": [
+        "A Python dictionary with model hyperparameters",
+        "A complete, self-contained JSON object representing one training example (e.g., instruction, input, output fields)",
+        "A line of raw text that the model should memorize",
+        "A URL pointing to an external training document"
+      ],
+      "correct": 1,
+      "explanation": "JSONL (JSON Lines) format stores one JSON object per line. Each object is a complete training example — typically containing instruction, input (optional), and expected output fields. This format is easy to stream and shard for large datasets."
+    },
+    {
+      "id": "q3",
+      "question": "After 3 epochs of fine-tuning, your training loss is 0.4 but your validation loss is 1.8 and increasing. What is happening and what should you do?",
+      "options": [
+        "The model is converging — this divergence is normal and training should continue",
+        "The model is underfitting — increase learning rate and train for more epochs",
+        "The model is overfitting — the training loss is very low but the model has memorized the training data and generalizes poorly. Reduce epochs or add more diverse data",
+        "The validation set has different tokenization — reformat the validation file"
+      ],
+      "correct": 2,
+      "explanation": "A low training loss with a rising validation loss is the classic overfitting signature: the model has memorized the training examples rather than learning generalizable patterns. Remedies: train fewer epochs, reduce LoRA rank, add more diverse data, or add dropout."
+    },
+    {
+      "id": "q4",
+      "question": "What is the purpose of the `gradient_accumulation_steps` parameter in training?",
+      "options": [
+        "It saves gradients to disk to allow resuming training from a checkpoint",
+        "It controls how many layers have gradients enabled in LoRA",
+        "It accumulates gradients over multiple forward passes before a single optimizer step, effectively simulating a larger batch size without requiring more GPU memory",
+        "It determines how many gradient checkpoints are saved during training"
+      ],
+      "correct": 2,
+      "explanation": "Gradient accumulation runs N forward+backward passes before updating weights, making the effective batch size = per_device_batch_size × accumulation_steps × num_GPUs. This lets you simulate batch_size=16 on a GPU that only fits batch_size=2."
+    },
+    {
+      "id": "q5",
+      "question": "ChatML format uses special tokens like `<|im_start|>` and `<|im_end|>`. Why is matching the training format critical?",
+      "options": [
+        "These tokens are copyrighted and must be licensed before use in training",
+        "If the training data uses different delimiters than the model's expected format at inference time, the model will fail to recognize turn boundaries and produce confused or truncated outputs",
+        "ChatML tokens increase the training speed by reducing sequence length",
+        "The tokens are only needed for multi-GPU training setups"
+      ],
+      "correct": 1,
+      "explanation": "Each model is pre-trained with a specific conversation format. Fine-tuning with mismatched format tokens causes the model to learn wrong associations between structure tokens and content, leading to broken generations at inference. Always match the base model's expected template."
+    },
+    {
+      "id": "q6",
+      "question": "Unsloth's primary advantage over standard Hugging Face PEFT training is:",
+      "options": [
+        "It supports larger LoRA ranks (up to r=1024)",
+        "It provides 2–5x faster training and 60% less memory usage through custom CUDA kernels and optimized backward passes",
+        "It automatically generates training data from your raw documents",
+        "It eliminates the need for a GPU entirely"
+      ],
+      "correct": 1,
+      "explanation": "Unsloth reimplements key training kernels (attention, cross-entropy, etc.) with custom CUDA code and smarter memory management, achieving 2–5x speedups and ~60% memory savings compared to stock Transformers + PEFT — making it the preferred choice for Colab and consumer GPU training."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "JSONL format",
+      "back": "JSON Lines — a file format where each line is a valid JSON object representing one training example. Used for fine-tuning datasets. Supports streaming and easy sharding. Typical fields: instruction, input (optional), output."
+    },
+    {
+      "id": "f2",
+      "front": "Alpaca format",
+      "back": "A fine-tuning dataset format with three fields: `instruction` (task description), `input` (optional context), and `output` (expected response). Popularized by Stanford Alpaca. Many instruction-tuning datasets use this structure."
+    },
+    {
+      "id": "f3",
+      "front": "ChatML format",
+      "back": "A multi-turn conversation format using special tokens: `<|im_start|>role\\ncontent<|im_end|>`. Used by OpenAI, Phi-3, and others. Enables fine-tuning on multi-turn dialogues with clear role boundaries (system/user/assistant)."
+    },
+    {
+      "id": "f4",
+      "front": "SFTTrainer (TRL)",
+      "back": "Supervised Fine-Tuning Trainer from the TRL (Transformer Reinforcement Learning) library. Wraps Hugging Face's Trainer with SFT-specific features: automatic prompt template handling, dataset formatting, and PEFT integration."
+    },
+    {
+      "id": "f5",
+      "front": "Unsloth",
+      "back": "An open-source library providing 2–5x faster QLoRA/LoRA fine-tuning with ~60% less GPU memory than standard PEFT. Achieves this through custom CUDA kernels for attention and loss computation. Works with Llama, Phi, Mistral, Gemma, and more."
+    },
+    {
+      "id": "f6",
+      "front": "Overfitting in fine-tuning",
+      "back": "When the model memorizes training examples rather than learning generalizable patterns. Symptoms: training loss low, validation loss high and rising. Fixes: fewer epochs, more diverse data, reduce LoRA rank, add dropout, use early stopping."
+    },
+    {
+      "id": "f7",
+      "front": "Learning rate schedule (cosine with warmup)",
+      "back": "A training schedule that linearly increases the learning rate during a warmup phase (typically 3–10% of steps), then decays it following a cosine curve. Prevents instability at training start and allows finer optimization near convergence."
+    },
+    {
+      "id": "f8",
+      "front": "Evaluation loss",
+      "back": "The cross-entropy loss computed on a held-out validation set that was not used for training. Tracks generalization quality. Should decrease alongside training loss. If it starts rising while training loss falls, overfitting has begun."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Fine-tuning LLMs with LoRA — Complete Walkthrough",
+      "youtube_id": "dA-NhCtrrVE",
+      "description": "Step-by-step guide to fine-tuning a small language model using LoRA and the Hugging Face PEFT library, covering dataset prep, training config, and evaluation."
+    },
+    {
+      "title": "Fine-tune an LLM on Google Colab (Free GPU)",
+      "youtube_id": "VPRSBzXzavo",
+      "description": "Practical tutorial demonstrating QLoRA fine-tuning of a small model on Google Colab's free T4 GPU, from dataset formatting to saving the trained adapter."
+    }
+  ],
+  "has_practical": true,
+  "practical_description": "Interactive demo that walks through preparing a small JSONL dataset, configuring LoRA hyperparameters, and simulating a training loop with live loss curves — showing how rank, learning rate, and epoch count affect training and validation loss."
+}

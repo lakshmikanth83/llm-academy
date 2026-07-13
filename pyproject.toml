@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llm-academy"
+version = "0.1.0"
+description = "Interactive AI/LLM learning app — from what is AI to building production RAG pipelines"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+keywords = ["ai", "llm", "learning", "fastapi", "education"]
+dependencies = [
+    "fastapi>=0.111.0",
+    "uvicorn[standard]>=0.29.0",
+    "aiosqlite>=0.20.0",
+    "httpx>=0.27.0",
+]
+
+[project.scripts]
+llm-academy = "llm_academy.main:run"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["llm_academy*"]
+
+[tool.setuptools.package-data]
+llm_academy = ["static/*", "content/*.json", "examples/*.py"]

@@ -1,0 +1,153 @@
+{
+  "id": "topic_29",
+  "level": 5,
+  "level_name": "Embeddings, Vector Search & RAG",
+  "order": 4,
+  "title": "RAG End-to-End",
+  "emoji": "📖",
+  "duration_minutes": 30,
+  "eli8": "## 📝 The Open-Book Exam!\n\nImagine two students taking a test:\n\n- 🧠 **Student A (no RAG)**: Has to answer everything from memory. Smart, but can get things wrong or make stuff up if they forgot!\n- 📚 **Student B (with RAG)**: Gets to look things up in a book before answering. Much more accurate and can show which page they found the answer on!\n\n**RAG** stands for **Retrieval-Augmented Generation** — it gives the AI an open book to check before answering!\n\n## 🔄 How RAG Works — 4 Steps\n\n**Before** someone asks a question, you prepare your \"library\":\n1. 📄 **Chunk** your documents into small pieces\n2. 🔢 **Embed** each piece (convert to GPS coordinates)\n3. 💾 **Store** everything in a vector database\n\n**When** someone asks a question:\n\n4. 🔍 **Retrieve** — convert the question to GPS coordinates, find the 3–5 most similar pieces\n5. ✏️ **Augment** — combine those pieces with the question into a prompt\n6. 💬 **Generate** — the AI reads the prompt and answers using the found pieces\n\n## 🎯 Why RAG Is Amazing\n\n- ✅ **Accurate** — AI only uses facts from your documents\n- 📅 **Up-to-date** — you can add new documents anytime\n- 🔗 **Cites sources** — you can show exactly where the answer came from\n- 💸 **Cheaper** — no need to retrain the whole AI model!\n\nRAG is how most company chatbots work — the AI doesn't memorize your company's policies, it looks them up every time you ask!",
+  "detail": "## What Is RAG?\n\n**Retrieval-Augmented Generation (RAG)** is a technique that enhances LLM responses by retrieving relevant external documents at inference time and including them in the prompt context. It addresses core LLM limitations:\n- **Knowledge cutoff**: LLMs don't know about events after their training cutoff\n- **Hallucination**: LLMs confabulate facts they didn't see in training\n- **Private data**: LLMs have no access to internal documents or proprietary knowledge\n\n## The RAG Pipeline\n\nRAG has two phases:\n\n### Phase 1: Indexing (offline, one-time or periodic)\n```\nDocuments → Chunk → Embed → Store in Vector DB\n```\n\n### Phase 2: Query (online, per-request)\n```\nUser Query → Embed Query → Retrieve Top-K Chunks → Augment Prompt → LLM → Response\n```\n\n## Step-by-Step Implementation\n\n```python\n# === PHASE 1: INDEXING ===\nimport chromadb\nfrom sentence_transformers import SentenceTransformer\nfrom langchain.text_splitter import RecursiveCharacterTextSplitter\n\n# Setup\nmodel = SentenceTransformer('all-MiniLM-L6-v2')\nclient = chromadb.PersistentClient(path=\"./rag_db\")\ncollection = client.get_or_create_collection(\"knowledge_base\")\n\n# Load and chunk document\nwith open(\"company_handbook.txt\") as f:\n    raw_text = f.read()\n\nsplitter = RecursiveCharacterTextSplitter(chunk_size=512, chunk_overlap=64)\nchunks = splitter.split_text(raw_text)\n\n# Embed and store\nembeddings = model.encode(chunks).tolist()\ncollection.add(\n    documents=chunks,\n    embeddings=embeddings,\n    ids=[f\"chunk_{i}\" for i in range(len(chunks))]\n)\nprint(f\"Indexed {len(chunks)} chunks\")\n```\n\n```python\n# === PHASE 2: QUERY ===\ndef rag_query(user_question: str, top_k: int = 3) -> str:\n    # 1. Embed the query\n    query_embedding = model.encode([user_question]).tolist()\n\n    # 2. Retrieve top-K relevant chunks\n    results = collection.query(\n        query_embeddings=query_embedding,\n        n_results=top_k\n    )\n    retrieved_chunks = results['documents'][0]\n\n    # 3. Augment: build prompt with retrieved context\n    context = \"\\n\\n---\\n\\n\".join(retrieved_chunks)\n    prompt = f\"\"\"Answer the question using ONLY the context below. \nIf the answer is not in the context, say \"I don't know based on the provided documents.\"\n\nContext:\n{context}\n\nQuestion: {user_question}\n\nAnswer:\"\"\"\n\n    # 4. Generate with LLM (using any LLM API)\n    response = llm_client.generate(prompt)\n    return response\n\nprint(rag_query(\"What is the vacation policy?\"))\n```\n\n## The Augmentation Prompt Template\n\nThe prompt template is critical for grounded generation:\n\n```\nYou are a helpful assistant. Answer using ONLY the following context.\nDo not use prior knowledge. If the answer is not in the context, say\n\"I cannot find this information in the provided documents.\"\n\nContext:\n[RETRIEVED CHUNKS]\n\nQuestion: [USER QUERY]\n\nAnswer:\n```\n\nKey constraints:\n- **\"ONLY the following context\"**: prevents hallucination\n- **\"If not in context, say so\"**: prevents confabulation\n- **Citation**: optionally instruct the LLM to cite chunk sources\n\n## Citation and Grounding\n\nFor trusted answers, include source metadata:\n\n```python\nresults = collection.query(\n    query_embeddings=query_embedding,\n    n_results=top_k,\n    include=['documents', 'metadatas', 'distances']\n)\n\nfor doc, meta, dist in zip(\n    results['documents'][0],\n    results['metadatas'][0],\n    results['distances'][0]\n):\n    print(f\"[{meta['source']}, p.{meta['page']}] (similarity: {1-dist:.2f})\")\n    print(doc[:200])\n```\n\n## Naive RAG Limitations\n\n| Problem | Cause | Solution |\n|---------|-------|----------|\n| Wrong chunks retrieved | Query-document mismatch | Hybrid search, query rewriting |\n| Context ignored by LLM | Prompt too long, relevant info buried | Reranking, context compression |\n| Hallucination despite context | LLM overrides retrieved facts | Stricter prompt, faithfulness checks |\n| Missing information | Document not indexed | Check coverage, re-index |\n| Stale information | Old index | Periodic re-indexing pipeline |\n\n## RAG vs Fine-Tuning\n\n| Aspect | RAG | Fine-Tuning |\n|--------|-----|------------|\n| Knowledge update | Add documents, no retraining | Retrain required |\n| Cost | Low (inference only) | High (training compute) |\n| Hallucination | Reduced (grounded) | Can still occur |\n| Response style | Fixed base model | Customizable |\n| Private data | Yes, never leaves your infra | Data used in training |\n\n**Rule of thumb**: Use RAG for knowledge/facts. Use fine-tuning for style, format, or specialized task behavior.\n\n## Top-K Selection\n\n- **K too small (1–2)**: May miss relevant context\n- **K too large (10+)**: Dilutes the prompt with noise, increases cost\n- **Practical default**: K = 3–5\n- Combine with **similarity threshold**: only include chunks above a minimum score",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What are the two main phases of a RAG pipeline?",
+      "options": [
+        "Training and inference",
+        "Indexing (offline) and Query/Retrieval (online)",
+        "Embedding and generation",
+        "Chunking and reranking"
+      ],
+      "correct": 1,
+      "explanation": "RAG has an Indexing phase (offline: chunk documents, embed them, store in vector DB) and a Query phase (online: embed user query, retrieve top-K chunks, augment prompt, generate response). The indexing phase is done once; the query phase runs for every user request."
+    },
+    {
+      "id": "q2",
+      "question": "Why does the RAG prompt template instruct the LLM to ONLY use the provided context?",
+      "options": [
+        "To make the LLM respond faster",
+        "To prevent the LLM from using its training knowledge, reducing hallucination and ensuring grounded answers",
+        "To save tokens in the context window",
+        "Because LLMs cannot access external knowledge otherwise"
+      ],
+      "correct": 1,
+      "explanation": "Instructing the LLM to use ONLY the provided context prevents it from mixing retrieved facts with potentially incorrect training-time knowledge (hallucinations). It forces the model to stay grounded in the retrieved documents, improving factual accuracy and enabling source citation."
+    },
+    {
+      "id": "q3",
+      "question": "What is a typical recommended value for K (number of chunks to retrieve) in a basic RAG pipeline?",
+      "options": [
+        "1",
+        "3–5",
+        "10–20",
+        "50+"
+      ],
+      "correct": 1,
+      "explanation": "K = 3–5 is the practical default for most RAG pipelines. Too few chunks (K=1-2) risks missing relevant context. Too many (K=10+) dilutes the prompt with noise and increases LLM input costs. The optimal K depends on chunk size and the LLM's context window."
+    },
+    {
+      "id": "q4",
+      "question": "When should you prefer RAG over fine-tuning?",
+      "options": [
+        "When you want to change the LLM's response style and tone",
+        "When you need the model to perform a specialized reasoning task",
+        "When you need to keep knowledge up-to-date or provide access to private documents",
+        "When the training dataset is very large"
+      ],
+      "correct": 2,
+      "explanation": "RAG is ideal when knowledge needs to be current (you can re-index without retraining) or when data is private (documents never enter training, staying in your infrastructure). Fine-tuning is better for adapting model behavior, style, or specialized task formats."
+    },
+    {
+      "id": "q5",
+      "question": "What causes 'retrieval failure' in a naive RAG pipeline?",
+      "options": [
+        "The LLM ignoring the retrieved context",
+        "The vector database being offline",
+        "Query-document mismatch: the query embedding doesn't closely match the relevant document chunks",
+        "The context window being too small"
+      ],
+      "correct": 2,
+      "explanation": "Retrieval failure occurs when the query embedding doesn't map closely enough to the relevant document chunk in vector space. This can happen due to vocabulary mismatch, poor chunking (relevant info split across chunks), or an embedding model not suited to the domain."
+    },
+    {
+      "id": "q6",
+      "question": "What is 'grounding' in the context of RAG?",
+      "options": [
+        "Storing embeddings in persistent storage",
+        "Connecting the LLM's response to verifiable source documents, enabling citations",
+        "Setting a minimum similarity threshold for retrieved chunks",
+        "Fine-tuning an embedding model on domain data"
+      ],
+      "correct": 1,
+      "explanation": "Grounding means anchoring the LLM's output to specific retrieved source documents. A grounded RAG response can point to exactly which document/page the information came from, making it auditable, trustworthy, and correctable."
+    },
+    {
+      "id": "q7",
+      "question": "In the RAG pipeline, what happens in the 'augmentation' step?",
+      "options": [
+        "The query embedding is refined for better retrieval",
+        "Retrieved chunks are re-embedded for accuracy",
+        "The retrieved context chunks are combined with the user query into a structured prompt for the LLM",
+        "The LLM output is post-processed to remove hallucinations"
+      ],
+      "correct": 2,
+      "explanation": "Augmentation is the step where retrieved chunks are formatted alongside the user's original question into a structured prompt (e.g., 'Use ONLY the following context to answer: [chunks]\\n\\nQuestion: [query]'). This prompt is then passed to the LLM for generation."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "RAG (Retrieval-Augmented Generation)",
+      "back": "A technique that enhances LLM responses by retrieving relevant documents from an external store at inference time and including them in the prompt. Addresses knowledge cutoffs, hallucination, and private data access without retraining the model."
+    },
+    {
+      "id": "f2",
+      "front": "Indexing Phase (RAG)",
+      "back": "The offline preparation phase: chunk documents into segments, embed each chunk, and store vectors + metadata in a vector database. Done once (or periodically), independently of user queries."
+    },
+    {
+      "id": "f3",
+      "front": "Retrieval Phase (RAG)",
+      "back": "The online query phase: embed the user's question, query the vector database for top-K similar chunks, and return those chunks as context. The quality of retrieval is the most impactful factor in RAG pipeline quality."
+    },
+    {
+      "id": "f4",
+      "front": "Augmentation (RAG)",
+      "back": "The step that combines retrieved context chunks with the user's query into a structured prompt for the LLM. A good augmentation prompt instructs the model to use ONLY the provided context and cite sources."
+    },
+    {
+      "id": "f5",
+      "front": "Generation (RAG)",
+      "back": "The final step where the LLM reads the augmented prompt (query + retrieved context) and produces a grounded response. The LLM acts as a reasoning engine over the retrieved facts, not a knowledge store."
+    },
+    {
+      "id": "f6",
+      "front": "Grounding",
+      "back": "Anchoring an LLM's response to specific retrieved source documents. A grounded response can cite exactly which document and page the information came from, making it auditable and correctable."
+    },
+    {
+      "id": "f7",
+      "front": "Citation in RAG",
+      "back": "Including source metadata (document name, page, chunk ID) with retrieved chunks and prompting the LLM to reference them in its answer. Enables users to verify claims and find the original sources."
+    },
+    {
+      "id": "f8",
+      "front": "RAG vs Fine-Tuning",
+      "back": "RAG: adds knowledge at inference time via retrieval — good for updatable, private, factual data. No retraining needed. Fine-tuning: bakes knowledge/behavior into model weights — good for style, format, specialized tasks. Requires retraining when knowledge changes."
+    }
+  ],
+  "videos": [
+    {
+      "title": "RAG Explained — Retrieval Augmented Generation",
+      "youtube_id": "T-D1OfcDW1M",
+      "description": "A clear end-to-end explanation of the RAG pipeline — from document indexing to retrieval and generation — with practical examples of how it improves LLM accuracy."
+    },
+    {
+      "title": "Build RAG from Scratch",
+      "youtube_id": "8OJC21T2SL4",
+      "description": "Hands-on walkthrough building a complete RAG pipeline from scratch using Python, covering chunking, embedding, vector storage, retrieval, and prompt augmentation."
+    }
+  ],
+  "has_practical": true,
+  "practical_description": "Full end-to-end RAG demo that indexes a sample document set into Chroma, then answers natural language questions with retrieved context — showing the retrieved chunks alongside the generated answer to illustrate grounding."
+}

@@ -1,0 +1,148 @@
+{
+  "id": "topic_35",
+  "level": 6,
+  "level_name": "Agents & Multi-Agent Systems",
+  "order": 3,
+  "title": "Agent Memory",
+  "emoji": "💾",
+  "duration_minutes": 15,
+  "eli8": "## How AI Agents Remember Things 🧠\n\nYour brain has different types of memory — and so do AI agents! Let's explore them using things you already understand.\n\n### 🗒️ Working Memory — What's In Your Head Right Now\n\nRight now, you're reading this sentence. You remember the start of it while you finish it. That's **working memory** — it's small, fast, and temporary.\n\nFor an AI agent, working memory is the **context window** — everything in the current conversation. It's like a whiteboard: super useful, but when you erase it (end the session), it's gone forever!\n\n- Holds the current task, recent messages, and tool results\n- Limited size (can only hold so much!)\n- Wiped clean when the session ends 💨\n\n### 📚 Long-Term Memory — Your Notebook\n\nWhen you learn something important in school, you write it in a notebook so you don't forget. AI agents have the same trick — they can write important facts to a **database** that persists even after the conversation ends.\n\nNext time the agent starts up, it can read from the notebook! This lets agents remember things across many conversations:\n- \"User prefers formal emails\"\n- \"Last time we worked on the budget spreadsheet\"\n- \"Sarah's birthday is in March\"\n\n### 🎬 Different Memory Types — Like Different Notebooks\n\nJust like you have different notebooks for different classes, agents have different memory types:\n\n- 📖 **Episodic memory**: remembers past conversations and events (\"Last Tuesday we talked about X\")\n- 🧩 **Semantic memory**: stores facts and knowledge (\"Paris is the capital of France\")\n- ⚙️ **Procedural memory**: stores skills and instructions (\"Always double-check math before answering\")\n\nA really smart agent uses *all* of these together — just like you do when you study for a test! 📝",
+  "detail": "## Agent Memory: Types and Architecture\n\nMemory is the mechanism by which an agent maintains state, learns from experience, and personalizes behavior. Without memory, every interaction starts fresh — the agent has no continuity. Different memory types serve different purposes and have different tradeoffs.\n\n## Memory Type Taxonomy\n\n### 1. In-Context Memory (Working Memory)\nThe current context window serves as short-term working memory. All ongoing information — the conversation history, tool outputs, intermediate reasoning — lives here.\n\n**Tradeoffs**:\n- Immediately accessible (no retrieval needed)\n- Limited by context window size (4K–200K tokens depending on model)\n- Ephemeral: wiped at session end\n- Cost scales linearly with size\n\n### 2. External Memory\nPersists beyond the context window, stored in external systems:\n- **Vector databases** (Pinecone, Chroma, Weaviate): semantic search over past experiences or documents\n- **Key-value stores** (Redis): fast lookup of named facts\n- **SQL databases**: structured entity and relationship storage\n- **File systems**: raw document storage\n\nThe agent reads from external memory via retrieval (often RAG) and writes to it via memory-saving tool calls.\n\n### 3. Episodic Memory\nRecords of past interactions and events, organized by time:\n- Stores conversation summaries or key moments\n- Enables references like \"last time you asked about X...\"\n- Often implemented as timestamped entries in a vector database\n\n### 4. Semantic Memory\nFactual knowledge about the world and the user:\n- User preferences (\"prefers bullet points\")\n- Domain facts (\"our product costs $29/month\")\n- Entity relationships (\"Alice manages Bob and Carol\")\n- Typically stored as structured documents or KG triples\n\n### 5. Procedural Memory\nInstructions and behaviors the agent should follow:\n- Reusable agent instructions (\"always verify sources before citing\")\n- Task templates and workflows\n- Often injected into the system prompt dynamically based on the current task\n\n## Memory Operations\n\n| Operation | Description |\n|---|---|\n| **Read** | Retrieve relevant memory before generating a response |\n| **Write** | Store new information after a significant event |\n| **Update** | Revise existing memory when facts change |\n| **Forget** | Delete or expire outdated memory (privacy, relevance) |\n\n## LangChain Memory Classes\n\n### ConversationBufferMemory\nStores the full conversation verbatim in the context window. Simple but expensive for long conversations.\n```python\nfrom langchain.memory import ConversationBufferMemory\nmemory = ConversationBufferMemory()\n# Grows unboundedly — every message stays in context\n```\n\n### ConversationSummaryMemory\nAs the conversation grows, older messages are summarized by the LLM and the summary replaces the raw history. Dramatically reduces token usage.\n```python\nfrom langchain.memory import ConversationSummaryMemory\nmemory = ConversationSummaryMemory(llm=llm)\n# LLM periodically compresses old history into a summary\n```\n\n**Token cost tradeoff**: Buffer memory is cheap computationally but expensive in tokens. Summary memory costs one extra LLM call for summarization but keeps the context lean.\n\n## MemGPT: LLM-Managed Memory\n\nMemGPT (Packer et al., 2023) is an architecture where the LLM itself manages its own memory, inspired by OS virtual memory:\n- **Main context**: the current prompt (like RAM)\n- **External storage**: the agent's long-term memory (like disk)\n- The LLM decides *what* to store, *when* to retrieve, and *when* to forget\n- Enables unbounded conversation length and persistent user knowledge\n\n## Multi-Session Memory\n\nFor long-running agents (assistants, autonomous workers):\n1. At session end: extract and store key information (entities, preferences, decisions)\n2. At session start: retrieve relevant context (user profile, recent interactions, active tasks)\n3. During session: opportunistically write new important facts\n\n## Privacy and Memory\n\nMemory systems introduce important privacy considerations:\n- User data persisted in vector databases must be governed\n- Right to deletion requires memory pruning capabilities\n- Sensitive data (health, financial) may need encryption at rest\n- Memory isolation between users is critical in multi-tenant deployments",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What is the primary limitation of in-context (working) memory for AI agents?",
+      "options": [
+        "It requires a vector database to function",
+        "It is limited by context window size and is wiped at session end",
+        "It is too slow for real-time agent responses",
+        "It can only store structured data, not conversation text"
+      ],
+      "correct": 1,
+      "explanation": "In-context memory is limited by the model's context window size (e.g., 4K–200K tokens) and is ephemeral — it disappears when the session ends. This makes it insufficient for long-running or multi-session agents that need to remember information across time."
+    },
+    {
+      "id": "q2",
+      "question": "Which memory type stores records of past conversations and events, organized by time?",
+      "options": [
+        "Semantic memory",
+        "Procedural memory",
+        "Episodic memory",
+        "Working memory"
+      ],
+      "correct": 2,
+      "explanation": "Episodic memory stores records of past interactions and events (episodes), enabling an agent to reference earlier conversations. It is typically implemented as timestamped summaries in a vector database."
+    },
+    {
+      "id": "q3",
+      "question": "What is the main token-cost advantage of ConversationSummaryMemory over ConversationBufferMemory?",
+      "options": [
+        "It stores more conversation history than buffer memory",
+        "It compresses older conversation history into summaries, keeping the context window lean",
+        "It eliminates the need for an LLM to process memory at all",
+        "It uses binary compression to reduce token count"
+      ],
+      "correct": 1,
+      "explanation": "ConversationSummaryMemory periodically summarizes older parts of the conversation using an LLM, replacing the raw text with a concise summary. This keeps the context window manageable for long conversations, unlike BufferMemory which grows unboundedly."
+    },
+    {
+      "id": "q4",
+      "question": "In MemGPT, what role does the LLM play in memory management?",
+      "options": [
+        "It compresses all memory into embeddings automatically",
+        "It actively decides what to store, retrieve, and forget — managing its own memory like an OS",
+        "It acts as a retrieval index, ranking memories by relevance",
+        "It only reads from memory; a separate system handles writes"
+      ],
+      "correct": 1,
+      "explanation": "MemGPT is inspired by operating system virtual memory management. The LLM itself is the memory manager — it decides what information to push to external storage (like swapping to disk) and what to pull back into active context (like loading into RAM)."
+    },
+    {
+      "id": "q5",
+      "question": "Which memory type stores reusable instructions and behaviors that the agent should always follow?",
+      "options": [
+        "Episodic memory",
+        "Semantic memory",
+        "External memory",
+        "Procedural memory"
+      ],
+      "correct": 3,
+      "explanation": "Procedural memory stores skills, instructions, and behavioral guidelines — the 'how to' knowledge. In agents, this might be injected into the system prompt dynamically based on the current task type."
+    },
+    {
+      "id": "q6",
+      "question": "What is the 'forget' operation in agent memory systems primarily needed for?",
+      "options": [
+        "Reducing the speed of memory retrieval",
+        "Privacy compliance, removing outdated information, and keeping memory relevant",
+        "Preventing the agent from answering questions",
+        "Converting vector embeddings back to text"
+      ],
+      "correct": 1,
+      "explanation": "The forget (delete/expire) operation is essential for privacy compliance (right to deletion), removing stale or incorrect facts, and keeping the memory store relevant. Without forgetting, memory can become cluttered with contradictory or outdated information."
+    },
+    {
+      "id": "q7",
+      "question": "In a multi-session agent, what is the recommended approach for memory management between sessions?",
+      "options": [
+        "Clear all memory at the end of each session to start fresh",
+        "Keep the entire conversation history in the context window permanently",
+        "Extract and store key information at session end; retrieve relevant context at session start",
+        "Use only procedural memory since it doesn't require session management"
+      ],
+      "correct": 2,
+      "explanation": "For multi-session agents, the best practice is to extract and persist key information (entities, preferences, decisions) at session end, then retrieve relevant context at the start of the next session. This balances continuity with efficiency."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Working Memory (agent)",
+      "back": "The agent's in-context, short-term memory: everything currently in the prompt/context window. Fast and immediately accessible, but ephemeral and limited by context window size."
+    },
+    {
+      "id": "f2",
+      "front": "Episodic Memory",
+      "back": "Memory of past events and conversations, organized by time. Allows an agent to reference previous interactions ('last time you asked about X...'). Often implemented as timestamped entries in a vector database."
+    },
+    {
+      "id": "f3",
+      "front": "Semantic Memory",
+      "back": "Storage for factual knowledge: user preferences, domain facts, entity relationships. Allows the agent to know things beyond the current conversation — e.g., 'the user prefers concise answers'."
+    },
+    {
+      "id": "f4",
+      "front": "External Memory",
+      "back": "Memory stored outside the context window in persistent systems (vector DB, SQL, key-value stores). Survives session resets and can scale to arbitrary size."
+    },
+    {
+      "id": "f5",
+      "front": "ConversationSummaryMemory",
+      "back": "A LangChain memory class that periodically summarizes older conversation history into a compact summary, replacing the raw text. Reduces token usage for long conversations at the cost of one extra LLM call."
+    },
+    {
+      "id": "f6",
+      "front": "MemGPT",
+      "back": "An architecture (Packer et al., 2023) where the LLM manages its own memory like an operating system manages virtual memory — deciding what to store in context (RAM) vs external storage (disk) and when to swap."
+    },
+    {
+      "id": "f7",
+      "front": "Procedural Memory",
+      "back": "Memory storing skills, instructions, and behavioral rules for the agent to follow. Often injected dynamically into the system prompt based on the current task type."
+    }
+  ],
+  "videos": [
+    {
+      "title": "AI Agent Memory Systems Explained",
+      "youtube_id": "J84e1L1_fMM",
+      "description": "A comprehensive overview of memory types for AI agents — working memory, episodic, semantic, and procedural — with practical implementation strategies."
+    },
+    {
+      "title": "Long-Term Memory for LLM Applications",
+      "youtube_id": "PNUZ8eoiJuY",
+      "description": "Deep dive into building persistent memory for LLM agents, covering vector database integration, memory summarization, and multi-session continuity."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

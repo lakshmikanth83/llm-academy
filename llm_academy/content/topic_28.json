@@ -1,0 +1,136 @@
+{
+  "id": "topic_28",
+  "level": 5,
+  "level_name": "Embeddings, Vector Search & RAG",
+  "order": 3,
+  "title": "Chunking Strategies",
+  "emoji": "✂️",
+  "duration_minutes": 15,
+  "eli8": "## 📖 Cutting Up a Book for the Library\n\nImagine you want to file every piece of information from a huge encyclopedia in a special meaning-library (a vector database). But you can't file the whole book at once — it's too big!\n\nYou need to **cut it into pieces** first. These pieces are called **chunks**. But how you cut matters a LOT:\n\n## ✂️ The Goldilocks Problem\n\n- 🔴 **Too small** (1 sentence): You get pieces that lose their meaning. \"He did it\" — did WHAT? Who is \"he\"?\n- 🔴 **Too big** (10 pages): The chunk is too stuffed with different topics. When someone asks one question, you drag in irrelevant stuff\n- 🟢 **Just right** (~250–500 words): Enough context to make sense, small enough to stay focused!\n\n## 🪆 Different Ways to Cut\n\n**Method 1 — Fixed Size** (simplest):\nJust count characters or words and cut: 500 characters, cut! Like cutting a sandwich into equal halves.\n\n**Method 2 — Recursive Splitting** (smarter):\nFirst try to cut at paragraphs. If a paragraph is still too big, cut at sentences. Still too big? Cut at words. It's like tearing apart Lego blocks — big pieces first, then smaller!\n\n**Method 3 — Semantic Chunking** (smartest):\nThe computer reads and thinks: \"These sentences feel related... but THIS sentence feels like a new topic starts.\" It cuts at **meaning boundaries**. Like how a good editor knows where chapters should end!\n\n**Bonus: Overlap** 🔗\nWhen cutting, leave a little **overlap** — keep the last sentence from the previous chunk in the new chunk. This way, nothing gets \"cut in half\" and loses context at the edges!",
+  "detail": "## Why Chunking Matters\n\nChunking is one of the most impactful decisions in a RAG pipeline. Poor chunking leads to:\n- **Irrelevant retrieval**: chunks contain multiple unrelated topics\n- **Context loss**: important context split across chunk boundaries\n- **Poor embedding quality**: embedding a mixed-topic chunk produces a blurred vector\n\n## Fixed-Size Chunking\n\nSplit text at a fixed character, word, or token count, with optional overlap:\n\n```python\nfrom langchain.text_splitter import CharacterTextSplitter\n\nsplitter = CharacterTextSplitter(\n    chunk_size=500,       # characters per chunk\n    chunk_overlap=50,     # characters of overlap between chunks\n    separator=\"\\n\\n\"      # prefer splitting at paragraph breaks\n)\nchunks = splitter.split_text(document)\n```\n\n**Pros**: Simple, predictable, no extra dependencies.\n**Cons**: Ignores document structure; may cut mid-sentence or mid-paragraph.\n\n## Recursive Character Text Splitting\n\nLangChain's `RecursiveCharacterTextSplitter` tries a hierarchy of separators:\n1. `\\n\\n` (paragraph breaks)\n2. `\\n` (line breaks)\n3. ` ` (spaces)\n4. `` (characters)\n\nOnly falls back to the next separator if the current one produces chunks that are too large:\n\n```python\nfrom langchain.text_splitter import RecursiveCharacterTextSplitter\n\nsplitter = RecursiveCharacterTextSplitter(\n    chunk_size=512,        # tokens or chars\n    chunk_overlap=64,\n    length_function=len,\n)\nchunks = splitter.split_text(long_document)\n```\n\nThis is the **recommended default** for most use cases.\n\n## Token-Based Chunking\n\nFor LLM pipelines, chunk size should be measured in **tokens**, not characters (a token is ~4 characters in English):\n\n```python\nfrom langchain.text_splitter import TokenTextSplitter\n\nsplitter = TokenTextSplitter(chunk_size=256, chunk_overlap=32)\nchunks = splitter.split_text(text)\n```\n\n**Chunk size guidelines**:\n- Dense retrieval (precision matters): **256–512 tokens**\n- Generative context (more context needed): **512–1024 tokens**\n- Summary-level (very high-level): **1024–2048 tokens**\n\n## Structure-Aware Splitting\n\nFor structured documents, respect the inherent structure:\n\n```python\n# Markdown-aware: split at headers, not mid-section\nfrom langchain.text_splitter import MarkdownHeaderTextSplitter\n\nsplitter = MarkdownHeaderTextSplitter(\n    headers_to_split_on=[\n        (\"#\", \"h1\"),\n        (\"##\", \"h2\"),\n        (\"###\", \"h3\"),\n    ]\n)\nchunks = splitter.split_text(markdown_doc)\n# Each chunk includes header metadata\n```\n\nAlso available: HTML splitter, code splitter (by function/class), LaTeX splitter.\n\n## Semantic Chunking\n\nSplit at **meaning boundaries** by detecting when consecutive sentences shift topic:\n\n1. Embed each sentence\n2. Compute cosine similarity between adjacent sentence embeddings\n3. Identify **breakpoints** where similarity drops (topic shift)\n4. Group sentences between breakpoints into chunks\n\n```python\nfrom langchain_experimental.text_splitter import SemanticChunker\nfrom langchain_openai.embeddings import OpenAIEmbeddings\n\nsplitter = SemanticChunker(\n    OpenAIEmbeddings(),\n    breakpoint_threshold_type=\"percentile\",  # or \"standard_deviation\"\n    breakpoint_threshold_amount=95\n)\nchunks = splitter.split_text(document)\n```\n\n**Pros**: Chunks are semantically coherent, not just size-bounded.\n**Cons**: Slower (requires embedding every sentence), variable chunk sizes.\n\n## Overlap Strategy\n\nOverlap preserves context at chunk boundaries:\n\n```\nChunk 1: [... sentence A | sentence B | sentence C]\nChunk 2:                  [sentence B | sentence C | sentence D | sentence E]\n```\n\nTypical overlap: **10–20% of chunk size**. More overlap = better boundary coverage, more redundant storage.\n\n## Parent-Document Retrieval\n\nA two-level strategy:\n1. Index **small child chunks** for precise embedding + retrieval\n2. When a child chunk matches, return its **parent (larger) chunk** to the LLM\n\nThis combines retrieval precision with generation context:\n\n```python\nfrom langchain.retrievers import ParentDocumentRetriever\n\nretriever = ParentDocumentRetriever(\n    vectorstore=small_chunk_store,\n    docstore=parent_doc_store,\n    child_splitter=RecursiveCharacterTextSplitter(chunk_size=200),\n    parent_splitter=RecursiveCharacterTextSplitter(chunk_size=2000),\n)\n```\n\n## Metadata Attachment\n\nAlways attach metadata to chunks during indexing:\n\n```python\nfor i, chunk in enumerate(chunks):\n    chunk.metadata.update({\n        \"source\": \"annual_report_2024.pdf\",\n        \"page\": chunk.metadata.get(\"page\", 0),\n        \"chunk_index\": i,\n        \"total_chunks\": len(chunks)\n    })\n```\n\nThis enables metadata filtering, source citation, and debugging retrieval failures.",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What is the recommended default chunk size range for dense retrieval tasks?",
+      "options": [
+        "50–100 tokens",
+        "256–512 tokens",
+        "1024–2048 tokens",
+        "4096 tokens"
+      ],
+      "correct": 1,
+      "explanation": "256–512 tokens is the recommended range for dense retrieval where precision is important. Smaller chunks produce more precise embeddings but may lack context; larger chunks cover more context but may blur the embedding with multiple topics."
+    },
+    {
+      "id": "q2",
+      "question": "In recursive text splitting, what happens when splitting on paragraph breaks (\\n\\n) produces a chunk that is still too large?",
+      "options": [
+        "The chunk is discarded",
+        "The splitter falls back to the next separator in the hierarchy (e.g., \\n)",
+        "The chunk is kept as-is regardless of size",
+        "The splitter embeds the chunk and compresses it"
+      ],
+      "correct": 1,
+      "explanation": "Recursive text splitting tries a hierarchy of separators (paragraphs → sentences → words → characters). If splitting on the current separator still produces an oversized chunk, it falls back to finer-grained separators until the chunk fits the size limit."
+    },
+    {
+      "id": "q3",
+      "question": "What is the purpose of overlap in chunking?",
+      "options": [
+        "To reduce the total number of chunks",
+        "To preserve context that might otherwise be split at chunk boundaries",
+        "To make embeddings more unique",
+        "To reduce the cost of embedding API calls"
+      ],
+      "correct": 1,
+      "explanation": "Overlap includes a portion of the previous chunk (e.g., the last few sentences) at the start of the next chunk. This ensures that context at chunk boundaries is not lost — a sentence that spans two chunks can still be fully represented in retrieval."
+    },
+    {
+      "id": "q4",
+      "question": "How does semantic chunking determine where to split a document?",
+      "options": [
+        "By counting tokens and splitting at the limit",
+        "By splitting at markdown headers and HTML tags",
+        "By detecting drops in embedding similarity between adjacent sentences",
+        "By using a separate LLM to label topic boundaries"
+      ],
+      "correct": 2,
+      "explanation": "Semantic chunking embeds individual sentences and computes cosine similarity between consecutive sentence pairs. Where similarity drops significantly, a topic shift is detected and a chunk boundary is placed. This produces semantically coherent chunks."
+    },
+    {
+      "id": "q5",
+      "question": "What problem does parent-document retrieval solve?",
+      "options": [
+        "It enables searching across multiple vector databases simultaneously",
+        "It balances retrieval precision (small chunks) with generation context (larger parent chunks)",
+        "It prevents duplicate chunks from being stored",
+        "It enables cross-lingual retrieval"
+      ],
+      "correct": 1,
+      "explanation": "Parent-document retrieval indexes small child chunks for precise semantic matching, but when a child chunk matches a query, the larger parent chunk is returned to the LLM. This gives you precise retrieval AND sufficient context for generation."
+    },
+    {
+      "id": "q6",
+      "question": "Why is it important to measure chunk size in tokens rather than characters?",
+      "options": [
+        "Tokens are always longer than characters",
+        "LLM context windows and embedding model limits are measured in tokens, not characters",
+        "Token counting is faster than character counting",
+        "Characters are not supported by all embedding models"
+      ],
+      "correct": 1,
+      "explanation": "LLM context windows, embedding model input limits, and pricing are all measured in tokens. A chunk of 500 characters might be ~125 tokens in English, but measuring in characters can lead to under- or over-estimating how much of an LLM's context you're consuming."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Chunking",
+      "back": "The process of splitting a large document into smaller segments before embedding and storing in a vector database. Chunk size affects retrieval precision, embedding quality, and the amount of context provided to the LLM during generation."
+    },
+    {
+      "id": "f2",
+      "front": "Fixed-Size Chunking",
+      "back": "A chunking strategy that splits text at a fixed character, word, or token count. Simple and predictable, but ignores document structure and may split mid-sentence or mid-paragraph."
+    },
+    {
+      "id": "f3",
+      "front": "Recursive Text Splitting",
+      "back": "A chunking strategy that tries a hierarchy of separators (paragraphs → sentences → words → characters), falling back to finer splits only when needed. The recommended default for most RAG pipelines."
+    },
+    {
+      "id": "f4",
+      "front": "Semantic Chunking",
+      "back": "A chunking strategy that detects topic shifts by measuring cosine similarity drops between consecutive sentence embeddings. Produces semantically coherent chunks, but is slower and produces variable-size chunks."
+    },
+    {
+      "id": "f5",
+      "front": "Chunk Overlap",
+      "back": "Including a portion of the previous chunk (e.g., last 10–20% of tokens) at the start of the next chunk. Prevents important context from being lost at chunk boundaries. Typical overlap: 10–20% of chunk size."
+    },
+    {
+      "id": "f6",
+      "front": "Parent-Document Retrieval",
+      "back": "A two-level retrieval strategy: index small child chunks for precise matching, but return the larger parent chunk to the LLM for generation. Balances retrieval precision with contextual richness for generation."
+    },
+    {
+      "id": "f7",
+      "front": "Token Count",
+      "back": "The measure of text length in LLM terms. One token ≈ 4 characters in English. Chunk sizes should be specified in tokens (not characters) to align with embedding model limits and LLM context window budgets."
+    }
+  ],
+  "videos": [
+    {
+      "title": "RAG Chunking Strategies Explained",
+      "youtube_id": "8OJC21T2SL4",
+      "description": "A practical guide to chunking strategies for RAG pipelines, covering fixed-size, recursive, semantic, and structure-aware approaches with real code examples."
+    },
+    {
+      "title": "Vector Databases and Document Chunking",
+      "youtube_id": "klTvEwg3oJ4",
+      "description": "Covers how document chunking connects to vector database indexing, and how chunk size and overlap affect retrieval quality in real applications."
+    }
+  ],
+  "has_practical": true,
+  "practical_description": "Side-by-side chunking demo that splits the same document using fixed-size, recursive, and semantic strategies, showing the resulting chunks and how different approaches handle paragraph and topic boundaries."
+}

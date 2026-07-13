@@ -1,0 +1,141 @@
+{
+  "id": "topic_27",
+  "level": 5,
+  "level_name": "Embeddings, Vector Search & RAG",
+  "order": 2,
+  "title": "Vector Databases",
+  "emoji": "🗄️",
+  "duration_minutes": 20,
+  "eli8": "## 📚 The World's Strangest Library\n\nImagine a magical library where books aren't sorted by title or author — they're sorted by **what they mean**.\n\n- All the books about dogs, puppies, and pets are shelved near each other\n- Books about rockets, planets, and astronauts are in a totally different corner\n- When you ask \"tell me about loyal animals\", the librarian instantly knows **which shelf** to go to!\n\nThat's a **vector database** — a special kind of database that organizes information by **meaning**, not by words.\n\n## 🔍 How Does It Find Things So Fast?\n\nA normal database checks every single item to find a match. That's like reading every book in a library!\n\nVector databases use a clever trick called **HNSW** (don't worry about the name — think of it as a treasure map):\n\n- 🗺️ The map has **layers** — start at the top layer with big jumps, then zoom in with smaller jumps\n- 🏃 Instead of checking everything, you only check a **small neighborhood** of nearby points\n- ⚡ Result: finding similar items is **super fast**, even with millions of items!\n\n## 🏪 Popular Vector Databases\n\nThere are many vector databases to choose from — like different brands of the same magical library:\n\n- 🌲 **Pinecone** — fully managed in the cloud, easy to start\n- 🎨 **Chroma** — runs on your own computer, great for learning\n- 🕸️ **Weaviate** — supports both meaning-search AND keyword search\n- ⚡ **Qdrant** — super fast, built for performance\n- 🐘 **pgvector** — adds vector powers to regular PostgreSQL!\n\nYou don't just store vectors — you also store **extra info** (called metadata) like the date, author, or category, so you can filter results!",
+  "detail": "## What Is a Vector Database?\n\nA **vector database** is a data store optimized for storing, indexing, and querying high-dimensional vectors (embeddings). Unlike relational databases that filter by exact matches or ranges, vector databases find the **nearest neighbors** in vector space — items with the most similar semantic meaning.\n\nCore operations:\n- **Upsert**: store a vector with an ID and optional metadata\n- **Query**: given a query vector, return the top-K most similar stored vectors\n- **Filter**: apply metadata constraints before or after vector search\n- **Delete**: remove vectors by ID\n\n## Indexing Algorithms\n\n### Flat Index\nCompute exact similarity against every stored vector. Perfect recall, but O(n) per query — unusable at scale.\n\n### IVF (Inverted File Index)\nCluster vectors into buckets (using k-means). At query time, search only the nearest buckets. Approximate: trades recall for speed.\n\n### HNSW (Hierarchical Navigable Small World)\nThe dominant algorithm for production vector search:\n- Builds a **multi-layer graph** — upper layers have long-range connections, lower layers have local connections\n- Query navigates from top layer (coarse) to bottom (fine), following the greedy path toward the query vector\n- Sub-linear query time: O(log n) with tunable recall/speed tradeoff\n- Parameters: `M` (connections per node), `ef_construction` (build quality), `ef_search` (query-time recall)\n\n```\nHNSW tradeoff:\n  Higher ef_search → better recall, slower queries\n  Lower ef_search  → faster queries, some missed results\n```\n\n## Vector Database Landscape\n\n| Database | Hosting | Index | Key Strength |\n|----------|---------|-------|-------------|\n| **Pinecone** | Managed cloud | HNSW | Ease of use, production scale |\n| **Chroma** | Local / server | HNSW | Developer-friendly, zero config |\n| **Weaviate** | Self-hosted / cloud | HNSW | Hybrid search built-in |\n| **Qdrant** | Self-hosted / cloud | HNSW | Rust performance, rich filtering |\n| **Milvus** | Self-hosted / cloud | Multiple | High throughput, large scale |\n| **pgvector** | PostgreSQL extension | HNSW / IVF | No new infrastructure, SQL |\n| **LanceDB** | Embedded | Disk-based | Serverless, columnar storage |\n\n## What Gets Stored\n\nA vector database record typically contains:\n1. **ID**: unique identifier\n2. **Vector**: the embedding (float32 array)\n3. **Metadata**: arbitrary key-value pairs (date, category, author, source URL)\n4. **Document**: original text (optional, often stored alongside)\n\n## Metadata Filtering\n\nFilter by metadata **before** (pre-filter) or **after** (post-filter) the vector search:\n\n```python\n# Chroma example: search with metadata filter\ncollection.query(\n    query_embeddings=[query_vector],\n    n_results=5,\n    where={\"category\": \"technology\", \"year\": {\"$gte\": 2023}}\n)\n```\n\nPre-filtering reduces the search space but may miss relevant results if the filtered subset is small. Post-filtering is more accurate but may return fewer than K results.\n\n## Local Demo: Chroma\n\n```python\nimport chromadb\nfrom sentence_transformers import SentenceTransformer\n\nclient = chromadb.Client()  # in-memory\ncollection = client.create_collection(\"docs\")\n\nmodel = SentenceTransformer('all-MiniLM-L6-v2')\n\ndocs = [\n    \"Python is a high-level programming language.\",\n    \"Dogs are loyal and friendly pets.\",\n    \"Neural networks learn from data.\",\n]\nembeddings = model.encode(docs).tolist()\n\ncollection.add(\n    documents=docs,\n    embeddings=embeddings,\n    ids=[\"d1\", \"d2\", \"d3\"]\n)\n\n# Query\nquery = \"machine learning algorithms\"\nresults = collection.query(\n    query_embeddings=model.encode([query]).tolist(),\n    n_results=2\n)\nprint(results['documents'])\n# [['Neural networks learn from data.', 'Python is a high-level programming language.']]\n```\n\n## Scalability Considerations\n\n- **Memory**: HNSW indices are kept in RAM for fast access — plan for ~4 bytes × dimensions × vectors\n- **Throughput**: Qdrant and Milvus are designed for high QPS; Chroma is for development\n- **Persistence**: In-memory (Chroma default) vs disk-backed (LanceDB, Qdrant with snapshots)\n- **Hybrid search**: Next topic — combining vector + BM25 keyword search for better recall\n\n## Choosing a Vector Database\n\n- **Learning / prototyping**: Chroma (zero setup, Python-native)\n- **Already using Postgres**: pgvector (no new infrastructure)\n- **Production, managed**: Pinecone or Weaviate Cloud\n- **Self-hosted, high performance**: Qdrant or Milvus\n- **Serverless / edge**: LanceDB",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What problem does HNSW solve in vector search?",
+      "options": [
+        "It enables exact nearest-neighbor search with 100% recall",
+        "It reduces query time from O(n) to approximately O(log n) by building a multi-layer navigable graph",
+        "It compresses vectors to save storage space",
+        "It enables SQL queries on vector data"
+      ],
+      "correct": 1,
+      "explanation": "HNSW (Hierarchical Navigable Small World) builds a multi-layer graph where upper layers allow long-range jumps and lower layers provide local refinement. This enables approximate nearest-neighbor search in sub-linear time, making it practical for millions of vectors."
+    },
+    {
+      "id": "q2",
+      "question": "Which of the following is NOT a vector database?",
+      "options": [
+        "Chroma",
+        "Pinecone",
+        "Qdrant",
+        "Redis Streams"
+      ],
+      "correct": 3,
+      "explanation": "Chroma, Pinecone, and Qdrant are all vector databases. Redis Streams is a data structure in Redis for append-only log streams, not a vector database (though Redis does have a separate vector search module)."
+    },
+    {
+      "id": "q3",
+      "question": "What is metadata filtering in a vector database?",
+      "options": [
+        "Removing low-quality embeddings before indexing",
+        "Applying attribute-based constraints (e.g., date range, category) to narrow the search space",
+        "Filtering out duplicate vectors",
+        "Reducing the number of dimensions in a vector"
+      ],
+      "correct": 1,
+      "explanation": "Metadata filtering allows you to apply constraints on non-vector fields (like date, category, or author) to restrict which vectors are considered during similarity search, enabling precise retrieval from specific subsets of your data."
+    },
+    {
+      "id": "q4",
+      "question": "What advantage does pgvector offer compared to dedicated vector databases?",
+      "options": [
+        "It has the fastest query performance of all vector databases",
+        "It supports the most dimensions",
+        "It adds vector search capabilities to PostgreSQL, eliminating the need for separate infrastructure",
+        "It only works with OpenAI embeddings"
+      ],
+      "correct": 2,
+      "explanation": "pgvector is a PostgreSQL extension that adds vector similarity search. If your application already uses PostgreSQL, you can add vector search without deploying and managing a separate vector database system."
+    },
+    {
+      "id": "q5",
+      "question": "What is the primary difference between a flat index and HNSW?",
+      "options": [
+        "Flat index stores vectors as text; HNSW stores them as binary",
+        "Flat index gives exact results by comparing against all vectors; HNSW gives approximate results much faster",
+        "HNSW only works with 768-dimensional vectors; flat index works with any size",
+        "Flat index supports metadata filtering; HNSW does not"
+      ],
+      "correct": 1,
+      "explanation": "A flat index computes exact similarity against every stored vector (perfect recall, O(n) cost). HNSW is an approximate nearest neighbor index that navigates a graph structure, giving near-perfect recall in O(log n) time — essential for large-scale production use."
+    },
+    {
+      "id": "q6",
+      "question": "You are building a RAG prototype for a hackathon using your laptop. Which vector database is the best starting point?",
+      "options": [
+        "Pinecone — it has the best documentation",
+        "Chroma — it runs locally with zero configuration and is Python-native",
+        "Milvus — it has the highest throughput",
+        "pgvector — it has full SQL support"
+      ],
+      "correct": 1,
+      "explanation": "Chroma is designed for developer experience and local prototyping — you can install it with pip, run it in-memory, and it integrates directly with LangChain and LlamaIndex. Pinecone requires API keys; Milvus and pgvector require more setup."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Vector Database",
+      "back": "A data store optimized for storing and querying high-dimensional embedding vectors. Finds the K nearest neighbors to a query vector using approximate nearest neighbor (ANN) algorithms, enabling semantic search at scale."
+    },
+    {
+      "id": "f2",
+      "front": "HNSW (Hierarchical Navigable Small World)",
+      "back": "The dominant ANN index algorithm. Builds a multi-layer graph — upper layers for coarse long-range navigation, lower layers for fine-grained local search. Achieves sub-linear query time with tunable recall/speed tradeoffs via ef_search and M parameters."
+    },
+    {
+      "id": "f3",
+      "front": "Approximate Nearest Neighbor (ANN)",
+      "back": "A class of algorithms that find vectors very close to (but not guaranteed to be exactly) the nearest neighbors, in exchange for dramatically faster query times than exact search. Most production vector databases use ANN."
+    },
+    {
+      "id": "f4",
+      "front": "Chroma",
+      "back": "An open-source, Python-native vector database designed for local development. Runs in-memory or on disk, zero configuration required. Commonly used for RAG prototyping and LLM application development."
+    },
+    {
+      "id": "f5",
+      "front": "Pinecone",
+      "back": "A fully managed, cloud-hosted vector database service. Handles infrastructure, scaling, and replication automatically. Strong choice for production applications needing high availability and low operational overhead."
+    },
+    {
+      "id": "f6",
+      "front": "Qdrant",
+      "back": "An open-source vector database written in Rust, optimized for high performance and low latency. Supports rich payload filtering, multiple vector types, and can be self-hosted or used via Qdrant Cloud."
+    },
+    {
+      "id": "f7",
+      "front": "Metadata Filter",
+      "back": "A constraint applied to non-vector fields (e.g., date >= 2023, category == 'science') during vector search. Pre-filtering restricts the search space before ANN; post-filtering removes results after retrieval. Enables targeted retrieval from specific data subsets."
+    },
+    {
+      "id": "f8",
+      "front": "pgvector",
+      "back": "A PostgreSQL extension that adds vector storage and similarity search capabilities. Supports HNSW and IVF indexes. Lets teams add semantic search to existing PostgreSQL infrastructure without deploying a separate vector database."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Vector Databases Explained",
+      "youtube_id": "klTvEwg3oJ4",
+      "description": "A comprehensive introduction to vector databases, how they index embeddings, and why they are essential for building semantic search and RAG systems."
+    },
+    {
+      "title": "Building with Chroma Vector Database",
+      "youtube_id": "MKbsnoRkFVQ",
+      "description": "Hands-on walkthrough of setting up Chroma locally, adding documents with embeddings, and querying for semantically similar results in a RAG pipeline."
+    }
+  ],
+  "has_practical": true,
+  "practical_description": "Local Chroma demo that ingests a set of sample documents, stores their embeddings, and lets you run semantic search queries — showing how vector databases retrieve by meaning rather than exact keyword matching."
+}

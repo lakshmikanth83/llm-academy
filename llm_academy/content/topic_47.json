@@ -1,0 +1,158 @@
+{
+  "id": "topic_47",
+  "level": 8,
+  "level_name": "Safety & Security",
+  "order": 1,
+  "title": "Guardrails",
+  "emoji": "🚧",
+  "duration_minutes": 20,
+  "eli8": "## What Are Guardrails? 🚧\n\nImagine you're running a lemonade stand, and you hire two helpers:\n\n- **Helper #1** stands at the front and checks every customer before they order. \"Are you trying to order something weird or dangerous? No? Great, come on in!\"\n- **Helper #2** checks every cup of lemonade *before* it goes out the door. \"Is this the right drink? Does it look okay? Perfect, hand it over!\"\n\nThat's exactly how **AI guardrails** work! They're like safety fences around an AI system — checking things going **in** AND things coming **out**.\n\n## Two Kinds of Guardrails 🔍\n\n**Input Guardrails** (the bouncer at the door) ask:\n- 🤔 \"Is this person asking for something harmful?\"\n- 🕵️ \"Is there sneaky personal information in this message?\"\n- 🚫 \"Is someone trying to trick the AI with hidden instructions?\"\n\n**Output Guardrails** (the safety inspector at the exit) check:\n- 💬 \"Is the AI's answer mean or toxic?\"\n- 🔐 \"Did the AI accidentally leak someone's private info?\"\n- ✅ \"Is the answer the right length and format?\"\n\n## Why Do We Need Both? 🛡️\n\nThink about a school hall monitor system:\n- Checking kids AT THE DOOR stops problems from getting in\n- Checking the LUNCH BOXES before kids leave stops them from taking things they shouldn't\n\nIf you only had one check, bad stuff could still slip through! A tricky person might phrase their request in a sneaky way that gets past the door — but the exit inspector might still catch a harmful answer before it reaches anyone.\n\n**Key ideas to remember:**\n- 🟢 Too many false alarms = the AI becomes annoying and unhelpful\n- 🔴 Too few checks = dangerous stuff gets through\n- ⚖️ Good guardrails find the right balance!",
+  "detail": "## Guardrails: Technical Deep Dive\n\nGuardrails are safety and compliance layers applied at the input and output boundaries of an LLM system. They serve as the primary defense-in-depth mechanism beyond the model's own training.\n\n### Input Guardrails\n\nInput guardrails inspect and optionally block or transform user messages before they reach the model.\n\n**Intent Classification** — A lightweight classifier labels user intent (e.g., benign, harmful, off-topic). Can be a small fine-tuned BERT model or an LLM-based zero-shot classifier.\n\n**Harmful Topic Detection** — Pattern matching and semantic similarity against topic categories: violence, self-harm, illegal activities, etc. Tools like Llama Guard frame this as a classification task with defined taxonomy.\n\n**PII Detection** — Two main approaches:\n- *Regex-based*: catches structured PII (SSNs, credit card numbers, phone numbers)\n- *NER-based*: catches unstructured PII (names, addresses). Libraries: spaCy, Presidio (Microsoft), GLiNER.\n\n**Prompt Injection Detection** — Identifies attempts to override system instructions. Approaches include semantic similarity to known injection patterns and a dedicated classifier.\n\n```python\nfrom presidio_analyzer import AnalyzerEngine\n\nanalyzer = AnalyzerEngine()\nresults = analyzer.analyze(\n    text=\"My SSN is 123-45-6789\",\n    language=\"en\"\n)\n# Returns: [RecognizerResult(entity_type='US_SSN', ...)]\n```\n\n### Output Guardrails\n\nOutput guardrails run after the model generates a response, before delivery to the user.\n\n**Toxicity Detection** — Perspective API (Google), Detoxify, or Llama Guard classify responses for hate speech, profanity, threats. Returns a score; responses above a threshold are blocked or regenerated.\n\n**PII Redaction** — Strip any PII the model may have reproduced from context. Presidio Anonymizer can replace entities with synthetic substitutes.\n\n**Fact/Format Validation** — Check response against expected schema (JSON validity, length limits, required fields). For RAG systems, grounding checks verify claims are supported by retrieved documents.\n\n### Implementation Options\n\n| Approach | Latency | Accuracy | Cost |\n|---|---|---|---|\n| Rules/regex | Very low | Low-medium | Free |\n| ML classifier | Low | Medium-high | Low |\n| LLM-as-judge | High | High | Medium-high |\n\n**Guardrails AI** (`pip install guardrails-ai`) provides a declarative framework with validators as composable building blocks.\n\n**NVIDIA NeMo Guardrails** uses a Colang-based policy language to define conversation flows and safety rails as programmable rules.\n\n```python\nfrom guardrails import Guard\nfrom guardrails.hub import ToxicLanguage\n\nguard = Guard().use(ToxicLanguage(threshold=0.5, on_fail=\"exception\"))\nguard.validate(\"Your response text here\")\n```\n\n### Fail-Open vs Fail-Closed\n\n- **Fail-closed**: if the guardrail errors or times out, block the request. Safer, but risks service disruption.\n- **Fail-open**: if the guardrail errors, allow the request through. Better availability, higher risk.\n\nThe right policy depends on the application's risk tolerance. Medical or legal applications should fail-closed; a general-purpose assistant may tolerate fail-open with enhanced logging.\n\n### Monitoring and Iteration\n\nLog all guardrail decisions (block/pass, classifier score, latency) to a data warehouse. Regularly audit false positives (legitimate requests blocked) and false negatives (harmful content passed). Use this data to retrain classifiers and tune thresholds. Guardrails are not a set-and-forget mechanism — they require continuous refinement as user behavior and attack patterns evolve.",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What is the primary difference between input guardrails and output guardrails?",
+      "options": [
+        "Input guardrails are faster; output guardrails are more accurate",
+        "Input guardrails inspect user messages before the model sees them; output guardrails inspect model responses before the user sees them",
+        "Input guardrails use ML models; output guardrails use regex only",
+        "Input guardrails are optional; output guardrails are mandatory"
+      ],
+      "correct": 1,
+      "explanation": "Input guardrails sit between the user and the model, while output guardrails sit between the model and the user. Both are important layers of defense."
+    },
+    {
+      "id": "q2",
+      "question": "Which of the following is best suited for detecting a Social Security Number in free text?",
+      "options": [
+        "A toxicity classifier",
+        "An LLM-as-judge with a long prompt",
+        "A regex pattern matching ###-##-#### format",
+        "A semantic similarity search against known SSNs"
+      ],
+      "correct": 2,
+      "explanation": "SSNs are structured data with a fixed format (###-##-####), making regex both fast and accurate. LLM-based approaches add unnecessary latency for structured PII."
+    },
+    {
+      "id": "q3",
+      "question": "Llama Guard is best described as:",
+      "options": [
+        "A firewall for network traffic to LLM APIs",
+        "An LLM fine-tuned to classify inputs and outputs against safety taxonomy categories",
+        "A rule-based blocklist maintained by Meta",
+        "A Python library for sanitizing prompt strings"
+      ],
+      "correct": 1,
+      "explanation": "Llama Guard is a Meta model fine-tuned specifically for safety classification, framing input/output moderation as a structured classification task with a defined taxonomy."
+    },
+    {
+      "id": "q4",
+      "question": "A medical chatbot guardrail that blocks the request whenever the safety classifier throws an exception is using which policy?",
+      "options": [
+        "Fail-open",
+        "Fail-soft",
+        "Fail-closed",
+        "Fail-safe-default"
+      ],
+      "correct": 2,
+      "explanation": "Fail-closed means any error or timeout in the guardrail results in the request being blocked. This is the correct policy for high-stakes domains like medical applications."
+    },
+    {
+      "id": "q5",
+      "question": "Which tradeoff do guardrail engineers constantly manage?",
+      "options": [
+        "Model size vs inference speed",
+        "False positives (blocking legitimate requests) vs false negatives (allowing harmful content)",
+        "Latency vs cost of GPU compute",
+        "Structured vs unstructured data formats"
+      ],
+      "correct": 1,
+      "explanation": "Setting thresholds too high blocks legitimate users (false positives hurt UX); setting them too low allows harmful content through (false negatives create risk). This balance is the core challenge."
+    },
+    {
+      "id": "q6",
+      "question": "Which tool provides a Colang-based policy language for defining guardrail conversation flows?",
+      "options": [
+        "Guardrails AI",
+        "Presidio",
+        "NVIDIA NeMo Guardrails",
+        "Perspective API"
+      ],
+      "correct": 2,
+      "explanation": "NVIDIA NeMo Guardrails uses the Colang programming language to define topical, safety, and execution rails as programmable conversation policies."
+    },
+    {
+      "id": "q7",
+      "question": "An LLM application uses an LLM-as-judge to evaluate every output for accuracy. What is the main drawback of this approach compared to a rule-based output check?",
+      "options": [
+        "LLM-as-judge cannot detect factual errors",
+        "LLM-as-judge adds significant latency and cost because it requires an additional model call",
+        "LLM-as-judge is less accurate than regex for all tasks",
+        "LLM-as-judge cannot be used for output guardrails, only input guardrails"
+      ],
+      "correct": 1,
+      "explanation": "An LLM-as-judge requires an additional inference call, which adds latency (often 500ms–2s) and API cost. It is more flexible but slower and more expensive than rule-based checks."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Input Guardrail",
+      "back": "A safety check applied to user messages *before* they reach the LLM. Examples include harmful intent classification, PII detection, and prompt injection detection."
+    },
+    {
+      "id": "f2",
+      "front": "Output Guardrail",
+      "back": "A safety check applied to LLM responses *before* they are returned to the user. Examples include toxicity scoring, PII redaction, and format validation."
+    },
+    {
+      "id": "f3",
+      "front": "PII (Personally Identifiable Information)",
+      "back": "Any data that could identify a specific individual — names, SSNs, email addresses, phone numbers, etc. Guardrails detect and redact PII using regex (structured) and NER models (unstructured)."
+    },
+    {
+      "id": "f4",
+      "front": "Toxicity Detection",
+      "back": "An output guardrail that scores text for harmful content (hate speech, threats, profanity). Tools include Perspective API and Detoxify. Responses above a score threshold are blocked or regenerated."
+    },
+    {
+      "id": "f5",
+      "front": "Llama Guard",
+      "back": "A Meta LLM fine-tuned as a safety classifier. It classifies both inputs and outputs against a safety taxonomy (violence, hate, self-harm, etc.), returning a safe/unsafe label with a violated category."
+    },
+    {
+      "id": "f6",
+      "front": "Fail-Open Policy",
+      "back": "When a guardrail component errors or times out, the request is *allowed through*. Prioritizes availability over safety. Appropriate for low-risk applications."
+    },
+    {
+      "id": "f7",
+      "front": "Fail-Closed Policy",
+      "back": "When a guardrail component errors or times out, the request is *blocked*. Prioritizes safety over availability. Required for high-stakes domains (medical, legal, finance)."
+    },
+    {
+      "id": "f8",
+      "front": "NeMo Guardrails",
+      "back": "An NVIDIA open-source toolkit that uses the Colang language to define programmable topical, safety, and execution rails for LLM applications. Integrates with LangChain."
+    },
+    {
+      "id": "f9",
+      "front": "LLM-as-Judge",
+      "back": "Using a second LLM call to evaluate the quality, safety, or factual grounding of the primary LLM's output. More flexible than rule-based checks but adds latency and cost."
+    }
+  ],
+  "videos": [
+    {
+      "title": "AI Guardrails Explained",
+      "youtube_id": "zjkBMFhNj_g",
+      "description": "Andrej Karpathy's introduction to large language models, covering the safety and alignment landscape that makes guardrails necessary in production systems."
+    },
+    {
+      "title": "Building Safe LLM Applications",
+      "youtube_id": "bQ5BoolX9Ag",
+      "description": "A walkthrough of attention mechanisms and transformer safety considerations, providing the architectural foundation for understanding where guardrails plug in."
+    }
+  ],
+  "has_practical": true,
+  "practical_description": "Build a two-stage guardrail pipeline: an input stage that detects PII using regex and flags harmful intent with a keyword classifier, and an output stage that scores toxicity and redacts any PII that slipped through. Test with sample prompts to see how block/pass decisions change as you adjust thresholds."
+}

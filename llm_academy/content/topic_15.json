@@ -1,0 +1,136 @@
+{
+  "id": "topic_15",
+  "level": 3,
+  "level_name": "Talking to LLMs",
+  "order": 2,
+  "title": "Zero-shot, One-shot, Few-shot",
+  "emoji": "🎯",
+  "duration_minutes": 15,
+  "eli8": "## Learning a New Dance 💃\n\nImagine your friend wants to teach you a new dance move.\n\n**Option 1 — Zero-shot:** They just say \"do the moonwalk.\" No demonstration, no hints. You either know it from before, or you guess! That's **zero-shot** — you ask the AI something without giving any examples.\n\n**Option 2 — One-shot:** They show you the move *once*, then say \"now you do it.\" One example is way more helpful! That's **one-shot** — one example before the question.\n\n**Option 3 — Few-shot:** They show you the move *three times, slowly*, from different angles. Now you really get it! That's **few-shot** — giving the AI a few examples so it knows exactly what pattern to follow.\n\n## Why Does This Work? 🤔\n\nAI models are really good at spotting patterns. When you show them a few examples of input → output, they go:\n\n> \"Oh! I see the pattern. Input looks like THIS, output looks like THAT. Let me do the same thing for the new input!\"\n\nIt's like showing someone: \n- 🍎 Apple → Fruit\n- 🥕 Carrot → Vegetable\n- 🍌 Banana → ???\n\nThey'll say \"Fruit!\" without you having to explain what a fruit is.\n\n## When Do You Use Each One? 🎮\n\n- 🏃 **Zero-shot** — for everyday tasks the AI already knows well (\"translate this to Spanish\", \"summarize this\")\n- 🎯 **One-shot** — when you want a specific *style* but only have one example\n- 🎪 **Few-shot** — when you have a special format or unusual pattern the AI hasn't seen before\n\n**Pro tip:** More examples doesn't always mean better! Three *great* examples beat ten *mediocre* ones every time. Quality beats quantity! ⭐",
+  "detail": "## Definitions\n\n**Zero-shot prompting** asks the model to perform a task with no examples provided. It relies entirely on the model's pre-trained knowledge and instruction-following capability:\n\n```\nClassify the sentiment of this review as positive, negative, or neutral:\n\"The battery life is disappointing but the screen is gorgeous.\"\n```\n\n**One-shot prompting** provides a single input-output demonstration before the actual query:\n\n```\nClassify sentiment. Example:\nInput: \"Shipping was slow but the product works great.\"\nOutput: Mixed\n\nNow classify:\nInput: \"The battery life is disappointing but the screen is gorgeous.\"\nOutput:\n```\n\n**Few-shot prompting** provides 3–10 demonstrations to establish a clear pattern:\n\n```\nInput: \"Absolutely love this keyboard, typing feels amazing.\" → Positive\nInput: \"Broken on arrival, complete waste of money.\" → Negative  \nInput: \"It's fine, does what it says.\" → Neutral\nInput: \"The battery life is disappointing but the screen is gorgeous.\" → ?\n```\n\n## How Few-Shot Works: In-Context Learning (ICL)\n\nIn-context learning is the model's emergent ability to adapt its behavior based on examples provided in the context window — *without any weight updates*. This is distinct from fine-tuning.\n\nThe mechanism: the transformer's attention layers use the example pairs as a form of dynamic pattern specification. The model learns the input-to-output mapping from the examples and applies it to the new query. ICL emerged as a property of sufficiently large models and was not explicitly trained for in the same way supervised tasks are.\n\n## Shot Count: Quality Over Quantity\n\nResearch findings on few-shot example selection:\n- **3–8 examples** is typically the sweet spot for most tasks\n- **Order matters**: examples placed closer to the query receive higher attention weight (recency bias)\n- **Diversity matters**: covering edge cases improves robustness\n- **Label distribution**: unbalanced classes in examples bias the output toward over-represented labels\n- **Format consistency**: inconsistent formatting between examples confuses the pattern\n\n## Zero-Shot Limitations\n\nZero-shot works well for:\n- Tasks well-represented in training data (translation, summarization, Q&A)\n- Common output formats the model has seen extensively\n\nZero-shot struggles with:\n- Novel output schemas the model hasn't seen\n- Domain-specific classification categories\n- Unconventional formatting requirements\n- Tasks requiring implicit style matching\n\n## Practical Decision Guide\n\n| Scenario | Recommended Approach |\n|---|---|\n| Common task, standard format | Zero-shot |\n| Custom output format, have one example | One-shot |\n| Novel task or unusual label scheme | Few-shot (3-5 examples) |\n| High-stakes classification | Few-shot with diverse examples |\n| Token budget is tight | Zero-shot with detailed instruction |\n\n## ICL as an Emergent Ability\n\nIn-context learning is considered an **emergent ability** — it appears suddenly above a certain model scale threshold and is largely absent in smaller models. Models below ~7B parameters show weak ICL; models above ~70B show strong ICL. This is why few-shot prompting is more effective with frontier models than smaller local models.\n\n## Code Example: Building a Few-Shot Prompt\n\n```python\nfew_shot_examples = [\n    {\"input\": \"I love this product!\", \"output\": \"positive\"},\n    {\"input\": \"Total garbage, never buying again.\", \"output\": \"negative\"},\n    {\"input\": \"It arrived on time.\", \"output\": \"neutral\"},\n]\n\ndef build_few_shot_prompt(examples, query):\n    prompt = \"Classify each review sentiment as positive, negative, or neutral.\\n\\n\"\n    for ex in examples:\n        prompt += f'Review: \"{ex[\"input\"]}\"\\nSentiment: {ex[\"output\"]}\\n\\n'\n    prompt += f'Review: \"{query}\"\\nSentiment:'\n    return prompt\n```",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What is zero-shot prompting?",
+      "options": [
+        "Prompting with zero tokens",
+        "Asking the model to perform a task with no examples provided",
+        "Asking the model a question it has never seen before in training",
+        "Sending an empty prompt to test the model's default behavior"
+      ],
+      "correct": 1,
+      "explanation": "Zero-shot prompting means giving the model a task with no input-output examples in the prompt. The model relies entirely on its pre-trained knowledge and instruction-following ability. It does not mean zero tokens or an empty prompt."
+    },
+    {
+      "id": "q2",
+      "question": "What is in-context learning (ICL)?",
+      "options": [
+        "Fine-tuning the model on a small dataset during inference",
+        "The model's ability to adapt its behavior from examples in the context window without updating its weights",
+        "A technique for compressing the context window to fit more examples",
+        "Training a model using only labeled examples with no pretraining"
+      ],
+      "correct": 1,
+      "explanation": "ICL is an emergent property where the model adapts its behavior based on input-output demonstrations provided in-context, without any gradient updates or weight changes. This is fundamentally different from fine-tuning."
+    },
+    {
+      "id": "q3",
+      "question": "You need an LLM to classify customer support tickets into 8 custom internal categories your company invented. Which approach is most likely to succeed?",
+      "options": [
+        "Zero-shot, because the model already knows about categories",
+        "Zero-shot with a very detailed system prompt",
+        "Few-shot with 2-3 examples per category",
+        "One-shot with a single example"
+      ],
+      "correct": 2,
+      "explanation": "Custom categories invented by your company are unlikely to appear in training data in the way you need them. Few-shot examples (2-3 per category) establish the specific mapping the model needs. Zero-shot risks the model interpreting category names differently."
+    },
+    {
+      "id": "q4",
+      "question": "How does the order of examples in a few-shot prompt affect outputs?",
+      "options": [
+        "Order has no effect; only the total number of examples matters",
+        "Earlier examples are always weighted more heavily",
+        "Examples closer to the query tend to receive higher attention due to recency bias",
+        "The model averages across all examples equally"
+      ],
+      "correct": 2,
+      "explanation": "Due to recency bias in attention mechanisms, examples placed later (closer to the query) tend to have more influence. This means you should place your most representative or important examples last in the few-shot sequence."
+    },
+    {
+      "id": "q5",
+      "question": "You have 20 examples available. Should you include all 20 in a few-shot prompt?",
+      "options": [
+        "Yes — more examples always produce better results",
+        "No — 20 examples is too many; use zero-shot instead",
+        "Not necessarily — 3-8 diverse, high-quality examples typically outperform 20 mediocre ones",
+        "Yes, but only if the model has a 128k context window"
+      ],
+      "correct": 2,
+      "explanation": "Research shows diminishing and sometimes negative returns beyond ~8 examples for most tasks. A curated set of 3-8 diverse, well-formatted, high-quality examples typically outperforms a larger set of mediocre ones. Quality and diversity matter more than quantity."
+    },
+    {
+      "id": "q6",
+      "question": "ICL (in-context learning) is considered an 'emergent ability.' What does this mean?",
+      "options": [
+        "It was deliberately designed and trained into the model",
+        "It appears only in models with specialized training data",
+        "It appears suddenly above a certain scale threshold and is largely absent in smaller models",
+        "It emerges from the user's prompting style, not model size"
+      ],
+      "correct": 2,
+      "explanation": "Emergent abilities are capabilities that appear unexpectedly at scale thresholds. ICL is weak or absent in smaller models and becomes a reliable capability in large models (roughly 7B+ parameters), even though it was not explicitly trained as a discrete skill."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Zero-shot prompting",
+      "back": "Asking a model to complete a task with no input-output examples in the prompt. Relies entirely on the model's pre-trained knowledge. Best for common tasks well-represented in training data."
+    },
+    {
+      "id": "f2",
+      "front": "One-shot prompting",
+      "back": "Providing exactly one input-output demonstration before the actual query. Useful when you want to show a specific style or format but have limited examples."
+    },
+    {
+      "id": "f3",
+      "front": "Few-shot prompting",
+      "back": "Providing 3–10 input-output demonstrations before the query. The model identifies the pattern and applies it. Most effective for novel tasks, custom formats, or unusual classification schemes."
+    },
+    {
+      "id": "f4",
+      "front": "In-context learning (ICL)",
+      "back": "A model's emergent ability to adapt its behavior based on examples given in the context window — without any weight updates or fine-tuning. The model infers the task from the demonstration pattern."
+    },
+    {
+      "id": "f5",
+      "front": "Emergent ability",
+      "back": "A model capability that appears suddenly above a certain scale threshold, absent in smaller models. ICL, chain-of-thought reasoning, and arithmetic are examples of emergent abilities in LLMs."
+    },
+    {
+      "id": "f6",
+      "front": "Demonstration (in few-shot)",
+      "back": "A single input-output pair provided as an example in a few-shot prompt. Multiple demonstrations together define the pattern the model should follow for the new query."
+    },
+    {
+      "id": "f7",
+      "front": "Recency bias in few-shot",
+      "back": "The tendency for examples placed later in the prompt (closer to the query) to have more influence on the output, due to how attention mechanisms weight nearby tokens."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Prompt Engineering Guide — Few-Shot and Zero-Shot Techniques",
+      "youtube_id": "1bUy-1hGZpI",
+      "description": "Covers zero-shot, one-shot, and few-shot prompting strategies with practical examples showing how example count and quality affect model outputs."
+    },
+    {
+      "title": "Transformers Explained — How Attention Enables In-Context Learning",
+      "youtube_id": "4Bdc55j80l8",
+      "description": "Explains the transformer attention mechanism, which is the underlying reason why in-context learning from few-shot examples is possible."
+    }
+  ],
+  "has_practical": true,
+  "practical_description": "A live demo where you run the same classification task using zero-shot, one-shot, and three-shot prompts, observing how adding examples shifts the model's output format and accuracy across a test set."
+}

@@ -1,0 +1,141 @@
+{
+  "id": "topic_24",
+  "level": 4,
+  "level_name": "Using LLMs: APIs & the Tool Landscape",
+  "order": 4,
+  "title": "Coding Assistants: Claude Code, Codex, Copilot, Cursor",
+  "emoji": "💻",
+  "duration_minutes": 15,
+  "eli8": "# Your AI Pair Programmer 🤝\n\nImagine having a brilliant friend who has read every line of code ever written — every tutorial, every textbook, every open-source project on the entire internet. And they're sitting right next to you, ready to help 24/7, never getting tired or grumpy.\n\nThat's what **coding assistants** are!\n\n## The Different Helpers 🛠️\n\n- 🟣 **GitHub Copilot** — Lives inside your code editor (VS Code). As you type, it finishes your sentences! It's like autocomplete, but it writes whole functions. It learned from millions of GitHub projects.\n\n- 🟠 **Claude Code** — Goes way beyond just finishing sentences. It can read your whole project, plan what needs to be done, write new files, run commands in the terminal, fix errors it caused, and even install packages. It's like hiring a junior developer!\n\n- 🔵 **Cursor** — A whole code editor (like VS Code) rebuilt from scratch with AI inside. It understands your ENTIRE codebase at once and can make changes across many files.\n\n- 🖥️ **Aider** — Like Claude Code but runs in your terminal. Open-source and free to use!\n\n## What They're Good At 🌟\n\n- ✅ Writing boilerplate code (the boring stuff)\n- ✅ Explaining error messages\n- ✅ Writing tests\n- ✅ Translating between programming languages\n- ✅ Suggesting better ways to write code\n\n## Watch Out! ⚠️\n\nAI coding assistants make mistakes too:\n- 🐛 They might use **functions that don't exist** (hallucinated APIs)\n- 🔓 They might write **insecure code** if you don't ask them to be careful\n- 🧪 They might **skip writing tests** unless you ask\n\nAlways review what the AI writes — you're the pilot, the AI is your co-pilot! ✈️",
+  "detail": "## What Are AI Coding Assistants?\n\nAI coding assistants are tools that integrate LLMs into software development workflows. They range from inline code completion (suggesting the next few lines) to fully agentic systems (planning, writing, running, and debugging entire features autonomously).\n\n## GitHub Copilot\n\nCopilot is the most widely adopted coding assistant, built as a VS Code extension (also available in JetBrains IDEs, Neovim, and others). It is powered by OpenAI Codex and, more recently, GPT-4 class models.\n\n**How it works:**\n- Continuously encodes the open file and surrounding context (imports, function signatures, comments)\n- Generates inline completions as ghost text that you accept with Tab\n- Uses surrounding code and docstrings as the prompt — **well-written comments dramatically improve suggestion quality**\n\n**Chat mode (Copilot Chat):** Lets you ask questions about code, explain functions, generate tests, and fix bugs in a chat interface alongside the editor.\n\n## Claude Code\n\nClaude Code is Anthropic's **agentic coding assistant** — a significant architectural step beyond inline completion. It operates as a CLI tool with access to your filesystem and terminal.\n\n**Capabilities:**\n- Reads and understands entire codebases\n- Plans multi-step implementation (designs a feature before writing code)\n- Creates, edits, and deletes files\n- Runs terminal commands (tests, installs, builds, linters)\n- Observes output and fixes errors in a feedback loop\n- Manages git operations\n\n**Typical workflow:** You describe a feature or bug in natural language. Claude Code analyzes the codebase, proposes a plan, executes it across multiple files, runs tests to verify, and iterates until complete.\n\n## Cursor\n\nCursor is an AI-native IDE — a full VS Code fork rebuilt with AI as a first-class citizen rather than an afterthought extension.\n\n**Key differentiator:** Cursor indexes your entire repository and sends relevant context to the model automatically. This enables coherent multi-file refactors and changes that respect your existing patterns and conventions.\n\n**Composer mode:** Describe changes across the whole codebase in natural language; Cursor applies them and shows a diff for review.\n\n## Aider\n\nAider is an open-source command-line pair programmer. You run it in a terminal, point it at your repo, and describe changes. It supports multiple LLM backends (Claude, GPT-4, local models). Because it's open-source, it can be self-hosted with open-weight models, making it suitable for environments where code cannot leave the machine.\n\n## How They Work Under the Hood\n\nAll coding assistants follow the same fundamental pattern:\n\n1. **Context encoding:** The tool selects relevant context — open files, related files (via embeddings or static analysis), recent changes, error messages\n2. **Prompt construction:** Assembles a prompt including the context and the user's request\n3. **LLM inference:** The model attends to the context and generates code\n4. **Insertion:** Output is inserted into the editor or applied to files\n\nThe quality ceiling is fundamentally limited by the underlying LLM's capabilities and the quality of context provided.\n\n## The HumanEval Benchmark\n\nHumanEval is the standard benchmark for code generation. It consists of 164 Python programming problems with docstrings and unit tests. The metric is **pass@1** (fraction solved correctly on the first attempt). State-of-the-art models score above 90%.\n\nLimitations: HumanEval problems are relatively simple and self-contained. Real-world coding involves understanding large codebases, legacy constraints, and ambiguous requirements — much harder to benchmark.\n\n## Effective Usage Patterns\n\n- **Write good comments/docstrings before asking for code** — they serve as the spec\n- **Keep functions small and focused** — smaller scope = more accurate generation\n- **Always review generated code** — AI can produce plausible-looking but incorrect logic\n- **Ask for tests explicitly** — assistants won't always include them unprompted\n- **Specify security constraints** — \"use parameterized queries\", \"sanitize user input\"\n\n## Limitations and Risks\n\n- **Hallucinated APIs:** The model may reference library functions or parameters that do not exist\n- **Outdated knowledge:** Training cutoffs mean the model may not know the latest library versions\n- **Insecure patterns:** Generated code may contain SQL injection vulnerabilities, hardcoded credentials, or improper error handling\n- **Test coverage gaps:** Assistants tend to generate the happy path and miss edge cases\n- **Over-reliance:** Developers who don't review AI-generated code thoroughly introduce hard-to-find bugs",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What is the fundamental difference between GitHub Copilot and Claude Code?",
+      "options": [
+        "Copilot uses GPT-4 while Claude Code uses Llama 3",
+        "Copilot provides inline completions inside an editor; Claude Code is an agentic system that plans, writes files, and runs commands",
+        "Copilot works with all languages; Claude Code only supports Python",
+        "Claude Code is a VS Code extension; Copilot is a standalone IDE"
+      ],
+      "correct": 1,
+      "explanation": "Copilot is primarily an inline completion tool — it suggests code as you type. Claude Code is an agentic system that can plan features, write and edit multiple files, execute terminal commands, observe results, and iterate — acting more like a junior developer than an autocomplete system."
+    },
+    {
+      "id": "q2",
+      "question": "What does the HumanEval benchmark measure?",
+      "options": [
+        "How fast a model can generate code",
+        "Whether a model's generated Python functions pass unit tests (pass@1 metric)",
+        "How many programming languages a model supports",
+        "Human satisfaction ratings of AI-generated code"
+      ],
+      "correct": 1,
+      "explanation": "HumanEval consists of 164 Python programming problems, each with a docstring spec and unit tests. The pass@1 metric measures the fraction of problems the model solves correctly on the first attempt. It is the standard benchmark for comparing code generation quality across models."
+    },
+    {
+      "id": "q3",
+      "question": "Which practice most improves the quality of GitHub Copilot suggestions?",
+      "options": [
+        "Using a faster internet connection",
+        "Writing detailed comments and docstrings before the function implementation",
+        "Having exactly 100 lines of code open in the editor",
+        "Always using Python rather than JavaScript"
+      ],
+      "correct": 1,
+      "explanation": "Copilot uses the surrounding code as its prompt, and comments/docstrings serve as the specification. A well-written function docstring that explains inputs, outputs, and behavior gives Copilot the clearest possible signal for what to generate. Vague or absent comments lead to generic, often incorrect suggestions."
+    },
+    {
+      "id": "q4",
+      "question": "What is Cursor's key differentiator compared to other coding assistants?",
+      "options": [
+        "It is free and open-source",
+        "It is a full IDE that indexes the entire repository and provides AI with whole-codebase context",
+        "It only works with Python projects",
+        "It runs entirely offline without any cloud API calls"
+      ],
+      "correct": 1,
+      "explanation": "Cursor is a VS Code fork rebuilt as an AI-native IDE. It indexes the full repository and automatically injects relevant context from across the codebase into prompts. This enables coherent multi-file refactors that understand existing patterns — something extension-based tools struggle with."
+    },
+    {
+      "id": "q5",
+      "question": "A developer uses Copilot to generate a database query function and it looks correct. What should they do before shipping it?",
+      "options": [
+        "Ship it immediately — Copilot has near-perfect accuracy on HumanEval",
+        "Review it for correctness, check for SQL injection vulnerabilities, and verify the API methods actually exist",
+        "Run it through a spell checker",
+        "Ask Copilot to regenerate it three times and pick the best version"
+      ],
+      "correct": 1,
+      "explanation": "AI-generated code must always be reviewed. Common issues include hallucinated API methods, SQL injection vulnerabilities, missing error handling, and logic bugs on edge cases. HumanEval scores are measured on simple isolated problems — real production code is much more complex. Treat generated code as a draft, not a finished product."
+    },
+    {
+      "id": "q6",
+      "question": "What is Aider's primary advantage over Copilot or Cursor?",
+      "options": [
+        "It has the highest benchmark scores of any coding assistant",
+        "It is open-source and can run with local open-weight models, keeping code off the cloud",
+        "It automatically deploys code to production",
+        "It only uses the Anthropic Claude API"
+      ],
+      "correct": 1,
+      "explanation": "Aider is open-source and supports multiple LLM backends, including self-hosted open-weight models like Llama 3. This makes it suitable for environments where source code cannot be sent to external APIs — regulated industries, proprietary codebases, or air-gapped development environments."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "What is GitHub Copilot?",
+      "back": "A VS Code extension (and other IDEs) that provides AI-powered inline code completion. It continuously encodes the open file and surrounding context to generate ghost-text suggestions you accept with Tab. Powered by OpenAI's models, trained on public GitHub repositories."
+    },
+    {
+      "id": "f2",
+      "front": "What is Claude Code?",
+      "back": "Anthropic's agentic coding assistant that operates as a CLI tool. Unlike completion tools, it can read entire codebases, plan implementations, create/edit/delete files, run terminal commands (tests, builds, installs), observe results, and iterate — acting as an autonomous coding agent."
+    },
+    {
+      "id": "f3",
+      "front": "What is Cursor?",
+      "back": "An AI-native IDE built as a fork of VS Code. It indexes the entire repository and provides full codebase context to AI models. Its Composer mode applies changes across multiple files simultaneously based on a natural language description, making it strong for large refactors."
+    },
+    {
+      "id": "f4",
+      "front": "What is Aider?",
+      "back": "An open-source command-line pair programming tool that integrates LLMs with your local git repository. It supports multiple backends (Claude, GPT-4, local models), making it suitable for privacy-sensitive environments where code cannot be sent to external cloud APIs."
+    },
+    {
+      "id": "f5",
+      "front": "What is code completion vs. agentic coding?",
+      "back": "Code completion (Copilot) suggests the next lines as you type — it is reactive and inline. Agentic coding (Claude Code, Cursor Composer) involves the AI proactively planning, implementing across multiple files, running commands, observing errors, and iterating — it acts with greater autonomy."
+    },
+    {
+      "id": "f6",
+      "front": "What is HumanEval and what does pass@1 mean?",
+      "back": "HumanEval is a benchmark of 164 Python coding problems, each with unit tests. pass@1 is the fraction of problems solved correctly on the first generation attempt. It is the standard metric for comparing code generation quality across LLMs."
+    },
+    {
+      "id": "f7",
+      "front": "What are hallucinated APIs in AI-generated code?",
+      "back": "When a model generates code that calls functions, methods, or library APIs that do not actually exist. The code looks syntactically correct but will fail at runtime with AttributeError or ImportError. This is a common failure mode — always verify that generated API calls exist in the actual library."
+    },
+    {
+      "id": "f8",
+      "front": "What is inline completion in a coding assistant?",
+      "back": "A mode where the AI suggests code directly in the editor as you type, appearing as greyed-out 'ghost text.' You press Tab to accept or keep typing to dismiss. GitHub Copilot pioneered this UX pattern. Suggestions are generated based on the surrounding file context and your cursor position."
+    }
+  ],
+  "videos": [
+    {
+      "title": "GitHub Copilot Full Demo and Tutorial",
+      "youtube_id": "nzG8jfqvKdQ",
+      "description": "Hands-on demonstration of GitHub Copilot in VS Code: inline completions, chat mode, test generation, and tips for getting the best results from AI-assisted coding."
+    },
+    {
+      "title": "Claude Code Overview and Demo",
+      "youtube_id": "FKByLkRZyMU",
+      "description": "Introduction to Claude Code's agentic capabilities: how it reads codebases, plans features, executes multi-file changes, and runs terminal commands to build and verify implementations."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

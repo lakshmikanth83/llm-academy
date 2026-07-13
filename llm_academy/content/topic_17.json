@@ -1,0 +1,131 @@
+{
+  "id": "topic_17",
+  "level": 3,
+  "level_name": "Talking to LLMs",
+  "order": 4,
+  "title": "Prompt Chaining",
+  "emoji": "⛓️",
+  "duration_minutes": 15,
+  "eli8": "## The Assembly Line 🏭\n\nImagine a car factory. Nobody builds the whole car in one shot! Instead:\n- Worker 1 builds the frame\n- Worker 2 adds the engine\n- Worker 3 installs the doors\n- Worker 4 does the painting\n\nEach worker takes what the previous worker made and adds their part.\n\n**Prompt chaining works exactly the same way!** Instead of asking the AI to do a giant complicated task all at once, you break it into smaller steps. The output of Step 1 becomes the input for Step 2, and so on.\n\n## A Real Example 📚\n\nSay you want to make a study guide from a long textbook chapter:\n\n1. 📖 **Step 1:** \"Summarize this chapter in 5 paragraphs\" → *Summary*\n2. 🔍 **Step 2:** \"From this summary, extract the 10 most important vocabulary words\" → *Word list*\n3. ❓ **Step 3:** \"Create 5 quiz questions based on these words\" → *Quiz*\n4. 📋 **Step 4:** \"Format these quiz questions as a printable worksheet\" → *Finished worksheet*\n\nEach step is simple. Together, they build something complex!\n\n## Why Not Just Do It All at Once? 🤔\n\nGreat question! Sometimes you can. But chaining helps when:\n- 🐘 The task is **too big** to do perfectly in one go\n- 🔍 You want to **check** the output between steps (and fix mistakes early!)\n- 🔀 Different steps need **different instructions**\n- 🧱 You want to **reuse** parts of the pipeline for different tasks\n\n**Watch out:** If Step 1 makes a mistake, Step 2 and 3 will build on that mistake! It's like a broken telephone game — errors can snowball. 📞",
+  "detail": "## What Is Prompt Chaining?\n\nPrompt chaining is the pattern of decomposing a complex task into a sequence of simpler subtasks, where the output of each prompt serves as input to the next. Rather than relying on a single large prompt to do everything, a chain orchestrates multiple focused LLM calls.\n\n```\n[User Request]\n    ↓\n[Prompt 1] → Output_1\n                ↓\n          [Prompt 2] → Output_2\n                          ↓\n                    [Prompt 3] → Final Output\n```\n\n## When to Use Prompt Chaining\n\n**Use chaining when:**\n- The task exceeds reliable single-prompt complexity (long document analysis, multi-step code generation)\n- Intermediate validation is required (human-in-the-loop or programmatic checks between steps)\n- The full context of all steps would exceed the context window\n- Different steps benefit from different model configurations (temperature, model size, tool access)\n- You need error isolation — catching failures at the step level before they propagate\n\n**Don't over-chain:** Simple tasks done in one prompt are more efficient. Chaining introduces latency, complexity, and more points of failure.\n\n## Chain Patterns\n\n### Sequential Pipeline\nThe most common pattern — each output feeds the next step linearly:\n```python\nsummary = llm(f\"Summarize: {document}\")\nfacts = llm(f\"Extract key facts from: {summary}\")\ntable = llm(f\"Format as markdown table: {facts}\")\n```\n\n### Conditional Branching\nThe chain's path depends on an intermediate output:\n```python\nsentiment = llm(f\"Is this review positive or negative? Reply with one word: {review}\")\nif sentiment.strip().lower() == \"positive\":\n    response = llm(f\"Write a thank-you reply to: {review}\")\nelse:\n    response = llm(f\"Write an empathetic escalation reply to: {review}\")\n```\n\n### Map-Reduce (Parallel + Fold)\nProcess many items independently, then aggregate:\n```python\n# Map: process each chunk in parallel\nchunk_summaries = [llm(f\"Summarize: {chunk}\") for chunk in document_chunks]\n# Reduce: combine into final output\nfinal_summary = llm(f\"Combine into a coherent summary: {' '.join(chunk_summaries)}\")\n```\n\n## Error Accumulation Problem\n\nErrors in early steps compound through the chain. If Step 1 misclassifies input, every downstream step may produce wrong but locally coherent output. Mitigations:\n\n- **Validation steps**: insert a verification prompt between stages\n- **Schema enforcement**: use structured output at each step to catch malformed intermediate data\n- **Human checkpoints**: surface intermediate outputs for review on high-stakes tasks\n- **Retry logic**: detect and retry failed or malformed steps\n\n```python\ndef validated_step(prompt, validate_fn, max_retries=3):\n    for attempt in range(max_retries):\n        result = llm(prompt)\n        if validate_fn(result):\n            return result\n        prompt += f\"\\n\\nPrevious attempt was invalid: {result}. Please try again.\"\n    raise ValueError(\"Step failed after max retries\")\n```\n\n## Example: Research Pipeline\n\nA real-world chained pipeline for automated research summaries:\n\n1. **Search**: Retrieve relevant articles for a query\n2. **Extract**: Per article — extract claims, methodology, conclusions\n3. **Reconcile**: Identify agreements and contradictions across extractions\n4. **Synthesize**: Generate a unified summary with citations\n5. **Format**: Output as structured markdown report\n\n## Parallelization\n\nChain steps that are independent of each other can run in parallel to reduce total latency:\n\n```python\nimport asyncio\n\nasync def parallel_chain(documents):\n    summaries = await asyncio.gather(*[\n        async_llm(f\"Summarize: {doc}\") for doc in documents\n    ])\n    return await async_llm(f\"Synthesize these summaries: {summaries}\")\n```\n\n## LangChain and Orchestration Frameworks\n\nFrameworks like LangChain, LlamaIndex, and Haystack provide abstractions for building chains:\n- `SequentialChain`: linear pipeline\n- `RouterChain`: conditional branching\n- `TransformChain`: non-LLM processing steps\n- Memory integration for passing state across turns",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What is prompt chaining?",
+      "options": [
+        "Sending the same prompt multiple times to average the outputs",
+        "Decomposing a complex task into a sequence of simpler prompts where each output feeds the next",
+        "Linking multiple AI models together with a shared memory",
+        "Adding chain-of-thought reasoning to every prompt automatically"
+      ],
+      "correct": 1,
+      "explanation": "Prompt chaining breaks a complex task into focused subtasks, with each step's output becoming the next step's input. This is distinct from chain-of-thought (which is reasoning within a single prompt) or model ensembling."
+    },
+    {
+      "id": "q2",
+      "question": "You are building a pipeline: Step 1 extracts entities, Step 2 fetches their Wikipedia summaries (external API call), Step 3 writes a report. Step 1 and Step 3 are LLM calls. What is Step 2?",
+      "options": [
+        "An LLM call with retrieval augmentation",
+        "A non-LLM transformation step — it is still a valid link in a prompt chain",
+        "A prompt chaining error — you cannot mix LLM and non-LLM steps",
+        "A conditional branching step"
+      ],
+      "correct": 1,
+      "explanation": "Prompt chains can and often should include non-LLM steps: API calls, database lookups, file I/O, validation functions. The chain pattern is about orchestrating a pipeline, not restricting it to LLM-only steps."
+    },
+    {
+      "id": "q3",
+      "question": "What is the 'error accumulation problem' in prompt chaining?",
+      "options": [
+        "Each LLM API call has a small probability of timeout errors that compound",
+        "Errors or inaccuracies in early chain steps propagate and compound through downstream steps",
+        "Longer chains use more tokens, accumulating cost errors",
+        "Models make more errors when given outputs from other models"
+      ],
+      "correct": 1,
+      "explanation": "Because each step builds on the previous output, a mistake in Step 1 will be treated as ground truth by Step 2. The chain can produce a completely wrong but internally consistent final output. This is why validation checkpoints are important."
+    },
+    {
+      "id": "q4",
+      "question": "In a map-reduce chain, what happens in the 'map' phase?",
+      "options": [
+        "A routing function maps inputs to different chain branches",
+        "Multiple items are processed independently, often in parallel",
+        "A geographic map is generated from location data",
+        "The model maps input tokens to output tokens in a single pass"
+      ],
+      "correct": 1,
+      "explanation": "Map-reduce is a pattern where the map phase processes many items independently (ideally in parallel) and the reduce phase combines the results. For LLMs: map = summarize each document chunk; reduce = synthesize all summaries into one."
+    },
+    {
+      "id": "q5",
+      "question": "When is prompt chaining NOT the right approach?",
+      "options": [
+        "When the task involves multiple sequential steps",
+        "When you need to validate intermediate results",
+        "When the task is simple enough to be done reliably in one prompt",
+        "When using a small context window model"
+      ],
+      "correct": 2,
+      "explanation": "Chaining adds orchestration complexity, latency (multiple API calls), and more failure points. For tasks that a single well-crafted prompt handles reliably, chaining introduces unnecessary overhead without benefit."
+    },
+    {
+      "id": "q6",
+      "question": "What is a human-in-the-loop checkpoint in a prompt chain?",
+      "options": [
+        "A step where a human manually types a prompt instead of the system",
+        "A pause point where intermediate output is surfaced for human review before the chain continues",
+        "A prompt that asks the model to simulate a human reviewer",
+        "An API rate limit that forces a human to authorize continued API usage"
+      ],
+      "correct": 1,
+      "explanation": "A human-in-the-loop checkpoint surfaces an intermediate result to a human for review or approval before the chain proceeds. This is especially important for high-stakes tasks where an early error could have serious downstream consequences."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Prompt chaining",
+      "back": "A pattern that decomposes complex tasks into sequential subtasks, where each prompt's output becomes the next prompt's input. Enables handling tasks that are too complex or too long for a single prompt."
+    },
+    {
+      "id": "f2",
+      "front": "Sequential pipeline",
+      "back": "The simplest prompt chain pattern: Step 1 → Step 2 → Step 3, each step linearly feeding the next. Output from one prompt is inserted directly into the next prompt's template."
+    },
+    {
+      "id": "f3",
+      "front": "Conditional branching (in chains)",
+      "back": "A chain pattern where the path taken depends on the content of an intermediate output. The model (or code) evaluates an output and routes to different downstream prompts based on the result."
+    },
+    {
+      "id": "f4",
+      "front": "Error accumulation",
+      "back": "The compounding of mistakes through a chain: an error in an early step is treated as ground truth by subsequent steps, potentially producing a wrong but internally consistent final output."
+    },
+    {
+      "id": "f5",
+      "front": "Map-reduce chain",
+      "back": "A two-phase chain pattern: map = process many items independently (often in parallel); reduce = aggregate all results into a single output. Commonly used for large document processing."
+    },
+    {
+      "id": "f6",
+      "front": "Subchain",
+      "back": "A reusable sequence of prompts that can be embedded as a component within a larger chain. Enables modular design where common processing steps are defined once and composed as needed."
+    }
+  ],
+  "videos": [
+    {
+      "title": "LangChain Overview — Building LLM Pipelines",
+      "youtube_id": "mrjq3lFz23s",
+      "description": "An introduction to LangChain's sequential and conditional chain primitives, showing how to wire LLM calls together to build complex document processing and Q&A pipelines."
+    },
+    {
+      "title": "Advanced Prompt Engineering — Chaining and Pipelines",
+      "youtube_id": "1bUy-1hGZpI",
+      "description": "Covers advanced prompting strategies including prompt chaining patterns, error handling in multi-step pipelines, and best practices for intermediate validation."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

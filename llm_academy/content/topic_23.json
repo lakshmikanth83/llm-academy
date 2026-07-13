@@ -1,0 +1,153 @@
+{
+  "id": "topic_23",
+  "level": 4,
+  "level_name": "Using LLMs: APIs & the Tool Landscape",
+  "order": 3,
+  "title": "The Big Players: Claude, ChatGPT, Gemini, Grok, Llama",
+  "emoji": "🏆",
+  "duration_minutes": 20,
+  "eli8": "# The AI Sports League 🏅\n\nThe AI world is like a sports league — there are several big teams competing, and each one has different strengths. Let's meet them!\n\n## The Starting Lineup 🌟\n\n- 🟠 **Claude (Anthropic)** — The careful, thoughtful player. Claude is trained to be safe, honest, and great at coding and long documents. It has a huge memory — it can read a 500-page book in one go!\n\n- 🟢 **ChatGPT (OpenAI)** — The famous pioneer! ChatGPT was the first big star and is still super popular. The newest versions (like GPT-4o) can see images AND hear your voice. OpenAI also makes \"reasoning models\" (o1, o3) that think extra hard before answering.\n\n- 🔵 **Gemini (Google)** — The data wizard. Google's AI is best friends with YouTube, Google Docs, and Gmail. It can handle ONE MILLION words of context — like reading 10 novels at once! Great for searching the internet in real time.\n\n- ⚡ **Grok (xAI)** — The internet kid. Made by Elon Musk's company, Grok can read live posts from X (formerly Twitter) right now. It also has a funny, sarcastic personality!\n\n- 🦙 **Llama (Meta)** — The open-source hero! Meta gives Llama away for FREE. Anyone can download it, run it on their own computer, and even modify it. It comes in different sizes — tiny (8B), medium (70B), and giant (405B).\n\n## How Do We Know Who's Best? 📊\n\nScientists test AI with standard exams:\n- **MMLU** — A huge test with questions from 57 subjects (like SAT but harder)\n- **HumanEval** — Tests how well AI can write code\n- **LMSYS Arena** — Humans vote on which AI answer they prefer\n\n## Picking the Right One 🎯\n\n- Want privacy? Use **Llama** on your own computer\n- Need to read huge documents? Use **Gemini** or **Claude**\n- Building a chatbot? Any of them work great!\n- On a budget? Use smaller, cheaper models\n\nDifferent tools for different jobs — just like you wouldn't use a hammer to eat soup! 🥄",
+  "detail": "## The LLM Provider Landscape\n\nThe frontier LLM market has consolidated around a small set of well-capitalized labs, each with distinct model families, architectural choices, and positioning.\n\n## Anthropic — Claude Family\n\nAnthropic structures its Claude models in three tiers targeting different cost/capability tradeoffs:\n\n- **Claude Haiku** — Fastest, cheapest, ideal for high-throughput classification, extraction, and simple Q&A\n- **Claude Sonnet** — Balanced capability and cost; the workhorse for most production workloads including coding, analysis, and complex reasoning\n- **Claude Opus** — Most capable tier, highest cost; use for the hardest tasks that justify the spend\n\n**Distinctive strengths:** Constitutional AI safety training, 200K token context window, strong instruction following, top-tier coding and long-document analysis. Anthropic's research focus on alignment gives Claude a reputation for fewer harmful outputs and more reliable refusals on genuinely harmful requests.\n\n## OpenAI — GPT-4o and o-series\n\n**GPT-4o** is OpenAI's flagship multimodal model: it accepts text, images, and audio natively. It is fast and broadly capable.\n\n**o1 / o3 (reasoning models):** A new paradigm where the model uses extended internal chain-of-thought before producing an answer. These models trade latency for dramatically improved performance on math, science, and hard coding problems. They are best suited for tasks where correctness matters more than speed.\n\nOpenAI's advantage: largest developer ecosystem, widest third-party tooling, first-mover brand recognition.\n\n## Google DeepMind — Gemini Family\n\n**Gemini 1.5 Pro / 2.0:** Natively multimodal (trained on text, images, audio, and video from the start). Key advantage: **1 million token context window** — suitable for entire codebases or large document collections.\n\nGoogle integrates Gemini into Workspace (Docs, Sheets, Gmail) and provides real-time web grounding via Google Search. Vertex AI is the enterprise deployment platform.\n\n## xAI — Grok\n\nBuilt by Elon Musk's xAI, Grok's primary differentiator is **real-time X (Twitter) data access** — the model can reference current social media conversations and trending topics. It adopts a more casual, snarky tone compared to other models. Available through X Premium and an API.\n\n## Meta — Llama 3 (Open Weights)\n\nLlama 3 is released under a permissive license that allows commercial use and modification. Available in **8B, 70B, and 405B** parameter variants. The 8B model runs efficiently on consumer GPUs (8–16GB VRAM).\n\n**Why open weights matter:**\n- Deploy on your own infrastructure — data never leaves your servers\n- No per-token API cost (only inference compute)\n- Fine-tune on proprietary data\n- Community ecosystem: Hugging Face, Ollama, llama.cpp, vLLM\n\n**Mistral AI** (European, also open-weights) offers Mistral 7B, Mixtral 8x7B (mixture-of-experts), and Mistral Large for API access.\n\n## Model Evaluation Benchmarks\n\n| Benchmark | What It Measures |\n|---|---|\n| **MMLU** | 57-subject academic knowledge (high school to expert level) |\n| **HumanEval** | Code generation correctness (pass@1 on Python problems) |\n| **MATH** | Competition mathematics |\n| **LMSYS Chatbot Arena** | Human preference voting (ELO rating) |\n| **BIG-Bench Hard** | Hard reasoning tasks that earlier models failed on |\n\nBenchmarks have limitations: models can be fine-tuned to perform well on benchmarks without generalizing. Always evaluate on your specific task.\n\n## Choosing the Right Model\n\n| Decision Factor | Recommendation |\n|---|---|\n| Data privacy / on-prem | Llama 3 or Mistral self-hosted |\n| Longest context window | Gemini 1.5 Pro (1M tokens) |\n| Best coding | Claude Sonnet/Opus or GPT-4o |\n| Lowest cost at scale | Claude Haiku or Llama 3 8B |\n| Real-time web data | Gemini (Search grounding) or Grok |\n| Hard math/reasoning | OpenAI o1/o3 or Claude Opus |\n| Multimodal (vision+audio) | GPT-4o or Gemini |\n\n**Model routing:** Production systems often route queries to different models based on complexity — cheap model for simple queries, expensive model only when needed.",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "Which Claude model tier is described as 'fastest and cheapest, ideal for high-throughput tasks'?",
+      "options": [
+        "Claude Opus",
+        "Claude Sonnet",
+        "Claude Haiku",
+        "Claude Instant"
+      ],
+      "correct": 2,
+      "explanation": "Claude Haiku is Anthropic's fastest and most affordable tier, designed for high-throughput use cases like classification, simple Q&A, and extraction where cost and speed matter more than maximum capability."
+    },
+    {
+      "id": "q2",
+      "question": "What is the key difference between OpenAI's o1/o3 models and standard GPT-4o?",
+      "options": [
+        "o1/o3 are multimodal while GPT-4o is text-only",
+        "o1/o3 use extended internal chain-of-thought reasoning before answering, trading latency for accuracy",
+        "o1/o3 are smaller and faster models",
+        "o1/o3 have access to real-time internet data"
+      ],
+      "correct": 1,
+      "explanation": "OpenAI's o1 and o3 reasoning models perform an extended internal thinking process before generating their final answer. This significantly improves performance on hard math, science, and coding problems at the cost of higher latency. They represent a different paradigm from standard autoregressive generation."
+    },
+    {
+      "id": "q3",
+      "question": "What is the primary advantage of Llama 3 being 'open weights'?",
+      "options": [
+        "It automatically updates to the latest training data every week",
+        "It can be deployed on your own infrastructure so data never leaves your servers",
+        "It has higher benchmark scores than all closed-source models",
+        "It requires no GPU to run"
+      ],
+      "correct": 1,
+      "explanation": "Open weights means the model parameters are publicly released. Organizations can run Llama 3 entirely on their own servers, ensuring data privacy, eliminating per-token API costs, and allowing fine-tuning on proprietary data. The trade-off is higher infrastructure investment."
+    },
+    {
+      "id": "q4",
+      "question": "Which model would be most appropriate for analyzing an entire 600-page legal document in a single context window?",
+      "options": [
+        "Claude Haiku with chunking",
+        "Grok, because it has real-time data access",
+        "Gemini 1.5 Pro with its 1 million token context window",
+        "Llama 3 8B running locally"
+      ],
+      "correct": 2,
+      "explanation": "Gemini 1.5 Pro supports up to 1 million tokens of context, making it uniquely suited for tasks requiring the model to attend to very long documents in a single pass — like legal contracts, large codebases, or book-length research. Other models have much shorter context limits."
+    },
+    {
+      "id": "q5",
+      "question": "What does the LMSYS Chatbot Arena benchmark measure?",
+      "options": [
+        "How accurately a model solves math competition problems",
+        "How fast a model generates tokens per second",
+        "Human preference: users vote on which of two anonymous model responses they prefer",
+        "How well a model handles 57 academic subjects"
+      ],
+      "correct": 2,
+      "explanation": "LMSYS Chatbot Arena is a crowdsourced benchmark where users interact with two anonymous models and vote for the better response. Models are ranked by an ELO rating system. It captures human-perceived quality rather than narrow academic metrics, making it highly relevant to real-world usage."
+    },
+    {
+      "id": "q6",
+      "question": "What is model routing in production LLM systems?",
+      "options": [
+        "Directing API traffic to the nearest geographic server",
+        "Sending different queries to different models based on complexity or cost requirements",
+        "A technique to reduce model hallucinations",
+        "Running multiple copies of the same model in parallel"
+      ],
+      "correct": 1,
+      "explanation": "Model routing means intelligently dispatching queries to different models based on factors like query complexity, required capability, and cost. A simple FAQ question goes to a cheap model like Haiku or Llama 3 8B; a complex coding task goes to Claude Opus. This optimizes cost without sacrificing quality on hard tasks."
+    },
+    {
+      "id": "q7",
+      "question": "What is Grok's primary differentiator compared to other frontier LLMs?",
+      "options": [
+        "It is the only open-source model among the big players",
+        "It has the largest context window in the industry",
+        "It has real-time access to X (Twitter) data and a more casual personality",
+        "It specializes exclusively in code generation"
+      ],
+      "correct": 2,
+      "explanation": "Grok, developed by xAI, can access live data from X (formerly Twitter), enabling responses about current social media trends. It also has a distinctly casual, sarcastic tone. These features differentiate it from more formal assistants like Claude or ChatGPT."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "What are the three Claude model tiers and their positioning?",
+      "back": "Haiku (fastest, cheapest — for high-throughput simple tasks), Sonnet (balanced capability and cost — the production workhorse), Opus (most capable, highest cost — for the hardest tasks). Anthropic positions them as a tiered family for different use cases."
+    },
+    {
+      "id": "f2",
+      "front": "What is GPT-4o?",
+      "back": "OpenAI's flagship multimodal model that natively accepts text, images, and audio input. The 'o' stands for 'omni.' It is fast and broadly capable, forming the foundation for ChatGPT's standard tier."
+    },
+    {
+      "id": "f3",
+      "front": "What are OpenAI o1/o3 reasoning models?",
+      "back": "A new class of OpenAI models that perform extended internal chain-of-thought reasoning before answering. They trade higher latency for significantly better performance on mathematics, science, and complex coding. They are best when correctness matters more than speed."
+    },
+    {
+      "id": "f4",
+      "front": "What is Gemini's key technical advantage?",
+      "back": "Gemini 1.5 Pro supports a context window of up to 1 million tokens, far larger than most competitors. It is also natively multimodal (trained on text, images, audio, video) and integrates with Google Search for real-time web grounding."
+    },
+    {
+      "id": "f5",
+      "front": "What does 'open weights' mean for a model like Llama 3?",
+      "back": "The trained model parameters are publicly released and can be downloaded, run locally, and modified. Anyone can deploy Llama 3 on their own hardware without paying per-token API costs, and can fine-tune it on proprietary data. This enables full data privacy and sovereignty."
+    },
+    {
+      "id": "f6",
+      "front": "What is the MMLU benchmark?",
+      "back": "Massive Multitask Language Understanding — a benchmark with questions across 57 academic subjects from high school to expert level (STEM, law, history, medicine, etc.). A score of ~90% is considered near-human expert level. It measures breadth of world knowledge."
+    },
+    {
+      "id": "f7",
+      "front": "What is model routing?",
+      "back": "A production pattern where a system dispatches different queries to different models based on task complexity, required capability, or cost. Simple queries go to cheap/fast models; complex tasks go to expensive capable models. Optimizes cost without sacrificing quality."
+    },
+    {
+      "id": "f8",
+      "front": "What is HumanEval?",
+      "back": "A benchmark from OpenAI that measures code generation ability. It consists of Python programming problems with unit tests. The primary metric is pass@1 — the percentage of problems solved correctly on the first attempt. Higher scores indicate better coding ability."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Andrej Karpathy — Intro to Large Language Models",
+      "youtube_id": "zjkBMFhNj_g",
+      "description": "Karpathy's accessible overview of the LLM landscape, covering how different model families work, their capabilities, limitations, and how to think about choosing between them."
+    },
+    {
+      "title": "LLM Model Comparison and Benchmarks",
+      "youtube_id": "VPRSBzXzavo",
+      "description": "A practical comparison of the major LLM providers — Claude, GPT-4, Gemini, and Llama — covering benchmark performance, pricing, context windows, and when to use each."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

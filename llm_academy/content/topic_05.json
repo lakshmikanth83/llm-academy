@@ -1,0 +1,148 @@
+{
+  "id": "topic_05",
+  "level": 1,
+  "level_name": "Foundations",
+  "order": 5,
+  "title": "LLMs vs SLMs",
+  "emoji": "⚖️",
+  "duration_minutes": 15,
+  "eli8": "# LLMs vs SLMs ⚖️\n\n## Encyclopedia vs. Pocket Guide 📚\n\nImagine you're going on a camping trip. You could bring:\n- 📚 A **giant encyclopedia** with everything ever written — but it weighs 50 kg and costs a fortune to carry\n- 📖 A **pocket wilderness guide** — lighter, cheaper, and covers exactly what you need for camping\n\nBoth have knowledge. But one is *much* better suited for your situation!\n\nThat's the difference between:\n- 🚀 **LLM (Large Language Model)** — like GPT-4 or Claude — a massive, incredibly smart encyclopedia\n- 🎯 **SLM (Small Language Model)** — like Phi-3 or Gemma — a focused, efficient pocket guide\n\n## The Rocket vs. Bicycle Analogy 🚀🚲\n\nNeed to cross the street? A **bicycle** is perfect — fast, cheap, no fuel needed.\nNeed to go to the moon? You need a **rocket**.\n\nSometimes the biggest, most powerful tool is overkill! If you want to:\n- ✅ Answer simple customer service questions → SLM works great!\n- ✅ Run AI on your phone with no internet → SLM is the only option!\n- ✅ Reason through complex legal documents → You need an LLM!\n- ✅ Write creative fiction with rich world knowledge → LLM all the way!\n\n## What Does \"Large\" Mean? 🔢\n\n\"Large\" refers to the number of **parameters** — the millions or billions of learned settings inside the model. Think of parameters like the number of switches in our neural network brain:\n\n| Model | Size | Like... |\n|---|---|---|\n| TinyLLaMA | 1 billion | A smart notebook |\n| Phi-3 Mini | 3.8 billion | A knowledgeable assistant |\n| Llama 3 8B | 8 billion | A well-read expert |\n| GPT-4 | ~1 trillion+ | A walking library 🏛️ |\n\n## The Tradeoffs ⚖️\n\n- 🔋 **SLM** = Fast, cheap, runs on your laptop or phone, uses less battery, more private\n- 🧠 **LLM** = Smarter, knows more, better at complex reasoning — but needs powerful servers and costs more to run\n\nNeither is \"better\" — they're tools for different jobs! A skilled AI engineer chooses the right size for the right task. 🛠️",
+  "detail": "# LLMs vs SLMs: Technical Comparison\n\n## Defining the Terms\n\n- **LLM (Large Language Model)**: A language model with a very high parameter count, typically 30B+ parameters in modern usage, though the boundary is informal. Examples: GPT-4 (~1T+ parameters estimated), Claude 3 Opus, LLaMA 3 70B/405B.\n- **SLM (Small Language Model)**: A language model small enough to run efficiently on consumer hardware or edge devices, typically under 10B parameters. Examples: Phi-3 Mini (3.8B), Gemma 2 2B/9B, Mistral 7B, TinyLLaMA (1.1B).\n\n## What Do More Parameters Buy?\n\n### World Knowledge\nLarger models, trained on more data with more capacity, memorize more factual associations. A 70B model is less likely to \"hallucinate\" (confabulate incorrect facts) than a 3B model on the same corpus.\n\n### Reasoning Depth\nComplex multi-step reasoning (mathematics, logical deduction, code with many interacting functions) improves reliably with parameter count. Chain-of-thought prompting benefits more from larger models.\n\n### Context Utilization\nLarger models tend to make better use of long contexts — retrieving information from earlier in a 100K-token context window more reliably than smaller counterparts.\n\n### Instruction Following\nSmaller models can be less reliable instruction followers, requiring more careful prompting or fine-tuning to stay on task.\n\n## What Parameters Cost\n\n### Memory (VRAM)\nFull-precision (float32) weights occupy 4 bytes per parameter:\n\n| Model Size | Float32 VRAM | Float16 VRAM | 4-bit Quantized |\n|---|---|---|---|\n| 7B params | ~28 GB | ~14 GB | ~4 GB |\n| 13B params | ~52 GB | ~26 GB | ~7 GB |\n| 70B params | ~280 GB | ~140 GB | ~35 GB |\n\nA single NVIDIA RTX 4090 (24GB VRAM) can run a 7B model in float16 or a 13B model with 4-bit quantization. 70B+ models typically require multi-GPU setups or cloud inference.\n\n### Inference Speed and Cost\nTokens per second (throughput) decreases with model size. Larger models also cost more per API call. As of 2025:\n- Claude 3 Haiku (small): ~$0.25/million input tokens\n- Claude 3 Opus (large): ~$15/million input tokens — 60x more expensive\n\n### Latency\nFirst-token latency (time to first output) scales with model size. For real-time applications (voice assistants, interactive chatbots), latency from large models can feel sluggish.\n\n## Notable SLMs (2024–2025)\n\n| Model | Params | Highlight |\n|---|---|---|\n| Phi-3 Mini | 3.8B | Microsoft; outperforms many 7B models on reasoning benchmarks |\n| Gemma 2 2B | 2B | Google; strong performance at its size class |\n| Mistral 7B | 7B | Efficiency-focused; competitive with 13B models |\n| Llama 3.2 3B | 3B | Meta; excellent for on-device and edge use |\n| TinyLLaMA | 1.1B | Fits on microcontrollers; community-built |\n\n## When to Use Each\n\n### Choose an SLM when:\n- **On-device / offline inference**: Mobile apps, edge hardware, IoT, no internet dependency\n- **Cost-sensitive production**: Millions of API calls where even 10x cost difference matters\n- **Latency-critical**: Real-time voice, gaming, interactive UIs requiring sub-200ms response\n- **Privacy requirements**: Data cannot leave the device or local network\n- **Narrow, well-defined task**: A fine-tuned 7B model often beats a generic 70B model on a specific domain\n\n### Choose an LLM when:\n- **Complex reasoning**: Legal analysis, advanced mathematics, code generation for large systems\n- **Broad knowledge breadth**: Queries spanning many domains where world knowledge matters\n- **Ambiguous, open-ended tasks**: Creative writing, strategic planning, nuanced judgment calls\n- **Zero-shot generalization**: Tasks without labeled data for fine-tuning\n\n## Quantization (Preview)\n\nQuantization reduces memory by representing weights in lower precision:\n- **Float32** (4 bytes/param): Full precision, maximum quality\n- **Float16 / BFloat16** (2 bytes/param): Standard training/inference, minimal quality loss\n- **INT8** (1 byte/param): ~2x compression, small quality degradation\n- **INT4 / GGUF** (0.5 bytes/param): Enables 70B models on consumer hardware, noticeable quality loss on hard tasks\n\nTools like **llama.cpp**, **Ollama**, and **GPTQ** make quantized local inference accessible.\n\n## Emergent Capabilities\n\nOne of the most striking empirical findings in LLM research: some capabilities appear **suddenly** at certain scale thresholds rather than improving gradually. Examples:\n- Arithmetic: near-zero accuracy at 10B parameters, then rapid improvement above 50B\n- Multi-step reasoning with chain-of-thought: emerges around 100B parameters\n- In-context learning (few-shot prompting) effectiveness: scales with model size\n\nThis \"emergence\" is a core motivation for building larger models — not just gradual improvement, but qualitatively new capabilities.\n\n## The Right Tool for the Job\n\nThe most sophisticated AI engineers do not default to the largest model. They:\n1. Define the task and quality bar clearly\n2. Benchmark SLMs first (cheaper, faster to iterate)\n3. Scale up only when quality falls short\n4. Consider fine-tuning a smaller model before paying for a larger one",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "Approximately how much VRAM does a 7-billion parameter model require in float16 precision?",
+      "options": [
+        "2 GB",
+        "7 GB",
+        "14 GB",
+        "56 GB"
+      ],
+      "correct": 2,
+      "explanation": "Float16 uses 2 bytes per parameter. 7 billion × 2 bytes = 14 GB. This fits on a single high-end consumer GPU (e.g., RTX 3090/4090 with 24GB VRAM) with room for the KV cache."
+    },
+    {
+      "id": "q2",
+      "question": "Which of the following is the strongest reason to choose an SLM over an LLM for a production application?",
+      "options": [
+        "SLMs always produce higher quality outputs",
+        "SLMs can handle longer context windows",
+        "The application runs on-device with strict privacy requirements and low latency needs",
+        "SLMs support more programming languages in code generation"
+      ],
+      "correct": 2,
+      "explanation": "On-device deployment with privacy constraints and latency requirements is the canonical use case for SLMs. They can run without internet connectivity, keep data local, and respond fast enough for real-time interaction."
+    },
+    {
+      "id": "q3",
+      "question": "What are 'emergent capabilities' in the context of large language models?",
+      "options": [
+        "Features explicitly programmed into the model during fine-tuning",
+        "Capabilities that appear suddenly at certain scale thresholds rather than improving gradually",
+        "Abilities that only appear after RLHF alignment training",
+        "Skills learned from synthetic data rather than real text"
+      ],
+      "correct": 1,
+      "explanation": "Emergent capabilities are abilities that are absent or near-zero below a certain parameter count and then appear (often abruptly) above a threshold. Multi-step arithmetic and chain-of-thought reasoning are well-documented examples."
+    },
+    {
+      "id": "q4",
+      "question": "What is quantization in the context of language models?",
+      "options": [
+        "The process of counting the number of parameters in a model",
+        "Splitting a model across multiple GPUs for parallel inference",
+        "Representing model weights in lower numerical precision to reduce memory usage",
+        "Reducing the size of the training dataset"
+      ],
+      "correct": 2,
+      "explanation": "Quantization reduces the number of bits used to store each parameter (e.g., from float32 to int4), drastically reducing VRAM requirements. A 70B model quantized to 4-bit can fit on ~35GB of VRAM instead of 280GB."
+    },
+    {
+      "id": "q5",
+      "question": "A startup needs to process millions of simple customer support queries per day at low cost. Which choice is most appropriate?",
+      "options": [
+        "GPT-4 for maximum quality on every query",
+        "A fine-tuned 7B SLM deployed on cost-efficient hardware",
+        "A 405B LLM for the most reliable answers",
+        "An n-gram model from the 1990s"
+      ],
+      "correct": 1,
+      "explanation": "For high-volume, cost-sensitive, well-defined tasks, a fine-tuned SLM is typically the right choice. A domain-specific fine-tuned 7B model often matches or exceeds a generic large model on the specific task, at a fraction of the cost."
+    },
+    {
+      "id": "q6",
+      "question": "The 'context window' of a language model refers to:",
+      "options": [
+        "The physical screen size required to display the model's output",
+        "The maximum number of tokens the model can process as input in a single call",
+        "The time window during which the model was trained",
+        "The range of topics the model has knowledge about"
+      ],
+      "correct": 1,
+      "explanation": "The context window is the maximum number of input tokens the model can attend to in a single forward pass. Modern LLMs range from 8K to 2M tokens. Larger context windows enable processing long documents but also increase memory and compute requirements."
+    },
+    {
+      "id": "q7",
+      "question": "Which of the following tasks most clearly requires an LLM rather than an SLM?",
+      "options": [
+        "Classifying a customer email as billing-related vs. technical-support",
+        "Answering simple FAQ questions from a predefined list",
+        "Analyzing a 200-page legal contract and identifying unusual clauses across jurisdictions",
+        "Generating a short product description from a template"
+      ],
+      "correct": 2,
+      "explanation": "Deep legal analysis across a long document requires broad world knowledge, complex multi-step reasoning, and reliable long-context utilization — all areas where LLMs have clear advantages over SLMs. The other tasks are narrow and well-suited to smaller models."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "LLM (Large Language Model)",
+      "back": "A language model with a very high parameter count (typically 30B+), trained on massive corpora. Offers broad world knowledge, complex reasoning, and strong generalization. Examples: GPT-4, Claude 3 Opus, LLaMA 3 70B/405B."
+    },
+    {
+      "id": "f2",
+      "front": "SLM (Small Language Model)",
+      "back": "A language model small enough to run on consumer hardware or edge devices (typically under 10B parameters). Faster, cheaper, and more private than LLMs; best for narrow, well-defined tasks. Examples: Phi-3 Mini (3.8B), Gemma 2 2B, Mistral 7B."
+    },
+    {
+      "id": "f3",
+      "front": "Parameters",
+      "back": "The learnable numerical values (weights and biases) in a neural network. 'Parameter count' is shorthand for model size. A 7B model has 7 billion such values. More parameters generally means more capacity to learn patterns, at higher compute and memory cost."
+    },
+    {
+      "id": "f4",
+      "front": "Inference",
+      "back": "The process of running a trained model on new inputs to generate outputs. Distinct from training (which adjusts weights). Inference cost scales with model size and context length. Also called 'deployment' in production contexts."
+    },
+    {
+      "id": "f5",
+      "front": "Quantization",
+      "back": "Reducing the numerical precision of model weights (e.g., float32 → int4) to decrease VRAM usage and speed up inference. A 7B model at int4 uses ~4GB instead of ~28GB. Slight quality degradation; tools like llama.cpp and Ollama support this."
+    },
+    {
+      "id": "f6",
+      "front": "Emergent Capabilities",
+      "back": "Abilities in LLMs that appear suddenly above certain scale thresholds rather than improving gradually with size. Examples: arithmetic, multi-step reasoning with chain-of-thought, reliable in-context learning. A key motivation for scaling model size."
+    },
+    {
+      "id": "f7",
+      "front": "Context Window",
+      "back": "The maximum number of tokens an LLM can process in a single call. Ranges from 4K tokens (older models) to 2M+ (Gemini 1.5 Pro). Larger context enables long document processing but increases memory and latency."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Intro to Large Language Models — Andrej Karpathy",
+      "youtube_id": "zjkBMFhNj_g",
+      "description": "Karpathy's comprehensive overview of how LLMs work, including model size tradeoffs, the training pipeline, and the current landscape of large vs. smaller models."
+    },
+    {
+      "title": "Small Language Models Explained",
+      "youtube_id": "9vM4p9NN0Ts",
+      "description": "An accessible breakdown of what makes small language models compelling, how they differ from their larger counterparts, and where they excel in real-world deployments."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

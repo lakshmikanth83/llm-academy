@@ -1,0 +1,141 @@
+{
+  "id": "topic_64",
+  "level": 11,
+  "level_name": "Capstone & Interview Prep",
+  "order": 4,
+  "title": "Portfolio & Resume Guidance",
+  "emoji": "📄",
+  "duration_minutes": 20,
+  "eli8": "# 📄 Show the World What You Can Build!\n\nImagine you're a carpenter and someone asks \"can you make furniture?\" You COULD explain it in words... or you could just show them the beautiful bookshelf you already built! A portfolio is YOUR bookshelf — proof that you can build with AI!\n\n## 💻 The Best Portfolio Projects\n\nHere are the projects that make employers go \"wow!\":\n\n**Project 1: RAG Chatbot** 🤖\n- Pick any topic you love (anime, sports stats, cooking recipes)\n- Build a chatbot that answers questions about YOUR documents\n- Show that it cites its sources and doesn't make stuff up!\n\n**Project 2: Fine-tuned Model** 🎨\n- Take a base model and fine-tune it on something cool\n- Show before/after examples: \"Here's what the base model said... here's what MY model says\"\n\n**Project 3: AI Agent** 🕵️\n- Build an agent that does a real task (research assistant, code helper, data analyst)\n- Show it actually solving a problem step by step!\n\n## 📸 Make GitHub Look Great\n\nEmployers WILL look at your GitHub profile:\n- 📌 **Pin your best 6 projects** to the top\n- 📖 Every project needs a **README** that explains:\n  - What problem does it solve?\n  - How does it work? (with a diagram!)\n  - How do I run it?\n- 🎬 A **demo GIF** is worth a thousand words!\n\n## 📝 Your AI Resume Keywords\n\nMake sure these words are in your resume (if you've done them):\n`RAG` `LangChain` `FastAPI` `RAGAS` `fine-tuning` `LoRA` `embeddings` `vector database` `prompt engineering` `LLM evaluation`\n\nAnd add **numbers**! \"Reduced hallucination rate by 35%\" is 10× better than \"improved the AI\"! 📊",
+  "detail": "## Building Your LLM Engineering Portfolio and Resume\n\n### Portfolio Projects That Stand Out\n\n**1. RAG Chatbot over Custom Documents**\n- *What it shows*: end-to-end LLM engineering, retrieval, prompt engineering, evaluation\n- *Implementation*: ingest custom corpus → Chroma/Pinecone → FastAPI → evaluation with RAGAS\n- *Differentiation*: choose an unusual domain (legal contracts, academic papers, game wikis)\n- *Evaluation metrics to show*: faithfulness score, answer relevance, latency benchmarks\n\n**2. Fine-tuned Model with Before/After Comparison**\n- *What it shows*: understanding of when fine-tuning is appropriate, data preparation, evaluation\n- *Implementation*: collect 500-2000 training examples → LoRA fine-tuning on Llama 3 → MMLU or domain benchmark\n- *Differentiation*: quantify improvement with clear metrics, show failure modes of the base model\n\n**3. AI Agent That Automates a Real Task**\n- *What it shows*: agent design, tool integration, prompt engineering, reliability engineering\n- *Examples*: research assistant (searches web + summarizes), data analysis agent (reads CSV + creates visualizations), code generation + test runner\n- *Key element*: show the agent handling failures gracefully, not just the happy path\n\n**4. LLM Evaluation Framework**\n- *What it shows*: rigorous thinking about quality, production mindset\n- *Implementation*: RAGAS evaluation pipeline over a benchmark dataset, CI integration\n- *Differentiation*: less common project = stands out\n\n### Project README Template\n\nEvery project README should include:\n```markdown\n# Project Name\n\n## Problem\n[1-2 sentences: what problem does this solve?]\n\n## Architecture\n[Diagram or text description of components]\n\n## Tech Stack\n- LLM: Claude Haiku / GPT-4o mini\n- Embeddings: text-embedding-3-small\n- Vector DB: Chroma (local) / Pinecone (production)\n- API: FastAPI\n- Evaluation: RAGAS\n\n## Results\n- Faithfulness: 0.87\n- Answer Relevance: 0.82\n- P95 Latency: 1.2s\n\n## Demo\n[GIF or link]\n\n## Run Locally\n[3-5 commands to get it running]\n```\n\n### GitHub Profile Optimization\n\n- Pin 4-6 best repositories (use the ⭐ pin feature)\n- Profile README with your skills and current focus\n- Consistent commit history (even small improvements count)\n- Demo GIFs in README — use `asciinema` for terminal or `LICEcap` for desktop\n- Semantic commit messages: `feat(rag): add cross-encoder reranking`\n\n### Resume for LLM Engineer Roles\n\n**Essential keywords** (use if you have experience):\n`RAG` `LangChain` `LlamaIndex` `FastAPI` `RAGAS` `LangSmith` `vector embeddings` `fine-tuning` `LoRA` `PEFT` `prompt engineering` `LLM evaluation` `sentence-transformers` `Chroma` `Pinecone` `vLLM`\n\n**Quantify everything**:\n- \"Reduced hallucination rate by 35% using RAGAS-based evaluation pipeline\"\n- \"Built RAG system over 50K documents with P95 latency under 1.5s\"\n- \"Fine-tuned Llama 3 on 1,200 domain examples, achieving 23% improvement on domain benchmark\"\n- \"Reduced LLM API costs by 60% through model routing and prompt caching\"\n\n**Job titles to search for**:\n- LLM Engineer / Large Language Model Engineer\n- AI Engineer\n- Generative AI Engineer\n- ML Engineer (LLM focus)\n- Applied AI Engineer\n- Prompt Engineer (entry level)\n- AI Product Engineer\n\n### Where to Keep Learning\n\n**Free courses**:\n- **fast.ai** — Practical Deep Learning for Coders (bottom-up, code-first)\n- **Hugging Face courses** — NLP, Diffusion, Agents (free, hands-on)\n- **DeepLearning.AI short courses** — LangChain, RAG, Agents, Evals (1-2 hours each)\n- **Anthropic courses** — Prompt engineering, tool use (official, free)\n\n**Stay current**:\n- Follow @karpathy, @swyx, @simonw, @LangChainAI on Twitter/X\n- Hugging Face Daily Papers (papers.huggingface.co)\n- AI newsletters: Import AI, The Batch, TLDR AI\n- arXiv cs.CL, cs.AI sections\n\n**Community**:\n- Hugging Face Discord — active, welcoming\n- Local AI/ML meetups (meetup.com)\n- Build in public on Twitter/LinkedIn — share what you're learning\n- Contribute to open-source (LangChain, LlamaIndex, RAGAS) — huge resume signal\n\n### The Portfolio Flywheel\n\n```\nBuild project → Document it well → Share publicly\n     ↑                                     |\n     |                                     ↓\nLearning from         ←       Network/feedback/\nfeedback/issues               visibility from\n                              GitHub + social\n```\n\nBuilding in public compounds: each project you share builds your reputation, attracts collaborators, and creates interview talking points.",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "Which portfolio project most effectively demonstrates end-to-end LLM engineering skills to a potential employer?",
+      "options": [
+        "A Jupyter notebook showing exploration of the OpenAI API",
+        "A RAG chatbot with custom documents, RAGAS evaluation metrics, a FastAPI backend, and a clear README with architecture and benchmarks",
+        "A blog post summarizing recent LLM papers",
+        "A collection of creative prompt templates saved as text files"
+      ],
+      "correct": 1,
+      "explanation": "A complete RAG system with evaluation demonstrates: document processing, retrieval, prompting, API design, and production thinking. It shows the full stack. A Jupyter notebook or blog post doesn't demonstrate engineering skills as concretely."
+    },
+    {
+      "id": "q2",
+      "question": "When writing a resume bullet for an LLM project, which version is strongest?",
+      "options": [
+        "\"Worked on an AI chatbot using various LLM technologies\"",
+        "\"Built a chatbot that helps users find information\"",
+        "\"Developed RAG pipeline over 50K support documents achieving faithfulness score 0.88, reducing escalation rate by 28%\"",
+        "\"Familiar with LangChain, FastAPI, and vector databases\""
+      ],
+      "correct": 2,
+      "explanation": "Quantified, specific results are the strongest signal. The third option specifies the technical approach (RAG), scale (50K documents), quality metric (faithfulness 0.88), and business impact (28% reduced escalation). The others are vague and unmeasurable."
+    },
+    {
+      "id": "q3",
+      "question": "What makes a fine-tuning project stand out in a portfolio compared to just saying 'I fine-tuned Llama 3'?",
+      "options": [
+        "Using a larger model — 70B parameters demonstrates more skill than 7B",
+        "A before/after comparison with concrete evaluation metrics showing what the base model failed at and how fine-tuning improved it",
+        "Fine-tuning on a larger dataset — number of examples is the key signal",
+        "Using the most recent fine-tuning technique (RLHF is always more impressive than LoRA)"
+      ],
+      "correct": 1,
+      "explanation": "What employers want to see is: (1) you identified a problem, (2) gathered quality data, (3) applied fine-tuning, (4) measured the improvement rigorously. The before/after comparison with metrics tells that complete story."
+    },
+    {
+      "id": "q4",
+      "question": "Which learning resource is best described as 'official prompt engineering guidance from the model provider'?",
+      "options": [
+        "fast.ai Practical Deep Learning",
+        "DeepLearning.AI LangChain course",
+        "Anthropic's prompt engineering documentation and courses",
+        "Hugging Face NLP course"
+      ],
+      "correct": 2,
+      "explanation": "Anthropic publishes official prompt engineering guides, a Prompt Library, and short courses covering best practices for Claude — directly from the model creator. This is the most authoritative source for prompting Claude specifically."
+    },
+    {
+      "id": "q5",
+      "question": "Why is contributing to open-source projects like LangChain or RAGAS a strong resume signal for LLM engineer roles?",
+      "options": [
+        "Because it proves the candidate has a high GitHub follower count",
+        "Open-source contributions demonstrate real engineering judgment, ability to work in a codebase with standards, and public code reviewers have validated the work",
+        "Because all LLM engineering roles require open-source experience as a hiring prerequisite",
+        "It shows the candidate prefers working for free"
+      ],
+      "correct": 1,
+      "explanation": "Open-source contributions show: you can navigate a real codebase, your code was reviewed and merged by senior engineers (a quality signal), you understand the tools deeply enough to improve them, and you have a concrete, verifiable work artifact."
+    },
+    {
+      "id": "q6",
+      "question": "What should every project README include to make it most effective for a portfolio?",
+      "options": [
+        "Only the license information and installation instructions",
+        "Problem statement, architecture description, tech stack, result metrics, demo GIF, and minimal run instructions",
+        "A detailed academic literature review of related work",
+        "The complete source code repeated in the README for convenience"
+      ],
+      "correct": 1,
+      "explanation": "A strong README answers: What problem? How does it work? (architecture) What did you build it with? How well does it work? (metrics) What does it look like? (demo) How do I run it? Employers spend 30-60 seconds on a project — make every element count."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Portfolio",
+      "back": "A collection of completed, publicly accessible projects that demonstrate applied skills. For LLM engineers: GitHub repositories with working code, evaluation metrics, architecture documentation, and live demos where possible."
+    },
+    {
+      "id": "f2",
+      "front": "GitHub README best practices",
+      "back": "Include: problem statement, architecture diagram, tech stack, result metrics, demo GIF, and 3-5 commands to run locally. Pin 4-6 best repos to your profile. Consistent commit history matters."
+    },
+    {
+      "id": "f3",
+      "front": "Resume keywords for LLM roles",
+      "back": "RAG, LangChain, LlamaIndex, FastAPI, RAGAS, LangSmith, fine-tuning, LoRA, PEFT, prompt engineering, vector embeddings, sentence-transformers, Chroma, Pinecone, vLLM. Use only if genuinely experienced."
+    },
+    {
+      "id": "f4",
+      "front": "RAG portfolio project",
+      "back": "The most common and impressive LLM portfolio project: custom document corpus → ingestion pipeline → vector database → query API → RAGAS evaluation. Demonstrates the full engineering stack."
+    },
+    {
+      "id": "f5",
+      "front": "Quantified resume bullets",
+      "back": "Resume bullets with numbers are far stronger than vague claims. Example: 'Reduced hallucination rate by 35% using RAGAS-based evaluation pipeline' vs. 'Improved AI quality.' Always include scale, metric, and result."
+    },
+    {
+      "id": "f6",
+      "front": "DeepLearning.AI short courses",
+      "back": "A platform offering 1-2 hour free courses on applied LLM topics: RAG, LangChain, LLM Evals, Agents, Prompt Engineering — taught by authors of the major frameworks. Excellent for staying current."
+    },
+    {
+      "id": "f7",
+      "front": "Networking for AI engineers",
+      "back": "Twitter/X AI community (follow Karpathy, swyx, Simon Willison), Hugging Face Discord, local AI meetups, building in public (sharing projects on social). Network compounds — early visibility creates opportunities."
+    },
+    {
+      "id": "f8",
+      "front": "LLM engineer job titles",
+      "back": "LLM Engineer, AI Engineer, Generative AI Engineer, ML Engineer (LLM focus), Applied AI Engineer, Prompt Engineer (entry), AI Product Engineer. Search all variants — companies use different naming conventions."
+    }
+  ],
+  "videos": [
+    {
+      "title": "AI Career Path and LLM Engineering Skills",
+      "youtube_id": "zjkBMFhNj_g",
+      "description": "Karpathy's overview of the LLM landscape and the skills practitioners need — useful framing for what to prioritize learning and building as you develop your AI engineering career."
+    },
+    {
+      "title": "Building an AI Portfolio That Gets You Hired",
+      "youtube_id": "VPRSBzXzavo",
+      "description": "Practical guidance on structuring portfolio projects, writing impactful GitHub READMEs, optimizing your resume for AI roles, and what hiring managers actually look for in candidates."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

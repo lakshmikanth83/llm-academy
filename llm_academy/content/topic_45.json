@@ -1,0 +1,153 @@
+{
+  "id": "topic_45",
+  "level": 7,
+  "level_name": "Evaluation & Testing",
+  "order": 5,
+  "title": "Testing Methodologies for AI Apps",
+  "emoji": "🧪",
+  "duration_minutes": 20,
+  "eli8": "## Testing AI is Weird! 🧪\n\nImagine you write a calculator app. If you type in 2 + 2, you always get 4. Every. Single. Time. You can write a test: \"does 2+2 equal 4?\" and it will either always pass or always fail. Easy!\n\nNow imagine you're testing an AI. You ask it \"Explain photosynthesis\" — and every time you ask, you get a **slightly different answer**. All of them might be correct! Traditional testing doesn't work here. You can't check if the output exactly equals what you expected.\n\n## What Do We Test Instead? 🎯\n\nInstead of testing for exact outputs, AI tests check **properties** of the output:\n- ✅ Is it factually correct? (not a specific wording, just accurate)\n- ✅ Is it safe? (no harmful content)\n- ✅ Is it helpful? (actually answers the question)\n- ✅ Is it not too long? (reasonable length)\n\nIt's the difference between:\n- ❌ \"Does the essay say exactly 'Photosynthesis is the process...'?\" (too rigid)\n- ✅ \"Does the essay mention light, chlorophyll, and glucose?\" (property check)\n\n## Different Types of Tests 🔧\n\n**Unit Tests** — Check small pieces\nTest that your document splitter works correctly, or that your prompt template formats things right. These can be traditional exact-match tests!\n\n**Integration Tests** — Check the whole pipeline\nRun a real question through your entire RAG system and check that the answer has the right properties.\n\n**Regression Tests** — Make sure nothing got worse\nEvery time you update your model or code, run all your old tests again. Did anything break?\n\n**Red-Teaming** — Try to break it on purpose 😈\nHire people (or use AI) to try every possible way to make your system fail, produce harmful outputs, or say embarrassing things. If you find problems in testing, you can fix them before users find them!\n\n## The DevOps Side 🚀\n\nJust like regular software, AI apps use **CI/CD** (Continuous Integration / Continuous Deployment) — automated pipelines that run all your tests every time you make a change. If the tests pass, deploy! If not, fix the bugs first. This keeps AI systems safe and reliable as they evolve.",
+  "detail": "## Testing Methodologies for AI Applications\n\nAI applications present fundamentally different testing challenges from deterministic software. Outputs are probabilistic, quality is multi-dimensional, and failure modes include subtle degradations rather than binary pass/fail. Effective testing requires a layered strategy covering components, pipelines, adversarial cases, and live traffic.\n\n### Why Traditional Testing Falls Short\n\nConventional unit tests assert that `f(x) == expected_output`. LLM outputs:\n- Are non-deterministic (same input → different outputs across runs)\n- Have many acceptable forms (paraphrase, different ordering, different phrasing)\n- Can be correct in one dimension (factual) but wrong in another (tone, safety)\n- May degrade gradually rather than fail catastrophically\n\nThe solution: test **properties** of outputs rather than exact strings.\n\n### Unit Testing AI Components\n\nIndividual components in an AI pipeline can often be tested conventionally:\n\n```python\n# Test the chunker deterministically\ndef test_chunker_splits_at_sentences():\n    text = \"First sentence. Second sentence. Third sentence.\"\n    chunks = chunk_text(text, max_tokens=10)\n    assert all(len(tokenize(c)) <= 10 for c in chunks)\n    assert \" \".join(chunks) == text  # No content lost\n\n# Test the prompt template\ndef test_system_prompt_includes_context():\n    context = \"Paris is the capital of France.\"\n    prompt = build_rag_prompt(context=context, question=\"What is the capital?\")\n    assert context in prompt\n    assert \"answer only from the provided context\" in prompt.lower()\n```\n\nRetrieval can be unit-tested with known document-query pairs:\n```python\ndef test_retriever_finds_known_document():\n    results = retriever.search(\"What are the symptoms of diabetes?\")\n    expected_doc_id = \"medical_doc_042\"\n    assert expected_doc_id in [r.id for r in results[:5]]\n```\n\n### Integration Testing\n\nTest the full pipeline end-to-end with curated test cases:\n\n```python\nimport pytest\n\n@pytest.mark.parametrize(\"question,required_content\", [\n    (\"What is the return policy?\", [\"30 days\", \"receipt\"]),\n    (\"How do I reset my password?\", [\"email\", \"reset link\"]),\n])\ndef test_rag_response_contains_required_info(question, required_content):\n    response = rag_pipeline.query(question)\n    for content in required_content:\n        assert content.lower() in response.lower(), f\"Missing: {content}\"\n```\n\nProperty-based checks using an LLM judge:\n```python\ndef test_response_is_safe(question):\n    response = model.generate(question)\n    safety_verdict = safety_classifier.check(response)\n    assert safety_verdict.is_safe, f\"Unsafe response: {safety_verdict.reason}\"\n```\n\n### Regression Testing\n\nRegression tests detect quality degradations when code or models change:\n1. Build a **test suite** of representative inputs with expected quality thresholds\n2. Run the suite before and after each model/code update\n3. Alert if any metric drops below threshold (e.g., RAGAS faithfulness < 0.85)\n\n```python\ndef test_no_regression_in_faithfulness():\n    scores = evaluate_ragas(golden_dataset)\n    assert scores[\"faithfulness\"] >= 0.85, f\"Faithfulness regression: {scores['faithfulness']}\"\n```\n\nVersion your test suite as code (evals-as-code) so regressions are traceable to commits.\n\n### Red-Teaming\n\nAdversarial testing to find safety, reliability, and bias failures:\n\n- **Manual red-teaming**: domain experts attempt jailbreaks, boundary tests, harmful prompts\n- **Automated red-teaming**: use an adversarial LLM to generate attack prompts at scale\n- **Bias probing**: test systematically for demographic, political, and cultural biases\n- **Edge cases**: ambiguous queries, very long inputs, non-English text, code injection attempts\n\nRed-teaming should cover:\n1. Direct harm (explicit harmful content requests)\n2. Indirect harm (leading questions, prompt injection)\n3. Factual reliability (trick questions, obscure topics)\n4. Consistency (contradictory premises)\n\n### A/B Testing\n\nCompare two model versions or prompt strategies on live user traffic:\n- Route X% of traffic to variant B, (100-X)% to variant A\n- Measure downstream metrics: task completion, user satisfaction, error rates\n- Run until statistical significance is achieved\n- Roll back if variant B degrades any tracked metric\n\n### Shadow Mode\n\nRun a new model version in parallel with production (\"shadow\") without serving its responses to users:\n- Capture both outputs for comparison\n- Evaluate quality offline before committing to the new version\n- Zero risk to users during evaluation\n\n### Canary Deployment\n\nGradually route a small fraction of traffic (e.g., 1-5%) to a new model version:\n- Monitor error rates, latency, and quality metrics for canary cohort\n- Gradually increase traffic percentage as confidence grows\n- Automatic rollback if anomalies detected\n\n### CI/CD for AI\n\n```yaml\n# Example GitHub Actions workflow\non: [push]\njobs:\n  eval:\n    steps:\n      - run: python -m pytest tests/unit/\n      - run: python evals/run_integration_tests.py\n      - run: python evals/check_ragas_regression.py --threshold 0.85\n      - run: python evals/safety_scan.py\n    # Deploy only if all checks pass\n```\n\n### Property-Based Testing for LLMs\n\nInspired by property-based testing frameworks (e.g., Hypothesis), define invariants that should always hold:\n- The response must not contain personally identifiable information\n- The response length must be between 50 and 500 words for this use case\n- The response must be in the same language as the query\n- The response must not contain competitor names",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "Why does traditional exact-match unit testing often fail for LLM outputs?",
+      "options": [
+        "LLMs are too slow for automated testing",
+        "LLM outputs are non-deterministic and may have many valid forms for the same input",
+        "Unit testing frameworks don't support string comparison",
+        "LLMs always produce identical outputs given the same temperature setting"
+      ],
+      "correct": 1,
+      "explanation": "LLM outputs are stochastic and can vary across runs. Even correct responses may differ in phrasing, structure, or ordering. Exact-match tests would fail most of the time even for perfectly good responses, making property-based testing a better approach."
+    },
+    {
+      "id": "q2",
+      "question": "In an AI application testing strategy, which component is MOST suitable for conventional deterministic unit tests?",
+      "options": [
+        "The language model's response quality",
+        "The document chunker and prompt template formatter",
+        "Whether the AI's tone is appropriate",
+        "Whether the answer contains the right facts"
+      ],
+      "correct": 1,
+      "explanation": "Non-LLM components like chunkers, prompt formatters, and retrieval logic are deterministic and can be tested with standard assertions. The LLM's output quality requires property-based or judge-based testing."
+    },
+    {
+      "id": "q3",
+      "question": "Red-teaming an AI application involves:",
+      "options": [
+        "Performance benchmarking under high traffic load",
+        "Adversarially probing the system for safety failures, biases, and unexpected behaviors",
+        "Running A/B tests to compare two model versions",
+        "Monitoring production metrics in real time"
+      ],
+      "correct": 1,
+      "explanation": "Red-teaming is adversarial testing where humans or automated systems attempt to elicit harmful, biased, or incorrect outputs through various attack strategies. It finds failure modes that are missed by standard test suites."
+    },
+    {
+      "id": "q4",
+      "question": "What distinguishes shadow mode testing from A/B testing?",
+      "options": [
+        "Shadow mode uses a different evaluation metric",
+        "In shadow mode, the new model's responses are NOT served to users — outputs are compared offline",
+        "A/B testing requires more traffic than shadow mode",
+        "Shadow mode is only used for latency optimization"
+      ],
+      "correct": 1,
+      "explanation": "In shadow mode, the new model runs in parallel and its outputs are captured for offline analysis, but users only see the production model's responses. This allows zero-risk evaluation before committing to a new model version. A/B testing actually exposes some users to the new variant."
+    },
+    {
+      "id": "q5",
+      "question": "A regression test in AI application testing is designed to:",
+      "options": [
+        "Test the model on increasingly harder questions over time",
+        "Detect quality degradations when the model or codebase is updated",
+        "Measure how well the model handles regression analysis tasks",
+        "Replace manual evaluation with automated evaluation"
+      ],
+      "correct": 1,
+      "explanation": "Regression tests guard against degradation: you run the same evaluation suite before and after each change, comparing metrics against a baseline threshold. If faithfulness drops from 0.92 to 0.78 after a retriever update, the regression test catches it."
+    },
+    {
+      "id": "q6",
+      "question": "Property-based testing for LLMs checks:",
+      "options": [
+        "Whether the output matches an expected reference string",
+        "Invariants that should hold for all valid outputs (e.g., language, length, safety)",
+        "The model's performance on standard benchmarks like MMLU",
+        "Whether the model was trained on the test data"
+      ],
+      "correct": 1,
+      "explanation": "Property-based testing defines invariants — properties that any acceptable output should satisfy — rather than specific expected values. Examples: 'the response must be in English', 'the response must not contain PII', 'the response must be between 50-500 words'."
+    },
+    {
+      "id": "q7",
+      "question": "Canary deployment in AI applications means:",
+      "options": [
+        "Deploying to a completely separate test environment",
+        "Routing a small fraction of live traffic to a new model version while monitoring metrics",
+        "Using a smaller, cheaper model to filter requests before the main model",
+        "Testing the model only on synthetic data"
+      ],
+      "correct": 1,
+      "explanation": "A canary deployment routes a small percentage (e.g., 1-5%) of real traffic to the new model version. Metrics are closely monitored for the canary cohort, and traffic gradually increases if everything looks good, or rolls back automatically on anomalies."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Unit test (AI context)",
+      "back": "Tests for individual, deterministic components of an AI pipeline — chunkers, prompt templates, retrieval logic. These can use conventional assertion-based testing. LLM output quality itself requires property-based or judge-based approaches."
+    },
+    {
+      "id": "f2",
+      "front": "Integration test (AI context)",
+      "back": "Tests the full end-to-end AI pipeline with representative inputs, checking that output properties (factual content, safety, relevance) meet expectations. Often combined with LLM-as-judge for quality scoring."
+    },
+    {
+      "id": "f3",
+      "front": "Regression test",
+      "back": "A test suite run before and after each model or code change to detect quality degradations. Metrics are compared against a baseline threshold; drops below threshold trigger alerts or block deployment."
+    },
+    {
+      "id": "f4",
+      "front": "Red-teaming",
+      "back": "Adversarial testing where humans or automated systems attempt to elicit harmful, biased, incorrect, or unexpected outputs. Surfaces failure modes (jailbreaks, prompt injections, edge cases) not covered by standard test suites."
+    },
+    {
+      "id": "f5",
+      "front": "A/B testing",
+      "back": "A controlled experiment where live traffic is split between two model versions (A = control, B = variant). Downstream metrics (task completion, user satisfaction) are compared to determine which version performs better."
+    },
+    {
+      "id": "f6",
+      "front": "Shadow mode",
+      "back": "Running a new model version in parallel with the production system, capturing its outputs for offline analysis, without serving those outputs to users. Zero risk to user experience; allows evaluation before committing to deployment."
+    },
+    {
+      "id": "f7",
+      "front": "Canary deployment",
+      "back": "Gradually routing a small fraction of live traffic (e.g., 1-5%) to a new model version. Metrics are monitored for the canary cohort; traffic increases as confidence grows, or rolls back if anomalies are detected."
+    },
+    {
+      "id": "f8",
+      "front": "Property-based testing (LLMs)",
+      "back": "Testing that checks invariants all valid LLM outputs should satisfy, rather than exact string matches. Examples: 'response must be in the same language as the query', 'response must not contain PII', 'response length must be 50-500 words'."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Testing LLM Applications",
+      "youtube_id": "NEreVeHGKgo",
+      "description": "An overview of testing strategies specific to AI and LLM applications, covering the shift from deterministic to property-based testing approaches."
+    },
+    {
+      "title": "Evaluation and Testing for LLM-Powered Apps",
+      "youtube_id": "VPRSBzXzavo",
+      "description": "Practical patterns for regression testing, red-teaming, and CI/CD integration for production AI systems."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

@@ -1,0 +1,141 @@
+{
+  "id": "topic_54",
+  "level": 9,
+  "level_name": "Fine-tuning, SLMs & Local Models",
+  "order": 4,
+  "title": "Quantization",
+  "emoji": "📉",
+  "duration_minutes": 20,
+  "eli8": "# Making AI Models Tiny Without Breaking Them 🗜️\n\nImagine you took an amazing 4K photo. It looks gorgeous — every pixel perfect. But it's 30 megabytes! Now imagine you compress it to a JPEG — still looks great, but now it's only 2 megabytes. That's 15x smaller! 🖼️\n\n**Quantization** does the same thing to AI model numbers.\n\n## 🔢 The Problem: Big Numbers\n\nAI models store billions of numbers. By default, each number uses **32 bits** of memory. That's like using a super precise ruler that measures to the millionth of an inch.\n\nA 7-billion-parameter model in full 32-bit precision = **28 gigabytes** of RAM. That's more than most computers have!\n\n## 📦 Squishing Numbers Down\n\nQuantization swaps those big 32-bit numbers for smaller ones:\n\n| Format | Bits per number | 7B Model Size |\n|--------|----------------|---------------|\n| Float32 (full) | 32 bits | 28 GB |\n| Float16 | 16 bits | 14 GB |\n| Int8 | 8 bits | 7 GB |\n| **Int4** | **4 bits** | **~4 GB** ✅ |\n\nWith 4-bit quantization, **Llama 3 fits on your laptop!** 💻\n\n## 🎯 Does Quality Suffer?\n\nSurprisingly, not much!\n\n- 8-bit: Almost identical to original quality 👍\n- 4-bit: About 1–3% accuracy drop on most tests 👍\n- 3-bit or lower: Noticeably worse 😬\n\nIt's like the difference between a 4K and 1080p video — most people can't tell the difference unless side-by-side!\n\n## 🏠 Run AI at Home!\n\nThanks to quantization tools like **llama.cpp** and **Ollama**, you can:\n\n- Download a quantized model file (.GGUF format)\n- Run it on your **regular computer** — no special hardware needed!\n- Process text completely **offline** — no internet, totally private 🔒\n- Get results in seconds, not minutes\n\nYou can run a **7-billion parameter AI** on a computer with just 8GB of RAM. A few years ago, this would have required a data center! 🏢",
+  "detail": "# Quantization: Shrinking Models for Efficient Inference\n\n## Why Quantization Matters\n\nModel deployment is often memory-bound, not compute-bound. Reducing memory footprint:\n- Enables larger models to fit on available hardware\n- Increases batch size → higher throughput\n- Reduces memory bandwidth requirements → lower latency\n- Enables edge and consumer hardware deployment\n\n## Numeric Formats and Memory Footprint\n\n```\nFloat32  (FP32):  sign(1) + exponent(8)  + mantissa(23) = 32 bits\nFloat16  (FP16):  sign(1) + exponent(5)  + mantissa(10) = 16 bits\nBFloat16 (BF16):  sign(1) + exponent(8)  + mantissa(7)  = 16 bits  ← preferred for training\nInt8     (INT8):  8 bits integer\nInt4     (INT4):  4 bits integer\n\nMemory for a 7B model:\n  FP32:  7B × 4 bytes = 28GB\n  FP16:  7B × 2 bytes = 14GB\n  INT8:  7B × 1 byte  = 7GB\n  INT4:  7B × 0.5 bytes ≈ 3.5–4GB (with overhead)\n```\n\n**BFloat16 vs Float16:** BFloat16 shares FP32's exponent range (avoiding overflow/underflow on large gradients), making it preferred for training. Float16 has more mantissa bits (more precision in the representable range), marginally better for inference.\n\n## Post-Training Quantization Methods\n\n### GPTQ (Generative Pre-trained Transformer Quantization)\nPaper: Frantar et al., 2022\n\nGPTQ uses second-order optimization to minimize quantization error layer by layer:\n1. Process a small **calibration dataset** (128–512 samples) through the model\n2. For each weight matrix, use the Hessian of the output loss to find optimal quantized values\n3. Compensate quantization error in remaining weights\n\nResult: 3–4 bit precision with minimal accuracy loss. GPTQ models are served efficiently with the `auto-gptq` library and are widely shared on Hugging Face.\n\n```python\nfrom transformers import GPTQConfig, AutoModelForCausalLM\n\ngptq_config = GPTQConfig(bits=4, dataset=\"c4\", tokenizer=tokenizer)\nmodel = AutoModelForCausalLM.from_pretrained(\n    \"meta-llama/Llama-3.1-8B\",\n    quantization_config=gptq_config\n)\n```\n\n### AWQ (Activation-aware Weight Quantization)\nPaper: Lin et al., 2023\n\nKey insight: not all weights are equally important. AWQ identifies **salient weights** (those that activate on important inputs) using activation statistics, and protects them during quantization.\n\n- Uses calibration data to find the top 0.1–1% most important weights\n- Scales important channels before quantization to preserve their relative precision\n- Achieves better accuracy than GPTQ at the same bit width, especially for low-precision (3-bit)\n\nSuitable for: when you need maximum quality at 4-bit. Served with `autoawq` library.\n\n## GGUF: CPU-Friendly Quantization\n\nGGUF (successor to GGML) is the format used by **llama.cpp** — enabling CPU-based inference with optional GPU offload.\n\n**Quantization types (GGUF naming convention):**\n```\nQ4_K_M  — 4-bit, K-quant method, Medium quality\nQ4_K_S  — 4-bit, K-quant, Small (lower quality, smaller file)\nQ5_K_M  — 5-bit, K-quant, Medium\nQ8_0    — 8-bit, fast, near-lossless\nQ2_K    — 2-bit, very small but noticeable degradation\n```\n\n**K-quant** methods (Q4_K_M, Q5_K_M, etc.) use mixed-precision — some layers stay at higher precision based on their sensitivity — achieving better quality-to-size ratios than uniform quantization.\n\n**Recommended for local use:** Q4_K_M offers the best balance of quality and size for most use cases.\n\n## Memory Requirements Reference\n\n```\nModel  | FP16   | Q8_0  | Q4_K_M | Q3_K_M\n-------|--------|-------|--------|-------\n1B    |  2GB   | 1.1GB |  0.7GB |  0.5GB\n3B    |  6GB   | 3.3GB |  2.0GB |  1.5GB\n7B    | 14GB   | 7.7GB |  4.4GB |  3.1GB\n13B   | 26GB   | 14GB  |  8.0GB |  5.8GB\n70B   | 140GB  | 77GB  |  40GB  |  29GB\n```\n\n## Quality Degradation\n\nBenchmark results across popular evaluations (MMLU, HellaSwag, etc.):\n- **FP16 → Q8_0:** <0.5% degradation — effectively lossless\n- **Q8_0 → Q4_K_M:** 1–3% degradation — acceptable for most applications\n- **Q4_K_M → Q3_K_M:** 3–8% degradation — noticeably worse on reasoning tasks\n- **Q3_K_M → Q2_K:** >10% degradation — avoid for serious use\n\n## Inference Engines for Quantized Models\n\n| Engine | Format | Primary Use |\n|--------|--------|-------------|\n| llama.cpp | GGUF | CPU/GPU local inference |\n| Ollama | GGUF | Local inference with easy CLI |\n| ExLlamaV2 | EXL2 | Fast GPU inference |\n| vLLM | AWQ/GPTQ | Production GPU serving |\n| AutoAWQ | AWQ | GPU inference |\n\n## Hardware-Aware Considerations\n\n- **INT8 on Nvidia GPUs:** Tensor Cores have INT8 support since Turing (RTX 2080). Fast and efficient.\n- **INT4 on consumer GPUs:** Less hardware support — often emulated in software, reducing the speed advantage\n- **Apple Silicon (M-series):** Uses a unified memory architecture — quantization still helps fit models but memory bandwidth differs from discrete GPU\n- **CPU inference:** llama.cpp uses AVX2/AVX-512 SIMD instructions for INT4/INT8 arithmetic, making CPU inference viable for smaller models",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "A 13B parameter model in FP16 requires approximately 26GB of GPU memory. What is the approximate memory requirement after 4-bit quantization?",
+      "options": [
+        "13GB (2x reduction)",
+        "6.5GB (4x reduction)",
+        "~8GB (accounting for quantization overhead and attention cache)",
+        "3.25GB (8x reduction)"
+      ],
+      "correct": 2,
+      "explanation": "FP16 to INT4 is a theoretical 4x reduction: 26GB / 4 = 6.5GB. In practice, with quantization constants storage, activation memory, and KV cache, the real footprint is ~7–8GB. Option C best reflects the practical figure."
+    },
+    {
+      "id": "q2",
+      "question": "What differentiates AWQ from GPTQ in how they decide which weights to quantize more carefully?",
+      "options": [
+        "AWQ uses gradient information from training data; GPTQ uses random sampling",
+        "AWQ identifies salient weights using activation statistics — protecting weights that matter most to the output — while GPTQ uses second-order Hessian-based compensation to minimize layer-wise quantization error",
+        "AWQ only works on embedding layers; GPTQ quantizes all layers equally",
+        "GPTQ requires a GPU; AWQ works on CPU only"
+      ],
+      "correct": 1,
+      "explanation": "AWQ's key insight: a small fraction of weights are 'salient' — connected to inputs with large activation magnitudes. Protecting these (via per-channel scaling) preserves model quality. GPTQ takes a different approach: using the Hessian of the layer output to find weight values that minimize the quantization error mathematically."
+    },
+    {
+      "id": "q3",
+      "question": "In the GGUF naming convention, what does 'Q4_K_M' mean?",
+      "options": [
+        "4th generation quantization, Kernel method, Multilingual",
+        "4-bit quantization using K-quant mixed-precision method at Medium quality — some sensitive layers use higher precision",
+        "Quantization at 4-bit with K layers frozen and M layers merged",
+        "Quarter-precision with Key and Value attention matrices kept in FP16"
+      ],
+      "correct": 1,
+      "explanation": "Q4 = 4 bits per weight. K = K-quant method, which uses mixed precision (sensitive layers at higher bit depth). M = Medium quality/size balance. Q4_K_M is the most commonly recommended GGUF format for local use — good quality with manageable file size."
+    },
+    {
+      "id": "q4",
+      "question": "GPTQ requires a 'calibration dataset' during quantization. What is this calibration data used for?",
+      "options": [
+        "To create a fine-tuned version of the model for the target domain",
+        "To evaluate the model's accuracy before and after quantization",
+        "To compute second-order statistics (Hessians) that guide which weight values minimize quantization error for typical inputs",
+        "To validate that the model's tokenizer is correctly configured"
+      ],
+      "correct": 2,
+      "explanation": "GPTQ uses calibration samples (e.g., 128 sequences from C4 or WikiText) to compute the Hessian matrix, which captures how sensitive the layer outputs are to changes in each weight. This guides the optimization that finds quantized weight values minimizing reconstruction error."
+    },
+    {
+      "id": "q5",
+      "question": "Why is BFloat16 preferred over Float16 for training, while Float16 can be suitable for inference?",
+      "options": [
+        "BFloat16 uses less memory than Float16",
+        "BFloat16 shares FP32's wider exponent range, preventing gradient overflow/underflow during backpropagation. Float16 has a wider mantissa for more sub-range precision, acceptable when gradients are not computed",
+        "BFloat16 is faster on all hardware; Float16 only runs on CPUs",
+        "They are equivalent — the choice is purely a hardware compatibility issue"
+      ],
+      "correct": 1,
+      "explanation": "BF16 has the same exponent as FP32 (8 bits) so it can represent the same range of values — avoiding NaN/inf on large gradient values during training. FP16 has only 5 exponent bits and is prone to overflow with large activations. At inference time (no gradients), FP16's extra mantissa precision is more valuable."
+    },
+    {
+      "id": "q6",
+      "question": "Which quantization format is designed specifically for CPU-based inference and is used by llama.cpp and Ollama?",
+      "options": [
+        "GPTQ",
+        "AWQ",
+        "GGUF",
+        "NF4"
+      ],
+      "correct": 2,
+      "explanation": "GGUF (GPT-Generated Unified Format) is the file format used by llama.cpp for CPU-friendly inference. It stores quantized weights in formats optimized for SIMD (AVX2/AVX-512) CPU operations. Ollama is built on llama.cpp and uses GGUF models."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Quantization",
+      "back": "The process of representing model weights using lower-precision numeric formats (e.g., INT8, INT4 instead of FP32/FP16). Reduces model memory footprint 2–8x with small accuracy loss, enabling deployment on hardware with limited memory."
+    },
+    {
+      "id": "f2",
+      "front": "GPTQ (Generative Pre-trained Transformer Quantization)",
+      "back": "A post-training quantization method that uses second-order (Hessian) information from a calibration dataset to find optimal quantized weight values layer by layer, minimizing output reconstruction error. Achieves high quality at 3–4 bits."
+    },
+    {
+      "id": "f3",
+      "front": "AWQ (Activation-aware Weight Quantization)",
+      "back": "A quantization method that identifies and protects 'salient' weights — those connected to inputs with high activation magnitudes — using per-channel scaling. Often achieves better accuracy than GPTQ at the same bit width, especially at 3-bit."
+    },
+    {
+      "id": "f4",
+      "front": "GGUF",
+      "back": "A file format for quantized LLMs used by llama.cpp and Ollama, optimized for CPU inference with optional GPU offload. Supports multiple quantization types (Q4_K_M, Q5_K_M, Q8_0, etc.) with different quality/size trade-offs."
+    },
+    {
+      "id": "f5",
+      "front": "Q4_K_M",
+      "back": "A GGUF quantization type using 4 bits per weight with the K-quant mixed-precision method at Medium quality. Sensitive layers use slightly higher precision. Generally recommended as the best quality-to-size trade-off for local inference."
+    },
+    {
+      "id": "f6",
+      "front": "llama.cpp",
+      "back": "An open-source C++ library for efficient LLM inference on CPUs (and GPUs). Uses GGUF format for quantized models. Implements optimized SIMD kernels for INT4/INT8 arithmetic. Foundation for Ollama and LM Studio."
+    },
+    {
+      "id": "f7",
+      "front": "Float16 vs Int4",
+      "back": "Float16: 16-bit floating-point, 7B model = 14GB. Int4: 4-bit integer, 7B model = ~4GB. Going from FP16 to INT4 gives a ~3.5x memory reduction with ~1–3% accuracy loss on standard benchmarks."
+    },
+    {
+      "id": "f8",
+      "front": "Calibration data (in quantization)",
+      "back": "A small dataset (typically 128–512 representative text samples) used during post-training quantization. GPTQ uses it to compute Hessians; AWQ uses it to compute activation statistics. Not used for training — only for computing quantization parameters."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Quantization Explained — Running LLMs on Consumer Hardware",
+      "youtube_id": "Mn_9W1nCFLo",
+      "description": "A clear explanation of model quantization, covering GPTQ, GGUF, and how to run large models on consumer hardware using llama.cpp."
+    },
+    {
+      "title": "Running Large Language Models Locally",
+      "youtube_id": "VPRSBzXzavo",
+      "description": "Practical walkthrough of downloading and running quantized models locally, demonstrating GGUF formats, Ollama, and memory requirements for different quantization levels."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

@@ -1,0 +1,148 @@
+{
+  "id": "topic_44",
+  "level": 7,
+  "level_name": "Evaluation & Testing",
+  "order": 4,
+  "title": "RAGAS & Evaluating RAG Pipelines",
+  "emoji": "🔬",
+  "duration_minutes": 20,
+  "eli8": "## A Report Card for RAG 🔬\n\nRemember how RAG works? The AI finds relevant information from a big library of documents, and then uses that information to answer your question. But how do we know if it's doing a good job? That's where **RAGAS** comes in — it's like a detailed report card for RAG systems!\n\n## The Four Report Card Grades 📋\n\nRAGAS checks four different things:\n\n**1. Context Precision 🎯 (Did you find the RIGHT stuff?)**\nImagine you asked \"What's the best food for dogs?\" and the AI pulled up 5 documents. But 3 of them are about cats! Context precision checks: of everything you found, how much was actually useful? High precision = mostly relevant documents found.\n\n**2. Context Recall 🔍 (Did you find ALL the stuff you needed?)**\nNow imagine the perfect answer needs information from 4 different documents, but the AI only found 2 of them. Context recall checks: did you find everything important? High recall = didn't miss crucial information.\n\n**3. Faithfulness 🤝 (Did you stick to what you found?)**\nThis is the anti-hallucination check! Did the AI's answer stay true to the documents it retrieved? Or did it start making things up beyond what the documents said? High faithfulness = answer is grounded in retrieved content.\n\n**4. Answer Relevance 🎯 (Did you actually answer the question?)**\nSometimes an AI might give a very accurate, faithful answer... to a different question than what was asked! Answer relevance checks: does your response actually address what the user wanted to know?\n\n## Why Do We Need All Four? 🤔\n\nThink of it like baking a cake:\n- 🎯 Context precision = using the right ingredients (not salt instead of sugar)\n- 🔍 Context recall = not forgetting any ingredients\n- 🤝 Faithfulness = following the recipe (not improvising)\n- ❓ Answer relevance = actually making the cake they asked for (not a pie!)\n\nYou need all four to know your RAG system is really working well!",
+  "detail": "## RAGAS: Evaluating RAG Pipelines\n\nRAGAS (Retrieval Augmented Generation Assessment) is a framework for evaluating the end-to-end quality of RAG pipelines without requiring extensive human annotations. It decomposes RAG quality into four independent metrics, each isolating a different failure mode.\n\n### Why Standard Metrics Fall Short for RAG\n\nTraditional NLP metrics like ROUGE or exact match are poorly suited for RAG evaluation:\n- ROUGE measures word overlap but not factual grounding\n- Exact match fails on paraphrase or multi-valid answers\n- General LLM-as-judge prompts don't distinguish retrieval failures from generation failures\n\nRAGAS addresses this by evaluating the retrieval and generation components separately and jointly.\n\n### The Four Core RAGAS Metrics\n\n#### 1. Context Precision\n**Question**: Of the retrieved chunks, what fraction are actually relevant to the question?\n\nThis measures the signal-to-noise ratio of the retrieval step. Low context precision means the model must attend to irrelevant content, increasing the chance of hallucination or misleading synthesis.\n\n**Intuition**: Precision = (relevant retrieved chunks) / (total retrieved chunks)\n\nRAGAS uses an LLM to judge whether each retrieved chunk is relevant to the question, then averages across chunks ranked by position (rewarding relevant chunks appearing higher in the retrieved list).\n\n#### 2. Context Recall\n**Question**: Of all the information needed to answer the question, what fraction was captured in the retrieved context?\n\nThis requires a reference answer (ground truth). RAGAS decomposes the reference answer into atomic statements and checks whether each statement is supported by the retrieved context.\n\n**Intuition**: Recall = (reference statements supported by context) / (total reference statements)\n\n#### 3. Faithfulness\n**Question**: Is every claim in the generated answer supported by the retrieved context?\n\nThis is the direct measure of hallucination in the generation step. A faithfulness score of 1.0 means every factual claim can be traced back to retrieved documents; lower scores indicate the model added information not present in context.\n\n**Process**:\n1. Decompose the generated answer into atomic claims\n2. For each claim, ask an LLM: \"Is this claim supported by the context?\"\n3. Faithfulness = (supported claims) / (total claims)\n\n#### 4. Answer Relevance\n**Question**: Does the generated answer actually address the user's question?\n\nMeasures whether the response is on-topic and complete, regardless of factual accuracy. An answer can be faithful to the context but still fail to address what was asked.\n\n**Process**: Generate n reverse questions from the answer (\"What question is this answer responding to?\"), embed them, and measure cosine similarity to the original question. High similarity = answer is relevant.\n\n### Combined RAGAS Score\n\n```python\nragas_score = harmonic_mean(context_precision, context_recall, faithfulness, answer_relevance)\n```\n\nThe harmonic mean is used (like F1) so a single very low metric drags down the overall score.\n\n### Using the RAGAS Python Library\n\n```python\nfrom ragas import evaluate\nfrom ragas.metrics import (\n    faithfulness,\n    answer_relevancy,\n    context_recall,\n    context_precision,\n)\nfrom datasets import Dataset\n\n# Prepare evaluation dataset\ndata = {\n    \"question\": [\"What is the capital of France?\"],\n    \"answer\": [\"The capital of France is Paris, known for the Eiffel Tower.\"],\n    \"contexts\": [[\"France is a country in Western Europe. Its capital is Paris.\"]],\n    \"ground_truth\": [\"Paris is the capital of France.\"]\n}\ndataset = Dataset.from_dict(data)\n\n# Run evaluation\nresult = evaluate(\n    dataset,\n    metrics=[faithfulness, answer_relevancy, context_recall, context_precision]\n)\nprint(result)  # DataFrame with per-sample scores\n```\n\n### Reference-Free vs Reference-Based Evaluation\n\n| Metric | Requires Ground Truth? | What It Measures |\n|---|---|---|\n| Context Precision | No | Retrieval signal-to-noise |\n| Context Recall | Yes | Retrieval completeness |\n| Faithfulness | No | Generation grounding |\n| Answer Relevance | No | Response on-topic-ness |\n\nContext recall is the only metric requiring a reference answer, making RAGAS partly usable without annotated data.\n\n### Building a Golden Dataset\n\nA golden dataset consists of:\n1. **Questions** representative of real user queries\n2. **Reference answers** with known correct content\n3. **Source documents** that should be retrieved\n\nStrategies:\n- Manually author questions from known documents\n- Use LLMs to generate synthetic QA pairs (then human-verify a sample)\n- Mine from real user logs and annotate a subset\n\n### Component-Level Debugging\n\nRAGAS metrics enable targeted debugging:\n- Low **context precision** → fix retrieval: better embeddings, re-ranking, smaller chunk size\n- Low **context recall** → fix retrieval: increase top-k, improve chunking to not split key info\n- Low **faithfulness** → fix generation: strengthen grounding instructions, add citations\n- Low **answer relevance** → fix prompt: ensure the system prompt focuses on answering the question\n\n### Automated Evaluation Harness\n\nFor production RAG systems, an evaluation harness runs automatically on:\n- Pre-deployment: gate model/retriever changes with a minimum RAGAS score threshold\n- Continuous: sample live queries weekly and trend metrics over time\n- A/B testing: compare retriever configurations by RAGAS scores on shared test sets",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "The RAGAS 'faithfulness' metric specifically measures:",
+      "options": [
+        "Whether the retrieved documents are relevant to the question",
+        "Whether every claim in the generated answer is supported by the retrieved context",
+        "Whether the answer is factually accurate according to world knowledge",
+        "Whether the answer addresses the user's original question"
+      ],
+      "correct": 1,
+      "explanation": "Faithfulness measures whether the generated answer stays grounded in the retrieved context — it is the direct metric for hallucination in the generation step. Notably, it does not check world-knowledge accuracy, only consistency with the provided context."
+    },
+    {
+      "id": "q2",
+      "question": "Context recall in RAGAS requires a reference answer because it measures:",
+      "options": [
+        "How many documents were retrieved in total",
+        "Whether the retrieved context contains all information needed to construct the reference answer",
+        "How quickly the retrieval system returned results",
+        "Whether the question was well-formed"
+      ],
+      "correct": 1,
+      "explanation": "Context recall measures completeness: did retrieval capture all the information needed? To know what 'all the information needed' is, you need a reference answer. RAGAS decomposes the reference into atomic statements and checks each against the retrieved context."
+    },
+    {
+      "id": "q3",
+      "question": "In RAGAS, which metric does NOT require a ground-truth reference answer?",
+      "options": [
+        "Context recall",
+        "Faithfulness",
+        "Both context recall and answer relevance",
+        "All four metrics require a reference answer"
+      ],
+      "correct": 1,
+      "explanation": "Faithfulness, context precision, and answer relevance can all be computed without a reference answer — they compare the answer against the retrieved context or the original question. Only context recall requires a reference answer to know what should have been retrieved."
+    },
+    {
+      "id": "q4",
+      "question": "If a RAG system has high faithfulness but low answer relevance, the most likely diagnosis is:",
+      "options": [
+        "The retriever is returning irrelevant documents",
+        "The model is hallucinating facts beyond its context",
+        "The generator stays close to the context but that context doesn't address the user's question",
+        "The chunking strategy is splitting key information across multiple chunks"
+      ],
+      "correct": 2,
+      "explanation": "High faithfulness means the answer is well-grounded in the retrieved context. Low answer relevance means the final answer doesn't address the user's actual question. Together, this suggests the retrieved context was off-topic, or the generation prompt didn't focus the model on answering the question directly."
+    },
+    {
+      "id": "q5",
+      "question": "Low context precision in a RAG evaluation indicates you should:",
+      "options": [
+        "Increase the number of documents retrieved (higher top-k)",
+        "Improve retrieval relevance — better embeddings, re-ranking, or smaller chunk size",
+        "Add more documents to the knowledge base",
+        "Use a larger language model for generation"
+      ],
+      "correct": 1,
+      "explanation": "Context precision measures the fraction of retrieved chunks that are actually relevant. Low precision means too many irrelevant chunks are being retrieved. The fix is in the retrieval step: better embeddings, a re-ranker to filter results, or smaller chunks that are more topically focused."
+    },
+    {
+      "id": "q6",
+      "question": "RAGAS answer relevance is computed by:",
+      "options": [
+        "Comparing the answer to the reference answer using ROUGE-L",
+        "Generating reverse questions from the answer and measuring similarity to the original question",
+        "Asking an LLM to rate the answer on a 1-5 scale",
+        "Checking whether key entities from the question appear in the answer"
+      ],
+      "correct": 1,
+      "explanation": "RAGAS answer relevance works backwards: it generates n candidate questions that the answer could be responding to, embeds them, and measures cosine similarity to the original question embedding. High similarity means the answer is addressing what was asked."
+    },
+    {
+      "id": "q7",
+      "question": "A 'golden dataset' in the context of RAG evaluation refers to:",
+      "options": [
+        "A dataset of high-quality documents for the knowledge base",
+        "A curated set of test questions with reference answers and source documents",
+        "The training data used to fine-tune the embedding model",
+        "A collection of the best model responses for few-shot examples"
+      ],
+      "correct": 1,
+      "explanation": "A golden dataset is a curated evaluation set containing representative questions, their correct reference answers, and the source documents that should be retrieved. It serves as the ground truth for measuring RAG pipeline quality and detecting regressions."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "RAGAS",
+      "back": "Retrieval Augmented Generation Assessment — a framework for evaluating RAG pipelines using four metrics: context precision, context recall, faithfulness, and answer relevance. Uses LLM-as-judge internally; mostly reference-free."
+    },
+    {
+      "id": "f2",
+      "front": "Context Precision (RAGAS)",
+      "back": "Fraction of retrieved chunks that are actually relevant to the question. Measures retrieval signal-to-noise ratio. Low precision indicates the retriever is returning irrelevant documents that may confuse the generator."
+    },
+    {
+      "id": "f3",
+      "front": "Context Recall (RAGAS)",
+      "back": "Fraction of the reference answer's atomic statements that are supported by the retrieved context. Measures retrieval completeness — did we capture all the information needed to answer? Requires a ground-truth reference answer."
+    },
+    {
+      "id": "f4",
+      "front": "Faithfulness (RAGAS)",
+      "back": "Fraction of claims in the generated answer that are supported by the retrieved context. Directly measures hallucination in the generation step. High faithfulness = answer stays grounded; does not measure world-knowledge accuracy."
+    },
+    {
+      "id": "f5",
+      "front": "Answer Relevance (RAGAS)",
+      "back": "Measures whether the generated answer addresses the user's original question. Computed by generating reverse questions from the answer and measuring embedding similarity to the original question. High = answer is on-topic."
+    },
+    {
+      "id": "f6",
+      "front": "Golden dataset",
+      "back": "A curated evaluation set with representative user questions, reference answers, and expected source documents. Used to measure RAG pipeline quality, detect regressions, and gate deployments. The foundation of any serious RAG evaluation program."
+    },
+    {
+      "id": "f7",
+      "front": "LLM-as-judge (in RAGAS)",
+      "back": "RAGAS uses a judge LLM internally to decompose answers into atomic claims and assess whether each claim is supported by retrieved context. This enables automated evaluation without manual annotation for most metrics."
+    }
+  ],
+  "videos": [
+    {
+      "title": "RAGAS: Evaluating RAG Pipelines",
+      "youtube_id": "MKbsnoRkFVQ",
+      "description": "A walkthrough of the RAGAS framework, explaining each metric with examples and showing how to run RAGAS evaluations on a real RAG pipeline."
+    },
+    {
+      "title": "RAG Evaluation Strategies",
+      "youtube_id": "ZqWXbG5_-oE",
+      "description": "Covers end-to-end evaluation strategies for RAG systems, including golden dataset construction, component-level debugging, and automated evaluation harnesses."
+    }
+  ],
+  "has_practical": true,
+  "practical_description": "Run RAGAS evaluation on a small RAG pipeline: feed it a set of questions with retrieved contexts and generated answers, compute all four RAGAS metrics, and display a results table showing which components need improvement."
+}

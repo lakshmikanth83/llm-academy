@@ -1,0 +1,153 @@
+{
+  "id": "topic_62",
+  "level": 11,
+  "level_name": "Capstone & Interview Prep",
+  "order": 2,
+  "title": "Interview Question Bank",
+  "emoji": "💼",
+  "duration_minutes": 30,
+  "eli8": "# 💼 Ace Your AI Engineer Interview!\n\nInterviews can be scary, but they're really just a conversation to see if you understand what you've learned! Let's go through the most common questions companies ask when hiring AI/LLM engineers.\n\n## 🧠 The Most Common Question Types\n\nInterviews for AI jobs usually have three parts:\n\n**Part 1: \"Do you understand the concepts?\"**\n- \"Explain how attention works\" (they want to know you understand the theory)\n- \"What's the difference between RAG and fine-tuning?\" (key tradeoff question)\n- \"How do you evaluate an LLM?\" (shows you care about quality)\n\n**Part 2: \"Can you code it?\"** 💻\n- Write a function to chunk documents\n- Implement a simple retry wrapper for API calls\n- Write a basic evaluation script\n\n**Part 3: \"System Design — draw me the architecture\"** 📐\n- \"Design a customer support chatbot for 10 million users\"\n- \"How would you build an AI code review system?\"\n- These test if you can connect all the pieces!\n\n## 🌟 The Golden Interview Tips\n\n- 🗣️ **Explain trade-offs**: \"RAG is better when X, fine-tuning is better when Y\"\n- 📊 **Mention evaluation**: Always say HOW you'd measure success\n- 💰 **Talk about cost**: Shows you're practical and business-aware\n- 🔄 **Mention iteration**: Good engineers test, measure, and improve\n\n## ⚡ The 3 Questions You MUST Know\n\n1. \"Explain transformers/attention\" — know the basics cold\n2. \"Design a RAG system\" — walk through all 5 components\n3. \"RAG vs. fine-tuning — when would you use each?\" — the classic tradeoff\n\nYou've learned all of these in this course! Trust yourself! 💪",
+  "detail": "## LLM Engineer Interview Question Bank\n\nThis curated bank covers the most commonly asked questions across all levels of LLM engineering roles, from junior engineer to senior ML engineer.\n\n---\n\n### Fundamentals (L1-L2)\n\n**Q: Explain the transformer architecture to a non-technical person.**\nModel answer: \"A transformer is a system that reads text by having every word 'pay attention' to every other word simultaneously. Unlike older systems that read left-to-right, transformers process all words in parallel and learn which words are most relevant to each other via the attention mechanism.\"\n\n**Q: What's the difference between GPT and BERT?**\nModel answer: \"GPT is decoder-only and generates text left-to-right — suited for generation tasks. BERT is encoder-only and reads full context bidirectionally — suited for classification and understanding tasks. GPT: 'generate the next word.' BERT: 'understand this full sentence.'\"\n\n**Q: How does the attention mechanism work?**\nModel answer: \"Each token creates Query, Key, and Value vectors. Attention scores are computed as dot products of Q with all Ks, scaled and softmax'd. The output is a weighted sum of Values, where higher-scoring K-V pairs contribute more. This lets every token 'look at' all other tokens with learned relevance weights.\"\n\n---\n\n### Prompting (L3)\n\n**Q: What is chain-of-thought prompting and when would you use it?**\nModel answer: \"CoT prompts the model to show reasoning steps before giving an answer. Use it for: multi-step arithmetic, logical deduction, complex code debugging. Less useful for: simple factual recall, classification, short-answer tasks where reasoning overhead isn't needed.\"\n\n**Q: Explain few-shot vs. zero-shot prompting.**\nModel answer: \"Zero-shot: give the task description only, no examples. Few-shot: include 2-5 input/output examples in the prompt. Few-shot guides the model toward the desired format/style. Zero-shot is cheaper; few-shot is more reliable for non-standard tasks.\"\n\n---\n\n### APIs & Tool Use (L4)\n\n**Q: How does tool/function calling work in LLM APIs?**\nModel answer: \"You define tools as JSON schemas describing function names, parameters, and descriptions. The model decides which tool to call based on context, returns a structured tool_use block with arguments. Your code executes the function and returns results. The model incorporates results into its final response.\"\n\n**Q: What's the difference between temperature and top-p?**\nModel answer: \"Temperature scales the logits before softmax — higher = more uniform distribution = more random. Top-p (nucleus sampling) keeps only the minimum tokens whose cumulative probability exceeds p — dynamically adjusts the vocabulary. Use temperature for global randomness control; top-p for cutting off low-probability tail tokens.\"\n\n---\n\n### RAG (L5)\n\n**Q: Design a RAG system for customer support.**\nModel answer: \"1) Ingest: extract text from support docs → chunk (512 tokens, 64 overlap) → embed with text-embedding-3-small → store in Pinecone. 2) Serve: embed query → retrieve top-7 → rerank with cross-encoder → format prompt with context + citation instructions → generate with Claude. 3) Evaluate: RAGAS faithfulness, answer relevance, human ratings. 4) Monitor: thumbs up/down → evaluation dataset.\"\n\n**Q: How would you evaluate RAG quality?**\nModel answer: \"Use RAGAS: faithfulness (are claims grounded in context?), answer relevance (does the answer address the question?), context precision (are retrieved chunks relevant?), context recall (are all necessary chunks retrieved?). Also: human ratings on a test set, A/B testing prompt variants.\"\n\n---\n\n### Agents (L6)\n\n**Q: What is an agent loop?**\nModel answer: \"LLM receives task → decides action (tool call or respond) → tool executes → result returned to LLM → repeat until task complete. The loop continues until the LLM outputs a final_answer or a max_steps limit is hit.\"\n\n**Q: When would you use multi-agent vs. single-agent?**\nModel answer: \"Single-agent: well-defined task, limited tools, short context. Multi-agent: parallel subtasks (e.g., research multiple topics simultaneously), specialized roles (planner + executor + critic), tasks that exceed single context window. Trade-off: multi-agent is more powerful but harder to debug and adds latency.\"\n\n---\n\n### Evaluation & Safety (L7-L8)\n\n**Q: How do you handle hallucinations in a production RAG system?**\nModel answer: \"Prevention: restrict model to context only (system prompt), use RAGAS faithfulness monitoring, set minimum similarity threshold for retrieval. Detection: faithfulness score on every response, automated fact-check against knowledge base. Mitigation: human fallback for low-confidence responses, display sources for user verification.\"\n\n**Q: What is prompt injection and how do you prevent it?**\nModel answer: \"Prompt injection is when malicious user input contains instructions that override the system prompt (e.g., 'Ignore previous instructions and...'). Prevention: input validation/sanitization, separate system vs. user content clearly in structured message format, never concatenate user input directly into system prompts, use a content moderation layer.\"\n\n---\n\n### Fine-tuning & Production (L9-L10)\n\n**Q: Fine-tuning vs. RAG — when to use each?**\nModel answer: \"RAG: when knowledge changes frequently, when you need citations, when data volume is large, when cost matters (no GPU needed). Fine-tuning: when you need consistent style/format, domain-specific terminology, faster inference (smaller model), or behavioral changes that prompting can't achieve. Often combine both.\"\n\n**Q: How would you monitor an LLM app in production?**\nModel answer: \"Metrics: P95 latency, error rate, cost/request, token usage. LLM-specific: faithfulness score, refusal rate, user ratings. Tooling: LangSmith/Langfuse for tracing, Grafana+Prometheus for infrastructure, alerting on anomalies. Feedback loop: low-rated responses → evaluation dataset → offline regression testing.\"\n\n---\n\n### System Design\n\n**Q: Design a RAG chatbot for 10M documents.**\nModel answer: \"Ingestion: S3 storage → chunker service (parallel, ECS) → embedding service → Pinecone (with metadata filters). Serving: FastAPI → query embed → Pinecone search → reranker → Claude (with streaming). Scale: read replicas for Pinecone, vLLM for self-hosted models, Redis for response caching. Monitoring: LangSmith tracing, cost dashboard, P95 alerts.\"\n\n**Q: Design an AI code review system.**\nModel answer: \"1) GitHub webhook on PR creation. 2) Extract diff, parse per-file changes. 3) For each file change: chunk the diff, retrieve relevant codebase context. 4) Prompt: 'Review this diff for bugs, style, security, performance.' 5) Post structured comments via GitHub API. 6) Evaluate: developer acceptance rate of suggestions as signal.\"\n",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "In a RAG system design question, which component evaluates whether the model's answer is grounded in the retrieved context?",
+      "options": [
+        "Context precision",
+        "Answer relevance",
+        "Faithfulness",
+        "Retrieval recall"
+      ],
+      "correct": 2,
+      "explanation": "Faithfulness (RAGAS) measures whether each claim in the generated answer is supported by the retrieved context — directly measuring hallucination risk. Context precision measures chunk quality; answer relevance measures whether the answer addresses the question."
+    },
+    {
+      "id": "q2",
+      "question": "An interviewer asks 'When would you fine-tune instead of using RAG?' The best answer is:",
+      "options": [
+        "Always fine-tune — it's more accurate than RAG",
+        "Fine-tune when you need consistent output format/style, domain terminology, or behavioral changes that prompting can't achieve; use RAG when knowledge changes frequently",
+        "Use RAG only for small document sets under 1000 documents",
+        "Fine-tune whenever you have more than 100 training examples"
+      ],
+      "correct": 1,
+      "explanation": "This is a classic trade-off question. Fine-tuning bakes knowledge and behavior into weights (good for style, format, terminology); RAG retrieves fresh knowledge at runtime (good for changing data, large corpora, citations). Both can be combined."
+    },
+    {
+      "id": "q3",
+      "question": "A system design question asks you to build a customer support AI for 10M documents. Which vector database choice and reasoning would impress the interviewer most?",
+      "options": [
+        "Chroma — it's the easiest to set up",
+        "A hand-built cosine similarity function in Python for maximum control",
+        "Pinecone or Weaviate — managed, horizontally scalable, with metadata filtering for multi-tenant isolation and production SLAs",
+        "SQLite with vector extension — it's free and open-source"
+      ],
+      "correct": 2,
+      "explanation": "At 10M documents, you need a managed vector database with horizontal scalability, metadata filtering (for user/department isolation), and production SLAs. Chroma and SQLite are excellent for development but don't scale to this level."
+    },
+    {
+      "id": "q4",
+      "question": "When answering 'How does attention work?', what is the most technically precise description of how attention scores are computed?",
+      "options": [
+        "Each token is compared to its nearest neighbors using cosine similarity",
+        "Attention scores are dot products of Query vectors with Key vectors, scaled by √d_k, then softmax'd to produce weights over Value vectors",
+        "Attention uses a convolutional filter sliding across the sequence to detect patterns",
+        "Each token's embedding is multiplied by a learnable weight matrix to produce the attention output"
+      ],
+      "correct": 1,
+      "explanation": "The scaled dot-product attention formula: Attention(Q,K,V) = softmax(QK^T / √d_k)V. The scaling by √d_k prevents dot products from growing too large with high-dimensional vectors, which would push softmax into saturation."
+    },
+    {
+      "id": "q5",
+      "question": "An interviewer asks about prompt injection. Which mitigation is most effective?",
+      "options": [
+        "Encrypting the system prompt so users cannot read it",
+        "Using a longer system prompt with more detailed instructions",
+        "Structuring messages so user input is always in a separate 'user' role and never concatenated into the system prompt, combined with an input validation/moderation layer",
+        "Switching to a different LLM provider"
+      ],
+      "correct": 2,
+      "explanation": "The key defense is structural: the API's role separation (system vs. user vs. assistant) provides inherent sandboxing. Never concatenate user input into the system prompt string. Add a moderation layer (Llama Guard, content classifiers) for adversarial inputs."
+    },
+    {
+      "id": "q6",
+      "question": "What does 'P95 latency' mean in an LLM monitoring context, and why does it matter more than average latency?",
+      "options": [
+        "P95 is the 95th fastest server in your infrastructure",
+        "P95 latency is the response time exceeded by only 5% of requests — it reveals the experience of nearly all users, while averages mask slow outliers",
+        "P95 means 95% of your cost comes from latency-related overhead",
+        "P95 is the target latency agreed in your SLA with 95% confidence"
+      ],
+      "correct": 1,
+      "explanation": "Average latency can look great (e.g., 800ms) while P95 is terrible (e.g., 8s), meaning 5% of users wait 10× longer. P95 reveals the 'bad tail' experience. P99 is even more extreme — useful for detecting rare but severe outliers."
+    },
+    {
+      "id": "q7",
+      "question": "In a multi-agent system design question, what is a key risk compared to a single-agent design?",
+      "options": [
+        "Multi-agent systems cannot use the same LLM for multiple agents",
+        "Multi-agent systems increase complexity (harder to debug, more failure points) and add latency from inter-agent coordination",
+        "Multi-agent systems always cost more because they use more token context",
+        "Multi-agent systems cannot handle tool use"
+      ],
+      "correct": 1,
+      "explanation": "Multi-agent systems are more powerful for parallel/specialized tasks but introduce coordination overhead, more failure surfaces, and harder debugging (which agent failed?). Interviewers want to see you understand this trade-off, not just the benefits."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Chain-of-thought (CoT) prompting",
+      "back": "Prompting the model to reason step-by-step before giving a final answer. Best for: multi-step arithmetic, logic problems, complex reasoning. Not needed for: simple factual recall, classification tasks."
+    },
+    {
+      "id": "f2",
+      "front": "RAG vs. Fine-tuning (interview answer)",
+      "back": "RAG: knowledge changes frequently, need citations, large data volume, no GPU budget. Fine-tuning: consistent style/format needed, domain terminology, behavioral changes, smaller/faster model needed. Often combined."
+    },
+    {
+      "id": "f3",
+      "front": "Tool/function calling (interview answer)",
+      "back": "Define tools as JSON schemas. LLM decides to call a tool, returns structured tool_use block with arguments. Code executes the tool, returns result. LLM incorporates result into final response. Enables agents."
+    },
+    {
+      "id": "f4",
+      "front": "Prompt injection (interview answer)",
+      "back": "Malicious user input that overrides the system prompt (e.g., 'Ignore previous instructions...'). Mitigations: structural role separation, never concatenate user input into system prompt, input validation/moderation."
+    },
+    {
+      "id": "f5",
+      "front": "Agent loop (interview answer)",
+      "back": "LLM receives task → decides action (tool call or respond) → tool executes → result returned to LLM → repeat until task complete or max_steps reached. Core pattern of all LLM agents."
+    },
+    {
+      "id": "f6",
+      "front": "RAGAS faithfulness",
+      "back": "Measures whether each claim in a RAG response is supported by the retrieved context. Detects hallucination — the model making up facts not present in the context. Range 0-1, higher is better."
+    },
+    {
+      "id": "f7",
+      "front": "System design framework for AI apps",
+      "back": "1) Clarify requirements (scale, latency, accuracy, cost). 2) High-level architecture. 3) Data pipeline (ingestion, processing, storage). 4) Serving layer (API, caching, LB). 5) Evaluation and monitoring."
+    },
+    {
+      "id": "f8",
+      "front": "Temperature vs. top-p (interview answer)",
+      "back": "Temperature: scales logits before softmax — controls overall randomness. Top-p (nucleus sampling): keeps minimum tokens for cumulative probability p — cuts off low-prob tail. Both control diversity of outputs."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Andrej Karpathy: Intro to Large Language Models",
+      "youtube_id": "zjkBMFhNj_g",
+      "description": "Karpathy's 1-hour overview covers LLM fundamentals, capabilities, limitations, and practical considerations — an excellent review of topics you'll be asked about in technical interviews."
+    },
+    {
+      "title": "AI Engineer Interview Preparation",
+      "youtube_id": "VPRSBzXzavo",
+      "description": "Structured walkthrough of common AI/LLM engineer interview question types — fundamentals, system design, coding challenges, and how to demonstrate production thinking to interviewers."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

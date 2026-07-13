@@ -1,0 +1,136 @@
+{
+  "id": "topic_31",
+  "level": 5,
+  "level_name": "Embeddings, Vector Search & RAG",
+  "order": 6,
+  "title": "RAG Failures & Architecture Patterns",
+  "emoji": "🏗️",
+  "duration_minutes": 20,
+  "eli8": "## 🐛 When RAG Goes Wrong\n\nRAG sounds perfect, but it can fail in sneaky ways! There are three types of failures:\n\n### 😕 Failure Type 1: Retrieval Failure\n\"I grabbed the wrong books from the library!\"\n\n- The question was about **quantum physics** but we grabbed books about **classical physics** — close, but wrong\n- We cut the documents into weird chunks and the important info got split in half\n- Our \"meaning GPS\" (embedding) doesn't understand specialized words in our field\n\n### 🙈 Failure Type 2: Generation Failure  \n\"I had the right books but didn't use them!\"\n\n- The AI looked at the retrieved text but **ignored it** and answered from memory anyway\n- The AI **hallucinated details** that weren't in the context\n- The AI said something that sounds true but **contradicts the source**\n\n### 📊 How Do We Measure Success?\n\nScientists created **RAGAS** — a special measuring tool that checks:\n\n- 🎯 **Faithfulness**: Did the answer only use facts from the retrieved text?\n- 🔍 **Context Precision**: Were the retrieved chunks actually relevant?\n- 📥 **Context Recall**: Did we retrieve ALL the important chunks?\n- 💬 **Answer Relevance**: Does the answer actually address the question?\n\n## 🏗️ Smarter RAG Architectures\n\n- 🤖 **Self-RAG**: AI decides \"should I retrieve? Was this result good enough?\"\n- ✅ **Corrective RAG**: Before using retrieved chunks, grades them — if they're bad, searches the internet instead!\n- 🗺️ **Adaptive RAG**: Routes simple questions to basic search, complex questions to advanced search",
+  "detail": "## RAG Failure Taxonomy\n\nRAG failures fall into two categories: **retrieval failures** (wrong context retrieved) and **generation failures** (LLM fails to use retrieved context correctly).\n\n## Retrieval Failures\n\n### 1. Query-Document Mismatch\nThe query's embedding doesn't align with the relevant document's embedding:\n- Technical jargon in queries vs. plain language in documents (or vice versa)\n- Short query vs. long document: the query embedding may not match the document's dense vector\n- **Fix**: asymmetric embedding models, HyDE, query expansion\n\n### 2. Poor Chunking\n- Relevant information split across two chunk boundaries\n- Chunks too large: embedding blurred by multiple topics\n- Chunks too small: lack the context needed to understand the answer\n- **Fix**: adjust chunk size/overlap, parent-document retrieval, semantic chunking\n\n### 3. Missing or Stale Data\n- The answer is in a document that was never indexed\n- Indexed content is outdated\n- **Fix**: audit document coverage, implement re-indexing pipelines, add freshness metadata\n\n### 4. Low-Quality Embeddings\n- Embedding model not suited to the domain (e.g., general model on medical text)\n- **Fix**: domain-specific embedding model or fine-tuned embeddings\n\n## Generation Failures\n\n### 1. Context Ignoring (Lost in the Middle)\nLLMs tend to pay more attention to content at the **beginning and end** of the context window than the middle. Relevant context buried in the middle may be ignored.\n- **Fix**: rerank so the most relevant chunks come first, reduce K\n\n### 2. Hallucination Despite Context\nThe LLM generates plausible-sounding facts not present in the retrieved context:\n- Over-confident model overrides retrieved facts with training knowledge\n- **Fix**: stricter system prompt, lower temperature, add faithfulness checks\n\n### 3. Faithfulness vs. Factuality\n- **Faithful**: answer is consistent with retrieved context (even if context is wrong)\n- **Factual**: answer is objectively true (even if not grounded in retrieved context)\n- RAG optimizes for faithfulness; factuality depends on document quality\n\n## RAGAS Evaluation Framework\n\nRAGAS is an automated evaluation framework for RAG pipelines:\n\n```python\nfrom ragas import evaluate\nfrom ragas.metrics import (\n    faithfulness,\n    answer_relevancy,\n    context_precision,\n    context_recall\n)\nfrom datasets import Dataset\n\ndata = {\n    \"question\": [\"What is the refund policy?\"],\n    \"answer\": [\"Refunds are issued within 30 days.\"],\n    \"contexts\": [[\"Our policy allows refunds within 30 days of purchase.\"]],\n    \"ground_truth\": [\"Refunds within 30 days are supported.\"]\n}\ndataset = Dataset.from_dict(data)\n\nresult = evaluate(\n    dataset,\n    metrics=[faithfulness, answer_relevancy, context_precision, context_recall]\n)\nprint(result)  # scores from 0.0 to 1.0 for each metric\n```\n\n### RAGAS Metrics Explained\n\n| Metric | Question Answered | Requires Ground Truth? |\n|--------|------------------|------------------------|\n| **Faithfulness** | Is the answer supported by the context? | No |\n| **Answer Relevancy** | Does the answer address the question? | No |\n| **Context Precision** | Are retrieved chunks actually relevant? | Yes |\n| **Context Recall** | Were all relevant chunks retrieved? | Yes |\n\n## Architecture Patterns\n\n### Self-RAG\nThe model dynamically decides **whether to retrieve** and **evaluates its own output**:\n1. Decide: \"Does this query need retrieval?\"\n2. Retrieve if needed\n3. Generate response\n4. Critique: \"Is this response supported by retrieved context? Is it useful?\"\n5. If critique fails, retry with different retrieval or respond from knowledge\n\n**Benefit**: Avoids unnecessary retrieval for simple questions; handles complex queries iteratively.\n\n### Corrective RAG (CRAG)\nEvaluates retrieved documents **before generation**:\n1. Retrieve top-K chunks\n2. Score each chunk's relevance with a lightweight evaluator (LLM or cross-encoder)\n3. If all chunks score low → fall back to web search or broader retrieval\n4. Only proceed to generation with high-quality context\n\n**Benefit**: Prevents generation from poor-quality retrieved context.\n\n### Adaptive RAG\nRoutes queries to different retrieval strategies based on query complexity:\n- **Simple factual** → direct retrieval, no reranking\n- **Multi-step reasoning** → iterative retrieval, chain-of-thought\n- **Time-sensitive** → filtered retrieval by date + web fallback\n\n```\nQuery → Query Classifier → [Simple | Complex | Time-sensitive]\n                                ↓          ↓            ↓\n                          Direct RAG   Iterative RAG  Adaptive RAG\n```\n\n## Failure Debugging Workflow\n\n1. **Log all inputs/outputs**: query, retrieved chunks, final answer\n2. **Check retrieval**: Are the retrieved chunks relevant? Use RAGAS context precision/recall\n3. **Check generation**: Is the answer faithful to context? Use RAGAS faithfulness\n4. **Identify failure type**: retrieval failure → fix chunking/embedding/hybrid search; generation failure → fix prompt/model/reranking order\n5. **A/B test fixes**: measure RAGAS metrics before and after",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What is the difference between 'retrieval failure' and 'generation failure' in a RAG pipeline?",
+      "options": [
+        "Retrieval failure means the vector database is down; generation failure means the LLM is down",
+        "Retrieval failure: wrong or irrelevant chunks retrieved; generation failure: LLM fails to correctly use retrieved context",
+        "Retrieval failure: too slow to respond; generation failure: response too long",
+        "Retrieval failure: embedding model error; generation failure: tokenizer error"
+      ],
+      "correct": 1,
+      "explanation": "Retrieval failure means the pipeline returned the wrong or irrelevant documents (fix: improve chunking, embeddings, or hybrid search). Generation failure means correct context was retrieved but the LLM ignored it, hallucinated, or was unfaithful to it (fix: improve prompt, reranking order, or add faithfulness checks)."
+    },
+    {
+      "id": "q2",
+      "question": "What does the RAGAS 'faithfulness' metric measure?",
+      "options": [
+        "Whether the retrieved documents are from trustworthy sources",
+        "Whether the LLM's answer is supported by and consistent with the retrieved context",
+        "Whether the original documents are factually accurate",
+        "Whether the query was correctly understood by the retrieval system"
+      ],
+      "correct": 1,
+      "explanation": "RAGAS faithfulness measures whether every claim in the generated answer is actually supported by the retrieved context. A faithfulness score of 1.0 means the answer only contains facts present in the context. It does not measure whether the context itself is factually correct."
+    },
+    {
+      "id": "q3",
+      "question": "What is the 'lost in the middle' phenomenon in RAG generation?",
+      "options": [
+        "Chunks in the middle of a document are never retrieved",
+        "LLMs tend to attend more to context at the beginning and end of the input, ignoring relevant content placed in the middle",
+        "The middle part of a response is often cut off due to token limits",
+        "Metadata for middle chunks is often missing"
+      ],
+      "correct": 1,
+      "explanation": "Research shows LLMs perform worse when relevant information is placed in the middle of a long context window compared to the beginning or end. In RAG, this means if K retrieved chunks are passed in order, chunks ranked 3-8 may be partially ignored even if they are the most relevant."
+    },
+    {
+      "id": "q4",
+      "question": "How does Corrective RAG (CRAG) differ from naive RAG?",
+      "options": [
+        "CRAG uses a different embedding model for each query",
+        "CRAG evaluates retrieved document quality before generation, falling back to alternative sources if quality is poor",
+        "CRAG always retrieves from multiple databases simultaneously",
+        "CRAG rewrites the query after each retrieval attempt"
+      ],
+      "correct": 1,
+      "explanation": "Corrective RAG (CRAG) adds a relevance evaluation step after retrieval: each retrieved document is scored for relevance. If scores are too low, the system falls back to alternative sources (e.g., web search) before proceeding to generation, preventing generation from poor-quality context."
+    },
+    {
+      "id": "q5",
+      "question": "What is the key distinction between 'faithfulness' and 'factuality' in RAG evaluation?",
+      "options": [
+        "They are synonyms and measure the same thing",
+        "Faithfulness measures consistency with retrieved context; factuality measures objective truth of the answer",
+        "Factuality is measured automatically; faithfulness requires human annotation",
+        "Faithfulness applies to retrieval; factuality applies to generation"
+      ],
+      "correct": 1,
+      "explanation": "Faithfulness measures whether the answer is consistent with the retrieved context (grounded). Factuality measures whether the answer is objectively true. A RAG system can be faithful but factually wrong (if the source document contains errors), or factually correct but unfaithful (if the LLM uses its training knowledge instead of the context)."
+    },
+    {
+      "id": "q6",
+      "question": "What does Self-RAG enable that standard RAG does not?",
+      "options": [
+        "Retrieval from multiple vector databases",
+        "Dynamic decision-making about whether to retrieve, and self-critique of generated outputs",
+        "Automatic re-indexing of documents",
+        "Parallel retrieval of multiple query variants"
+      ],
+      "correct": 1,
+      "explanation": "Self-RAG trains the model to generate special reflection tokens that decide: (1) whether retrieval is needed for this query, (2) whether retrieved passages are relevant, and (3) whether the generated response is supported by the context. This enables more efficient and accurate generation compared to always-retrieve pipelines."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Retrieval Failure",
+      "back": "A RAG failure mode where the wrong or irrelevant chunks are retrieved. Caused by: query-document vocabulary mismatch, poor chunking, missing data in the index, or a domain-mismatched embedding model. Fix with hybrid search, better chunking, or domain-specific embeddings."
+    },
+    {
+      "id": "f2",
+      "front": "Generation Failure",
+      "back": "A RAG failure mode where correct context was retrieved but the LLM fails to use it correctly — ignoring context (lost in the middle), hallucinating beyond the context, or contradicting the retrieved facts. Fix with stricter prompts, reranking, lower temperature."
+    },
+    {
+      "id": "f3",
+      "front": "Faithfulness (RAGAS)",
+      "back": "A RAGAS metric measuring whether every claim in the generated answer is supported by the retrieved context. Score 0–1; 1.0 = fully grounded. Does not require ground truth labels — computed by checking each answer claim against the context."
+    },
+    {
+      "id": "f4",
+      "front": "RAGAS",
+      "back": "Retrieval Augmented Generation Assessment — an open-source framework for automatically evaluating RAG pipelines. Metrics include faithfulness, answer relevancy, context precision, and context recall. Enables systematic quality measurement without expensive human annotation."
+    },
+    {
+      "id": "f5",
+      "front": "Self-RAG",
+      "back": "An architecture where the LLM itself decides when to retrieve (not all queries need retrieval), evaluates retrieved passages for relevance, and critiques its own generated response for faithfulness. Trained with special reflection tokens to enable this decision-making."
+    },
+    {
+      "id": "f6",
+      "front": "Corrective RAG (CRAG)",
+      "back": "A RAG architecture that evaluates retrieved document quality before generation. If retrieved documents score below a threshold, it triggers a fallback (e.g., web search, broader retrieval) to obtain higher-quality context before generating a response."
+    },
+    {
+      "id": "f7",
+      "front": "Context Precision (RAGAS)",
+      "back": "A RAGAS metric measuring what fraction of retrieved chunks are actually relevant to the question. High precision = no irrelevant noise in the context. Requires ground truth to compute (which documents should have been retrieved)."
+    }
+  ],
+  "videos": [
+    {
+      "title": "RAG Failures and How to Fix Them",
+      "youtube_id": "ZqWXbG5_-oE",
+      "description": "A systematic walkthrough of common RAG failure modes — retrieval failures, generation failures, and evaluation gaps — with concrete debugging strategies and architecture patterns to address them."
+    },
+    {
+      "title": "RAG Architecture Patterns",
+      "youtube_id": "8OJC21T2SL4",
+      "description": "Overview of advanced RAG architectures including Self-RAG, Corrective RAG, and Adaptive RAG, explaining when to apply each pattern and how they improve over naive RAG pipelines."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

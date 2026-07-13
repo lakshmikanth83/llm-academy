@@ -1,0 +1,136 @@
+{
+  "id": "topic_22",
+  "level": 4,
+  "level_name": "Using LLMs: APIs & the Tool Landscape",
+  "order": 2,
+  "title": "Function & Tool Calling",
+  "emoji": "🔧",
+  "duration_minutes": 20,
+  "eli8": "# Giving the AI a Toolbox 🧰\n\nImagine you hired a really smart assistant, but they were locked in a room with no phone, no internet, and no calculator. They could only use what's in their head.\n\nThat's what a regular AI is like — super smart, but stuck with only the knowledge they were trained on. They might **make up** an answer if they don't know something!\n\n## The Toolbox Solution 🔨\n\n**Tool calling** is like sliding a toolbox under the door. Now your assistant can:\n\n- 🧮 **Use a calculator** instead of guessing math\n- 🌐 **Search the web** for today's weather or news\n- 📊 **Look up your database** for real customer info\n- 📁 **Read a file** from your computer\n\nBut here's the clever part — **YOU** still run the tools, not the AI. The AI just says \"I need Tool X with these inputs.\" Then you run the tool and give the results back. It's teamwork!\n\n## How the Magic Works 🪄\n\nHere's the four-step dance:\n\n1. 🧑 **You** describe what tools exist (like a menu)\n2. 🤖 **The AI** reads your message and picks a tool: \"I'll use the calculator tool with 15 × 47\"\n3. 🧑 **You** actually run the calculator and get 705\n4. 🤖 **The AI** uses that result to write a real answer: \"15 × 47 = 705!\"\n\nThis is exactly how ChatGPT browses the web, how Claude Code runs terminal commands, and how AI assistants can check your calendar!\n\n## Why It Matters 🌟\n\n- No more made-up answers (hallucinations) for things the AI can look up\n- AI can take **real actions** in the world\n- You can build an AI that connects to ANY system\n- The AI can use **multiple tools** in a row to solve complex problems\n\nTool calling turns a smart chatbot into a real **agent** — an AI that can actually get things done! 🚀",
+  "detail": "## What Is Tool Calling?\n\nTool calling (also called function calling) is a structured mechanism that allows LLMs to request the execution of predefined functions during inference. Rather than generating a free-text answer, the model emits a structured `tool_use` block specifying which tool to invoke and with what arguments. The calling application executes the tool and returns the result, and the model then incorporates it into its final response.\n\nThis pattern is foundational to **AI agents** — systems that can take actions, gather information, and complete multi-step tasks.\n\n## Tool Definition Schema\n\nTools are described to the model using a JSON Schema-like structure:\n\n```python\ntools = [\n    {\n        \"name\": \"get_weather\",\n        \"description\": \"Get the current weather for a given city. Use this when the user asks about weather conditions.\",\n        \"input_schema\": {\n            \"type\": \"object\",\n            \"properties\": {\n                \"city\": {\n                    \"type\": \"string\",\n                    \"description\": \"The city name, e.g. 'London'\"\n                },\n                \"units\": {\n                    \"type\": \"string\",\n                    \"enum\": [\"celsius\", \"fahrenheit\"],\n                    \"description\": \"Temperature unit\"\n                }\n            },\n            \"required\": [\"city\"]\n        }\n    }\n]\n```\n\nThe **description** is critical — the model uses it to decide when and whether to call a tool. Vague descriptions lead to missed or incorrect tool calls.\n\n## The Tool-Calling Flow (Anthropic)\n\n```python\nimport anthropic\nimport json\n\nclient = anthropic.Anthropic()\n\n# Step 1: Initial request with tools\nresponse = client.messages.create(\n    model=\"claude-sonnet-4-5\",\n    max_tokens=1024,\n    tools=tools,\n    messages=[{\"role\": \"user\", \"content\": \"What's the weather in Tokyo?\"}]\n)\n\n# Step 2: Check if model wants to call a tool\nif response.stop_reason == \"tool_use\":\n    tool_use_block = next(b for b in response.content if b.type == \"tool_use\")\n    tool_name = tool_use_block.name\n    tool_input = tool_use_block.input\n\n    # Step 3: Execute the tool (your code)\n    result = get_weather(tool_input[\"city\"], tool_input.get(\"units\", \"celsius\"))\n\n    # Step 4: Send tool result back\n    final_response = client.messages.create(\n        model=\"claude-sonnet-4-5\",\n        max_tokens=1024,\n        tools=tools,\n        messages=[\n            {\"role\": \"user\", \"content\": \"What's the weather in Tokyo?\"},\n            {\"role\": \"assistant\", \"content\": response.content},\n            {\n                \"role\": \"user\",\n                \"content\": [{\n                    \"type\": \"tool_result\",\n                    \"tool_use_id\": tool_use_block.id,\n                    \"content\": json.dumps(result)\n                }]\n            }\n        ]\n    )\n    print(final_response.content[0].text)\n```\n\n## Parallel Tool Calls\n\nModels can request multiple tools simultaneously in a single response. For example, asking \"What's the weather in Paris and London?\" may produce two `tool_use` blocks. Execute them in parallel (e.g., `asyncio.gather`) and return both `tool_result` blocks in a single user message.\n\n## Tool Choice Control\n\n- **`auto`** (default) — model decides whether to use a tool\n- **`required`** — model must use at least one tool\n- **`{\"type\": \"tool\", \"name\": \"get_weather\"}`** — force a specific tool\n\nUse `required` in agentic pipelines where you always need structured output.\n\n## Common Tool Patterns\n\n| Tool | Use Case |\n|---|---|\n| Calculator | Arithmetic the model might hallucinate |\n| Web search | Real-time information |\n| Database query | Fetching user-specific records |\n| Code execution | Running Python to verify results |\n| File read/write | Persistent storage between sessions |\n| Calendar/email | Taking real-world actions |\n\n## Security Considerations\n\nAlways validate tool inputs before execution. If a tool calls `execute_sql(query)`, sanitize the query against injection. Never expose tools that allow arbitrary code execution without sandboxing. The model's generated arguments should be treated as untrusted user input — apply the same validation you would for any external data source.\n\n## Chaining Tool Calls\n\nComplex agents chain multiple tool calls: search the web → read a page → extract data → write to a database. This is the basis of **ReAct** (Reason + Act) style agents. Keep a conversation loop running until `stop_reason == \"end_turn\"`.",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What happens when an LLM decides to use a tool?",
+      "options": [
+        "The LLM directly executes the tool's code on its own servers",
+        "The LLM emits a structured tool_use block, and the calling application executes the tool",
+        "The LLM pauses and asks the user to run the tool manually",
+        "The tool result is automatically fetched from a central registry"
+      ],
+      "correct": 1,
+      "explanation": "The model never executes tools itself — it outputs a structured request (tool_use block) containing the tool name and arguments. The application code is responsible for executing the tool and returning the result. This separation keeps the model stateless and the execution environment under developer control."
+    },
+    {
+      "id": "q2",
+      "question": "Which part of a tool definition most influences whether the model chooses to call that tool?",
+      "options": [
+        "The parameter names",
+        "The tool's description",
+        "The JSON Schema types (string, integer, etc.)",
+        "The order the tool appears in the tools list"
+      ],
+      "correct": 1,
+      "explanation": "The model uses the tool's description to decide when a tool is appropriate. A clear, specific description like 'Use this to get real-time weather data' tells the model exactly when to call it. Vague descriptions lead to missed calls or incorrect usage. Good descriptions are the single most impactful part of tool definition."
+    },
+    {
+      "id": "q3",
+      "question": "What is the stop_reason value that tells you the model wants to call a tool (Anthropic API)?",
+      "options": [
+        "end_turn",
+        "max_tokens",
+        "tool_use",
+        "function_call"
+      ],
+      "correct": 2,
+      "explanation": "When the Anthropic model decides to call a tool, it sets stop_reason to 'tool_use' and includes one or more tool_use content blocks in the response. You check this value to know whether to execute tools or treat the response as a final answer."
+    },
+    {
+      "id": "q4",
+      "question": "A user asks 'What's the weather in Paris and London right now?' What is the most efficient way for the model to handle this?",
+      "options": [
+        "Call the weather tool for Paris, wait for the result, then call it for London",
+        "Return both answers from memory without using tools",
+        "Call the weather tool for both cities in parallel within a single response",
+        "Decline and ask the user to specify one city at a time"
+      ],
+      "correct": 2,
+      "explanation": "Modern LLMs support parallel tool calls — emitting multiple tool_use blocks in a single response. The application can then execute both calls concurrently and return both results together, making the interaction faster than sequential tool calls."
+    },
+    {
+      "id": "q5",
+      "question": "Why is input validation critical before executing a tool requested by the model?",
+      "options": [
+        "To improve the model's accuracy on subsequent turns",
+        "Because tool inputs from the model should be treated as untrusted input and may contain injection attacks",
+        "To reduce token usage in the conversation",
+        "Because the model always generates malformed JSON"
+      ],
+      "correct": 1,
+      "explanation": "A model could (through prompt injection or adversarial input) produce tool arguments containing SQL injection, path traversal, or other attacks. Always validate and sanitize tool inputs just as you would any user-supplied data. Never pass raw model output directly to database queries, shell commands, or file operations."
+    },
+    {
+      "id": "q6",
+      "question": "Setting tool_choice to 'required' means:",
+      "options": [
+        "Only the first tool in the list will be called",
+        "The model must call at least one tool, it cannot respond without using a tool",
+        "All tools in the list will be called",
+        "The model will ask the user which tool to use"
+      ],
+      "correct": 1,
+      "explanation": "tool_choice='required' forces the model to use at least one tool before responding. This is useful in agentic pipelines where you always need a structured output (e.g., always extract data into a schema). 'auto' lets the model decide freely."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "What is tool calling (function calling)?",
+      "back": "A mechanism allowing LLMs to request execution of predefined functions. The model outputs a structured tool_use block with a tool name and arguments. The application executes the tool and returns results, which the model incorporates into its final answer."
+    },
+    {
+      "id": "f2",
+      "front": "What is a tool definition schema?",
+      "back": "A JSON Schema-like object describing a tool to the model. It includes: name (the function identifier), description (when/why to use it — critical for model decision-making), and input_schema (the parameters the tool accepts, with types and required fields)."
+    },
+    {
+      "id": "f3",
+      "front": "What is a tool_use block?",
+      "back": "The structured object the model returns when it decides to call a tool. It contains: type: 'tool_use', id (unique identifier for this call), name (which tool), and input (the arguments as a JSON object). The application uses this to execute the tool."
+    },
+    {
+      "id": "f4",
+      "front": "What is a tool_result?",
+      "back": "The message sent back to the model containing the output of a tool execution. It references the tool_use_id from the original request and contains the tool's output as a string or structured content. The model uses it to generate its final response."
+    },
+    {
+      "id": "f5",
+      "front": "What is JSON Schema in the context of tools?",
+      "back": "A vocabulary for describing the structure and validation rules of JSON data. In tool definitions, it specifies parameter types (string, integer, boolean, array, object), required fields, enums (allowed values), and descriptions. The model uses it to generate correctly-typed tool inputs."
+    },
+    {
+      "id": "f6",
+      "front": "What are parallel tool calls?",
+      "back": "When a model emits multiple tool_use blocks in a single response, requesting several tools to be executed simultaneously. For example, fetching weather for three cities at once. The application executes them concurrently and returns all results in a single user message."
+    },
+    {
+      "id": "f7",
+      "front": "What is the ReAct pattern in agentic tool use?",
+      "back": "Reason + Act: the model alternates between reasoning about what to do next and taking an action (calling a tool). The loop continues — reason, act, observe result, reason again — until the task is complete. It is the basis of most tool-using AI agents."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Function Calling with LLMs Explained",
+      "youtube_id": "qFJeN9V1ZsI",
+      "description": "Clear walkthrough of how function/tool calling works: the tool definition schema, the model's tool_use response, executing functions, and returning results for the final answer."
+    },
+    {
+      "title": "Prompt Engineering and Tool Use — Anthropic Guide",
+      "youtube_id": "1bUy-1hGZpI",
+      "description": "Covers advanced prompt engineering including the tool use section — how to write effective tool descriptions and structure multi-tool agentic workflows."
+    }
+  ],
+  "has_practical": true,
+  "practical_description": "Live demo where a Claude-powered assistant uses three tools — a calculator, a mock weather API, and a dictionary lookup — to answer a multi-part query, showing the complete tool_use/tool_result conversation loop."
+}

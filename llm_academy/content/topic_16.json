@@ -1,0 +1,136 @@
+{
+  "id": "topic_16",
+  "level": 3,
+  "level_name": "Talking to LLMs",
+  "order": 3,
+  "title": "Chain of Thought & Reasoning",
+  "emoji": "🔗",
+  "duration_minutes": 15,
+  "eli8": "## Show Your Work! 📝\n\nRemember when your math teacher said \"show your work, not just the answer\"? There was a good reason for that — writing out each step helps you avoid mistakes and catch errors.\n\nAI models have the same problem. If you ask \"What is 17 × 24 + 13?\" and the AI just tries to blurt out the answer, it often gets it wrong. But if you ask it to **think step by step**, something magical happens:\n\n1. First: 17 × 24 = 408\n2. Then: 408 + 13 = 421\n3. Answer: 421 ✅\n\nBy writing out each step, the AI catches its own mistakes!\n\n## The Magic Words 🪄\n\nHere's the coolest trick in all of prompt engineering: just add the phrase...\n\n> **\"Let's think step by step.\"**\n\n...and the model suddenly gets much better at hard problems! This is called **Chain of Thought** (CoT) prompting. It was discovered by researchers who were amazed that such simple words made such a big difference.\n\n## When Should You Use It? 🤔\n\nChain of Thought is great for:\n- 🧮 **Math problems** — multi-step calculations\n- 🧩 **Logic puzzles** — \"if A is before B, and C is after A but before D...\"\n- 📋 **Planning** — \"How should I organize my birthday party?\"\n- 🔍 **Analysis** — breaking down a complicated question\n\nBut you probably don't need it for:\n- ❌ Simple facts (\"What's the capital of France?\")\n- ❌ Creative writing (\"Write me a poem about cats\")\n- ❌ Quick translations\n\n**Fun fact:** When you ask the AI to reason step by step, it's basically giving itself scratch paper to work on before writing the final answer! 🗒️",
+  "detail": "## Chain-of-Thought Prompting\n\nChain-of-Thought (CoT) prompting, introduced by Wei et al. (2022), elicits intermediate reasoning steps from large language models before producing a final answer. The key insight: generating reasoning tokens creates a \"scratchpad\" that guides the subsequent prediction of the answer token.\n\n## Why It Works\n\nLLMs are autoregressive — each token is predicted based on all preceding tokens. When the model generates intermediate reasoning steps, those tokens become part of the context for predicting the final answer. Correct intermediate steps make the correct final answer more probable. The model is, in effect, conditioning its answer on its own reasoning.\n\nWithout CoT:\n```\nQ: A bat and ball cost $1.10. The bat costs $1 more than the ball. How much does the ball cost?\nA: $0.10  ❌  (the intuitive but wrong answer)\n```\n\nWith CoT:\n```\nQ: A bat and ball cost $1.10. The bat costs $1 more than the ball. How much does the ball cost? Let's think step by step.\nA: Let ball = x cents. Bat = x + 100 cents. x + (x + 100) = 110. 2x = 10. x = 5. The ball costs $0.05.  ✅\n```\n\n## Zero-Shot CoT vs. Few-Shot CoT\n\n**Zero-shot CoT** (Kojima et al., 2022): Simply append \"Let's think step by step\" to the prompt. No examples needed. Remarkably effective across math, logic, and commonsense reasoning tasks.\n\n**Few-shot CoT**: Provide 3-8 examples where each example includes both the reasoning chain and the final answer:\n\n```\nQ: Roger has 5 tennis balls. He buys 2 more cans of 3 balls each. How many balls does he have?\nA: Roger starts with 5 balls. 2 cans × 3 balls = 6 new balls. 5 + 6 = 11 balls. The answer is 11.\n\nQ: [your actual question]\nA:\n```\n\nFew-shot CoT generally outperforms zero-shot CoT for complex tasks, but zero-shot CoT is often sufficient and cheaper.\n\n## Self-Consistency\n\nProposed by Wang et al. (2022): instead of relying on a single reasoning chain, sample multiple diverse chains (temperature > 0) and take a majority vote on the final answer. This improves accuracy significantly on multi-step arithmetic and commonsense reasoning:\n\n```python\nfrom collections import Counter\n\ndef self_consistent_answer(question, n_samples=5):\n    answers = []\n    for _ in range(n_samples):\n        response = llm(question + \" Let's think step by step.\", temperature=0.7)\n        final_answer = extract_answer(response)\n        answers.append(final_answer)\n    return Counter(answers).most_common(1)[0][0]\n```\n\nSelf-consistency is particularly effective for problems with a single correct answer (math, logic) but less useful for open-ended tasks.\n\n## Tree of Thoughts (ToT)\n\nYao et al. (2023) extend CoT to explore multiple reasoning paths simultaneously, like a tree search. At each step, the model generates several possible \"thoughts,\" evaluates them, and prunes unproductive branches. This is more powerful than single-path CoT but computationally expensive and requires orchestration code.\n\n## ReAct: Reasoning + Acting\n\nReAct (Yao et al., 2022) interleaves CoT reasoning with external tool use:\n- **Reason**: \"I need to find the population of Tokyo.\"\n- **Act**: `search(\"Tokyo population 2024\")`\n- **Observe**: \"Tokyo population: 13.96 million\"\n- **Reason**: \"Now I can compare with London...\"\n\nThis is the foundation of modern LLM agent frameworks.\n\n## Limitations\n\n- **Cost**: Longer outputs = more tokens = higher cost and latency\n- **Hallucinated reasoning**: The model can generate a plausible-looking but factually wrong chain that leads to a wrong answer with high confidence\n- **Diminishing returns**: For simple tasks, CoT adds overhead without meaningful accuracy gain\n- **Not a substitute for RAG**: CoT cannot retrieve facts the model wasn't trained on\n\n## When to Apply CoT\n\n| Task Type | CoT Benefit |\n|---|---|\n| Multi-step arithmetic | High |\n| Logical deduction | High |\n| Commonsense reasoning | Medium |\n| Factual lookup | Low |\n| Creative writing | Low |\n| Classification | Low–Medium |",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What is the core mechanism by which Chain-of-Thought improves accuracy?",
+      "options": [
+        "It retrieves more training data at inference time",
+        "The generated reasoning tokens become part of the context that guides the final answer prediction",
+        "It forces the model to use a different decoding algorithm",
+        "It increases the model's temperature for more creative outputs"
+      ],
+      "correct": 1,
+      "explanation": "LLMs predict each token conditioned on all previous tokens. When CoT generates intermediate reasoning, those tokens become context for the final answer. Correct intermediate steps make the correct final answer statistically more likely to be predicted."
+    },
+    {
+      "id": "q2",
+      "question": "What is the zero-shot Chain-of-Thought trigger phrase?",
+      "options": [
+        "Think carefully before answering.",
+        "Let's think step by step.",
+        "Reason through this problem.",
+        "Show your work."
+      ],
+      "correct": 1,
+      "explanation": "'Let's think step by step' is the specific phrase from Kojima et al. (2022) that reliably triggers CoT-style reasoning in large models. While similar phrasings also work, this exact phrase was studied and found to be highly effective across model families."
+    },
+    {
+      "id": "q3",
+      "question": "What does self-consistency add to Chain-of-Thought prompting?",
+      "options": [
+        "It ensures the reasoning chain doesn't contradict itself within a single response",
+        "It samples multiple reasoning chains at higher temperature and takes a majority vote on the final answer",
+        "It forces the model to always agree with the user",
+        "It runs the same prompt on multiple models and averages the results"
+      ],
+      "correct": 1,
+      "explanation": "Self-consistency (Wang et al., 2022) generates multiple diverse reasoning paths (using temperature > 0) and aggregates the final answers via majority vote. This exploits the fact that correct answers tend to emerge through multiple independent reasoning routes."
+    },
+    {
+      "id": "q4",
+      "question": "Which of these tasks would benefit MOST from Chain-of-Thought prompting?",
+      "options": [
+        "Translating 'hello' into French",
+        "Writing a birthday poem for a friend",
+        "Solving a multi-step word problem involving percentages and rates",
+        "Identifying the capital of Japan"
+      ],
+      "correct": 2,
+      "explanation": "CoT provides the biggest benefit on multi-step reasoning tasks where an intermediate scratchpad genuinely helps reach the correct answer. Simple factual lookups and creative tasks don't require step-by-step reasoning."
+    },
+    {
+      "id": "q5",
+      "question": "What is a key risk of Chain-of-Thought prompting?",
+      "options": [
+        "The model always refuses to answer after generating a reasoning chain",
+        "The model may generate a plausible-sounding but factually wrong reasoning chain that leads to an incorrect confident answer",
+        "CoT always makes models slower without improving accuracy",
+        "The model runs out of context window space"
+      ],
+      "correct": 1,
+      "explanation": "A significant limitation is hallucinated reasoning: the model can produce a logically coherent-looking chain of steps that is factually wrong at key points, arriving at an incorrect answer. The appearance of reasoning doesn't guarantee correct facts."
+    },
+    {
+      "id": "q6",
+      "question": "How does ReAct differ from standard Chain-of-Thought prompting?",
+      "options": [
+        "ReAct uses multiple models voting on answers",
+        "ReAct interleaves CoT reasoning steps with external tool use (e.g., web search)",
+        "ReAct removes the reasoning steps and only outputs the final answer",
+        "ReAct is a fine-tuning technique, not a prompting technique"
+      ],
+      "correct": 1,
+      "explanation": "ReAct (Reasoning + Acting) extends CoT by allowing the model to interleave reasoning steps with actions like tool calls (search, calculator, code execution). The observation from each action feeds back into the next reasoning step, enabling complex agent workflows."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Chain-of-Thought (CoT) prompting",
+      "back": "A prompting technique that elicits intermediate reasoning steps from an LLM before the final answer. The generated reasoning tokens act as a scratchpad that improves accuracy on complex tasks."
+    },
+    {
+      "id": "f2",
+      "front": "Zero-shot CoT",
+      "back": "Triggering chain-of-thought reasoning without any examples, simply by appending 'Let's think step by step' to the prompt. Effective for math, logic, and commonsense reasoning tasks."
+    },
+    {
+      "id": "f3",
+      "front": "Few-shot CoT",
+      "back": "Providing 3–8 examples where each example includes both a reasoning chain and a final answer, before posing the actual question. Generally more accurate than zero-shot CoT for complex tasks."
+    },
+    {
+      "id": "f4",
+      "front": "Self-consistency",
+      "back": "A CoT extension that samples multiple reasoning chains (at temperature > 0) for the same question and takes a majority vote on the final answer. Improves reliability on tasks with single correct answers."
+    },
+    {
+      "id": "f5",
+      "front": "Tree of Thoughts (ToT)",
+      "back": "An extension of CoT that explores multiple reasoning paths simultaneously, like a tree search. The model generates candidate 'thoughts', evaluates them, and prunes unproductive branches. More powerful but computationally expensive."
+    },
+    {
+      "id": "f6",
+      "front": "ReAct (Reasoning + Acting)",
+      "back": "A framework interleaving chain-of-thought reasoning with external tool actions (search, code execution). The model reasons about what to do, acts, observes the result, then reasons again. Foundation of LLM agent systems."
+    },
+    {
+      "id": "f7",
+      "front": "Reasoning chain / scratchpad",
+      "back": "The sequence of intermediate reasoning steps generated by an LLM during CoT prompting. Acts as working memory — these tokens condition the final answer, making correct outputs more probable."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Chain of Thought Prompting — Eliciting Reasoning in LLMs",
+      "youtube_id": "qRnMZHKjAFE",
+      "description": "Explains the chain-of-thought technique, why 'let's think step by step' works, and demonstrates its effectiveness on math and logic problems with and without CoT."
+    },
+    {
+      "title": "Reasoning and Attention in Large Language Models",
+      "youtube_id": "bQ5BoolX9Ag",
+      "description": "A deep dive into how transformer attention supports multi-step reasoning, covering self-consistency and how attention patterns relate to reasoning quality."
+    }
+  ],
+  "has_practical": true,
+  "practical_description": "A side-by-side demo solving a multi-step math and logic problem with and without 'Let's think step by step,' showing the model's scratchpad output and final answer for each approach."
+}

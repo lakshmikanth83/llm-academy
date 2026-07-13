@@ -1,0 +1,148 @@
+{
+  "id": "topic_07",
+  "level": 2,
+  "level_name": "How LLMs Work",
+  "order": 2,
+  "title": "Embeddings",
+  "emoji": "🗺️",
+  "duration_minutes": 20,
+  "eli8": "# Words as Map Coordinates 🗺️\n\nImagine a magical map where words are placed on it based on their *meaning*. Words that are similar end up close together, and words that are different end up far apart.\n\n## The Meaning Map\n\nOn this meaning map:\n- 🐱 \"cat\" and \"kitten\" are next-door neighbors\n- 🍎 \"apple\" and \"banana\" live in the same fruit neighborhood\n- 👑 \"king\" and \"queen\" are very close, just like a real royal family\n- 🏠 \"house\" and \"banana\" are very far apart — they have nothing to do with each other!\n\nEach word gets its own **coordinates** on this map — a list of numbers that describe exactly where it lives. These coordinates are called an **embedding**.\n\n## Why Is This Useful? 🤔\n\nWhen you ask an AI a question, it looks up the embeddings for all your words and finds nearby neighbors:\n\n- You ask: *\"Tell me about a feline pet\"*\n- The AI looks up \"feline\" and \"pet\" on the map\n- It sees they're close to \"cat\", \"kitten\", \"tabby\"\n- So it knows you're asking about cats! 🐱\n\n## The Magic of Math 🔢\n\nHere's the coolest part — you can do **math** with these coordinates!\n\n> **King** - Man + Woman = **Queen** 👑\n\nThat's real! If you take the king's coordinates, subtract the \"man\" coordinates, and add the \"woman\" coordinates, you end up right next to \"queen\" on the map!\n\nThis is how AI understands that:\n- Paris is to France as Tokyo is to Japan 🗾\n- Hot is to cold as fast is to slow\n- Walking is to walked as running is to ran\n\nEmbeddings turn language into math — and math is something computers are really, really good at! 🧮",
+  "detail": "# Embeddings\n\n## What Is an Embedding?\n\nAn **embedding** is a dense, fixed-length vector of floating-point numbers that represents a piece of text (token, word, sentence, or document) in a continuous high-dimensional space. The core property: semantically similar texts have vectors that are geometrically close to each other.\n\nA 1,536-dimensional embedding for \"cat\" might look like:\n```\n[0.023, -0.412, 0.887, 0.003, -0.156, ... (1,536 values total)]\n```\n\n## Historical Context: Word2Vec and GloVe\n\n**Word2Vec** (Mikolov et al., 2013) was the breakthrough: train a shallow neural network to predict surrounding words (Skip-gram) or predict a word from its context (CBOW). The hidden layer weights become word embeddings. Trained on Google News corpus (100B words), 300-dimensional vectors.\n\n**GloVe** (Pennington et al., 2014) — Global Vectors for Word Representation. Instead of local context windows, factorizes the global word co-occurrence matrix. Tends to capture broader semantic relationships.\n\nBoth have been superseded by contextual embeddings from transformer models, but the intuitions they established remain foundational.\n\n## Semantic Similarity via Cosine Similarity\n\nThe standard measure of similarity between two embedding vectors:\n\n```python\nimport numpy as np\n\ndef cosine_similarity(a, b):\n    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))\n\n# Returns a value in [-1, 1]\n# 1.0  = identical direction (highly similar)\n# 0.0  = orthogonal (unrelated)\n# -1.0 = opposite direction (antonyms)\n\nsim = cosine_similarity(embed(\"dog\"), embed(\"puppy\"))  # ~0.85\nsim = cosine_similarity(embed(\"dog\"), embed(\"quantum\"))  # ~0.12\n```\n\n## The King - Man + Woman = Queen Relationship\n\nWord2Vec demonstrated that linear arithmetic on embedding vectors encodes semantic relationships:\n\n- `vec(\"king\") - vec(\"man\") + vec(\"woman\") ≈ vec(\"queen\")`\n- `vec(\"Paris\") - vec(\"France\") + vec(\"Italy\") ≈ vec(\"Rome\")`\n- `vec(\"walked\") - vec(\"walk\") + vec(\"run\") ≈ vec(\"ran\")`\n\nThis shows that the offset between \"king\" and \"queen\" encodes the concept of gender, separately from the concept of royalty.\n\n## Modern Embedding Models\n\n| Model | Dimensions | Context | Best Use |\n|-------|-----------|---------|----------|\n| text-embedding-ada-002 | 1,536 | 8,192 tokens | General-purpose RAG |\n| text-embedding-3-small | 1,536 | 8,192 tokens | Cost-efficient retrieval |\n| text-embedding-3-large | 3,072 | 8,192 tokens | High-accuracy semantic search |\n| all-MiniLM-L6-v2 | 384 | 256 tokens | Fast local inference |\n| BGE-M3 | 1,024 | 8,192 tokens | Multilingual retrieval |\n\n**Sentence embeddings** (vs. word embeddings) represent an entire sentence or passage as a single vector. Models like SBERT (Sentence-BERT) are fine-tuned specifically for this task using siamese network training.\n\n## Dimensionality and Information Density\n\nHigher-dimensional embeddings can represent more nuanced distinctions, but with trade-offs:\n- Storage: 1M documents × 1,536 dims × 4 bytes = ~6 GB\n- Search latency: nearest-neighbor search scales with dimensions\n- Matryoshka Representation Learning (MRL): embeddings that can be truncated (e.g., 3,072 → 512 dims) with graceful quality degradation\n\n## Use in Retrieval-Augmented Generation (RAG)\n\nThe primary production use of embeddings today:\n\n1. **Indexing**: Encode all documents into vectors, store in a vector database (Pinecone, Weaviate, pgvector)\n2. **Query**: Encode the user's question into a vector\n3. **Retrieve**: Find the K nearest document vectors via approximate nearest neighbor (ANN) search\n4. **Generate**: Feed retrieved documents as context to the LLM\n\nThis enables LLMs to \"retrieve\" relevant knowledge without storing all facts in model weights.",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What is an embedding in the context of language models?",
+      "options": [
+        "A compressed version of a neural network stored on disk",
+        "A dense fixed-length vector of floating-point numbers representing text in a continuous space",
+        "The process of inserting special tokens into a prompt",
+        "A lookup table mapping words to integer IDs"
+      ],
+      "correct": 1,
+      "explanation": "An embedding is a dense, fixed-length numerical vector that represents a piece of text (word, sentence, or document) in a continuous high-dimensional space where semantic similarity corresponds to geometric proximity."
+    },
+    {
+      "id": "q2",
+      "question": "What does cosine similarity measure between two embedding vectors?",
+      "options": [
+        "The Euclidean distance between the endpoints of the vectors",
+        "The angle between the vectors, indicating how similar their directions are",
+        "The number of dimensions the two vectors share",
+        "The dot product normalized by the total vocabulary size"
+      ],
+      "correct": 1,
+      "explanation": "Cosine similarity measures the cosine of the angle between two vectors. A value of 1.0 means the vectors point in the same direction (highly similar), 0.0 means orthogonal (unrelated), and -1.0 means opposite directions."
+    },
+    {
+      "id": "q3",
+      "question": "What does the famous Word2Vec relationship 'King - Man + Woman ≈ Queen' demonstrate?",
+      "options": [
+        "That word embeddings can be added and subtracted like ordinary numbers",
+        "That linear arithmetic on embedding vectors encodes semantic relationships and analogies",
+        "That all gender relationships are simple linear transformations",
+        "That Word2Vec embeddings are three-dimensional"
+      ],
+      "correct": 1,
+      "explanation": "This demonstrates that semantic relationships are encoded as consistent linear offsets in embedding space. The vector difference (King - Man) captures the concept of 'royalty without maleness', and adding 'Woman' navigates to 'Queen'."
+    },
+    {
+      "id": "q4",
+      "question": "OpenAI's text-embedding-3-large model produces embeddings with how many dimensions?",
+      "options": ["384", "768", "1,536", "3,072"],
+      "correct": 3,
+      "explanation": "text-embedding-3-large produces 3,072-dimensional vectors, making it OpenAI's highest-quality embedding model. text-embedding-3-small and text-embedding-ada-002 produce 1,536-dimensional vectors."
+    },
+    {
+      "id": "q5",
+      "question": "In a Retrieval-Augmented Generation (RAG) system, what role do embeddings play?",
+      "options": [
+        "They replace the language model entirely for factual questions",
+        "They encode documents and queries into vectors so that semantically similar content can be retrieved via nearest-neighbor search",
+        "They compress the model weights to fit on smaller hardware",
+        "They translate between different tokenizer vocabularies"
+      ],
+      "correct": 1,
+      "explanation": "In RAG, documents are encoded into embedding vectors and stored in a vector database. At query time, the question is also embedded, and approximate nearest-neighbor search finds the most semantically relevant documents to include as context."
+    },
+    {
+      "id": "q6",
+      "question": "What was the key architectural insight of Word2Vec that made training word embeddings practical?",
+      "options": [
+        "Using a full transformer architecture with attention",
+        "Training a shallow neural network on local context prediction tasks (Skip-gram or CBOW)",
+        "Factorizing the global word co-occurrence matrix",
+        "Using byte-pair encoding before embedding"
+      ],
+      "correct": 1,
+      "explanation": "Word2Vec used a shallow (2-layer) neural network trained on simple prediction tasks: predict surrounding words given a center word (Skip-gram) or predict the center word from context (CBOW). This made training on billions of words computationally feasible."
+    },
+    {
+      "id": "q7",
+      "question": "What is a sentence embedding, and how does it differ from a word embedding?",
+      "options": [
+        "A sentence embedding is just the average of all word embeddings in the sentence",
+        "A sentence embedding represents an entire passage as a single fixed-length vector, often trained specifically for semantic similarity tasks",
+        "A sentence embedding uses a larger vocabulary than word embeddings",
+        "Sentence embeddings and word embeddings are the same thing"
+      ],
+      "correct": 1,
+      "explanation": "While naive averaging of word vectors is sometimes used, dedicated sentence embedding models (like SBERT) are fine-tuned using siamese/triplet networks on sentence-level similarity tasks, producing vectors that better capture full-passage meaning."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Embedding",
+      "back": "A dense, fixed-length vector of floating-point numbers representing text in a continuous high-dimensional space. Semantically similar texts have geometrically close vectors."
+    },
+    {
+      "id": "f2",
+      "front": "Vector",
+      "back": "An ordered list of numbers. In ML, embedding vectors typically have 384–3,072 dimensions. Each dimension captures some aspect of semantic meaning, though individual dimensions are not humanly interpretable."
+    },
+    {
+      "id": "f3",
+      "front": "Cosine similarity",
+      "back": "A measure of similarity between two vectors defined as the cosine of the angle between them: cos(θ) = (A·B) / (‖A‖‖B‖). Ranges from -1 (opposite) to 1 (identical direction). The standard metric for embedding similarity."
+    },
+    {
+      "id": "f4",
+      "front": "Semantic similarity",
+      "back": "The degree to which two pieces of text have the same meaning or are related in topic/concept. Measured in embedding space via cosine similarity — semantically similar texts have high cosine similarity scores."
+    },
+    {
+      "id": "f5",
+      "front": "Word2Vec",
+      "back": "A 2013 neural network approach by Mikolov et al. that learns word embeddings by training on local context prediction. Demonstrated that word relationships encode as linear offsets (King - Man + Woman = Queen)."
+    },
+    {
+      "id": "f6",
+      "front": "Sentence embedding",
+      "back": "A single fixed-length vector representing an entire sentence or passage. Models like SBERT are fine-tuned specifically for sentence-level semantic similarity, going beyond simple word-vector averaging."
+    },
+    {
+      "id": "f7",
+      "front": "Dimensionality (of embeddings)",
+      "back": "The number of values in an embedding vector. Common sizes: 384 (MiniLM), 768 (BERT), 1,536 (text-embedding-3-small), 3,072 (text-embedding-3-large). Higher dimensions can capture more nuance but increase storage and compute."
+    },
+    {
+      "id": "f8",
+      "front": "Vector database",
+      "back": "A database optimized for storing and querying high-dimensional vectors. Enables approximate nearest-neighbor (ANN) search to find the most semantically similar documents to a query embedding. Examples: Pinecone, Weaviate, pgvector, Chroma."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Word Embedding and Word2Vec Explained — StatQuest",
+      "youtube_id": "viZrOnJclY0",
+      "description": "Clear visual explanation of how Word2Vec trains word embeddings, the Skip-gram and CBOW architectures, and why the resulting vectors capture semantic relationships."
+    },
+    {
+      "title": "Embeddings Explained — Visualizing High-Dimensional Space",
+      "youtube_id": "gQddtTdmG_8",
+      "description": "Visual walkthrough of what embedding spaces look like, how dimensionality reduction (t-SNE/UMAP) reveals clustering, and practical examples of semantic similarity in action."
+    }
+  ],
+  "has_practical": true,
+  "practical_description": "Interactive embedding similarity explorer where you type two phrases and see their cosine similarity score, plus a 2D visualization (via PCA projection) showing how words cluster in embedding space."
+}

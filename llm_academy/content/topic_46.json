@@ -1,0 +1,153 @@
+{
+  "id": "topic_46",
+  "level": 7,
+  "level_name": "Evaluation & Testing",
+  "order": 6,
+  "title": "Build Your Own Eval Suite",
+  "emoji": "🏗️",
+  "duration_minutes": 30,
+  "eli8": "## Let's Build a Real Test System! 🏗️\n\nImagine you're a teacher and you need to grade 1,000 students' essays every week. You can't read every single one yourself! So what do you do? You create a **rubric** (a scoring guide), train teaching assistants to use it, and let them do the grading.\n\nBuilding an eval suite for AI is exactly the same idea:\n1. 📝 Write the test questions (your \"exam\")\n2. ✅ Write the correct answers (the \"answer key\")\n3. 🤖 Build a grader (LLM-as-judge with your rubric)\n4. 🏃 Run all tests automatically\n5. 📊 Track results over time\n\n## Step 1: What Are You Testing? 🎯\n\nFirst, decide what matters for YOUR specific AI application:\n- A **customer support bot** needs: accuracy, helpfulness, politeness, no hallucinations\n- A **coding assistant** needs: working code, clear explanations, correct syntax\n- A **study helper** needs: factual accuracy, age-appropriate language, completeness\n\n## Step 2: Your Golden Dataset 🥇\n\nThis is your collection of test questions with \"correct\" answers. You need:\n- **Diverse questions**: easy ones, hard ones, tricky ones, edge cases\n- **Reference answers**: what a perfect response looks like\n- **At least 50-100 examples** for meaningful statistics\n\nTip: Start with real questions from your users — those are the most valuable!\n\n## Step 3: Build Your Scorer 🎰\n\n```python\n# Simple LLM-as-judge scorer\ndef score_response(question, response, reference):\n    prompt = f\"\"\"\n    Rate this AI response from 1-5 for accuracy.\n    Question: {question}\n    Response: {response}  \n    Reference: {reference}\n    Score (just the number 1-5):\"\"\"\n    return llm.generate(prompt)\n```\n\n## Step 4: Track Over Time 📈\n\nThe magic of an eval suite is running it every time you make a change:\n- Updated the model? Run evals! Did it get better or worse?\n- Changed the prompt? Run evals! Did it improve?\n- Added new documents to your knowledge base? Run evals!\n\nThis way you **never accidentally make your AI worse** without knowing about it.",
+  "detail": "## Building a Production Eval Suite\n\nAn eval suite is a version-controlled, automated system for measuring AI application quality across a representative set of test cases. This topic walks through the complete construction of an eval suite, from criteria definition to CI/CD integration.\n\n### Step 1: Define Evaluation Criteria\n\nCriteria should be specific to your application's purpose and user needs. A customer support bot might evaluate:\n\n| Criterion | Description | Weight |\n|---|---|---|\n| Factual accuracy | Does the response contain correct information? | High |\n| Faithfulness | Is the response grounded in the knowledge base? | High |\n| Helpfulness | Does the response address the user's actual need? | High |\n| Tone | Is the response appropriately professional/friendly? | Medium |\n| Completeness | Does the response fully address the question? | Medium |\n| Brevity | Is the response an appropriate length? | Low |\n\n### Step 2: Build the Golden Dataset\n\nA golden dataset is a curated collection of test cases with known-good reference answers.\n\n**Sourcing test cases**:\n- Sample from real user queries (most representative of actual use)\n- Manually craft edge cases and adversarial examples\n- Generate synthetic QA pairs from your knowledge base using an LLM, then human-verify a sample\n- Include failure cases from incident reports\n\n**Annotation best practices**:\n- Use at least two annotators per question, measure inter-annotator agreement\n- Include examples at different difficulty levels\n- Cover all major use-case categories in proportion to real traffic\n- Aim for 100-500 examples; 50 is a viable minimum for early-stage systems\n\n```python\n# Golden dataset format\ngolden_dataset = [\n    {\n        \"id\": \"test_001\",\n        \"category\": \"return_policy\",\n        \"question\": \"Can I return a product after 45 days?\",\n        \"reference_answer\": \"Our return policy covers 30 days from purchase. Items returned after 30 days are not eligible for a full refund, though you may be eligible for store credit at our discretion.\",\n        \"key_facts\": [\"30 days\", \"not eligible\", \"store credit\"],\n        \"difficulty\": \"medium\"\n    },\n    # ...\n]\n```\n\n### Step 3: Implement Scorers\n\n**Exact match scorer** (for factual, closed-ended questions):\n```python\ndef exact_match_scorer(response: str, reference: str) -> float:\n    return 1.0 if response.strip().lower() == reference.strip().lower() else 0.0\n```\n\n**Key fact coverage scorer**:\n```python\ndef key_facts_scorer(response: str, key_facts: list[str]) -> float:\n    response_lower = response.lower()\n    hits = sum(1 for fact in key_facts if fact.lower() in response_lower)\n    return hits / len(key_facts)\n```\n\n**LLM-as-judge scorer**:\n```python\nimport json\n\ndef llm_judge_scorer(\n    question: str,\n    response: str,\n    reference: str,\n    criteria: list[str],\n    judge_model: str = \"gpt-4o\"\n) -> dict:\n    criteria_str = \"\\n\".join(f\"- {c}: rate 1-5\" for c in criteria)\n    prompt = f\"\"\"You are an expert evaluator. Rate the following AI response.\n\nQuestion: {question}\nResponse: {response}\nReference answer: {reference}\n\nRate on each criterion (1=poor, 5=excellent):\n{criteria_str}\n\nReturn JSON only: {{\"criterion_name\": score, ...}}\"\"\"\n    \n    result = call_llm(prompt, model=judge_model)\n    return json.loads(result)\n```\n\n### Step 4: Build the Evaluation Pipeline\n\n```python\nimport pandas as pd\nfrom datetime import datetime\n\ndef run_eval_suite(\n    pipeline,\n    golden_dataset,\n    scorers,\n    run_id: str = None\n) -> pd.DataFrame:\n    run_id = run_id or datetime.now().isoformat()\n    results = []\n    \n    for test_case in golden_dataset:\n        # Generate response from the pipeline under test\n        response = pipeline.generate(test_case[\"question\"])\n        \n        # Run all scorers\n        scores = {}\n        for scorer_name, scorer_fn in scorers.items():\n            scores[scorer_name] = scorer_fn(\n                question=test_case[\"question\"],\n                response=response,\n                reference=test_case[\"reference_answer\"]\n            )\n        \n        results.append({\n            \"run_id\": run_id,\n            \"test_id\": test_case[\"id\"],\n            \"category\": test_case[\"category\"],\n            \"question\": test_case[\"question\"],\n            \"response\": response,\n            **scores\n        })\n    \n    return pd.DataFrame(results)\n\ndef aggregate_results(df: pd.DataFrame) -> dict:\n    numeric_cols = df.select_dtypes(include='number').columns\n    return {\n        \"overall\": df[numeric_cols].mean().to_dict(),\n        \"by_category\": df.groupby(\"category\")[numeric_cols].mean().to_dict()\n    }\n```\n\n### Step 5: Regression Detection\n\n```python\ndef check_regression(\n    current_scores: dict,\n    baseline_scores: dict,\n    thresholds: dict\n) -> list[str]:\n    failures = []\n    for metric, threshold in thresholds.items():\n        current = current_scores.get(metric, 0)\n        baseline = baseline_scores.get(metric, 0)\n        if current < threshold:\n            failures.append(f\"{metric}: {current:.3f} < threshold {threshold}\")\n        if current < baseline - 0.05:  # 5% relative regression\n            failures.append(f\"{metric}: regressed from {baseline:.3f} to {current:.3f}\")\n    return failures\n```\n\n### Evaluation Frameworks\n\n**Promptfoo**: Open-source CLI tool for testing LLM prompts and models. Supports multiple providers, custom assertions, and CI integration.\n\n```yaml\n# promptfoo config\nproviders:\n  - openai:gpt-4o\n  - anthropic:claude-3-5-sonnet-20241022\n\ntests:\n  - vars:\n      question: \"What is your return policy?\"\n    assert:\n      - type: contains\n        value: \"30 days\"\n      - type: llm-rubric\n        value: \"Response should be helpful and accurate about the return policy\"\n```\n\n**Braintrust**: Hosted eval platform with dataset management, score tracking, and experiment comparison UI.\n\n**LangSmith**: LangChain's evaluation and tracing platform. Tight integration with LangChain pipelines.\n\n**OpenAI Evals**: Open-source framework used internally at OpenAI; supports custom eval types and bulk evaluation runs.\n\n### Cost and Sampling\n\nRunning LLM-as-judge on every sample is expensive at scale. Strategies:\n- **Stratified sampling**: run full eval on a representative sample (e.g., 10% of dataset) per CI run\n- **Tiered evaluation**: run cheap metrics (exact match, key facts) on all samples; LLM judge on flagged cases only\n- **Cost estimation**: at $0.01/1K tokens for a judge model, evaluating 100 samples × ~500 tokens ≈ $0.50 per run\n\n### Statistical Significance\n\nWhen comparing two model versions, check that differences are statistically significant:\n- Use a paired t-test on per-sample scores\n- With 100 samples, a 0.05 change in mean score is typically significant at p < 0.05\n- Small datasets can show noise as apparent improvement; don't over-optimize to small test sets",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What is the primary purpose of a golden dataset in an eval suite?",
+      "options": [
+        "To provide training examples for fine-tuning the model",
+        "A curated set of test questions with reference answers used to measure pipeline quality",
+        "A collection of the model's best outputs for few-shot examples",
+        "A database of competitor model responses for comparison"
+      ],
+      "correct": 1,
+      "explanation": "A golden dataset is the evaluation ground truth: representative test questions paired with reference answers and expected properties. It enables consistent, reproducible quality measurement across model versions and code changes."
+    },
+    {
+      "id": "q2",
+      "question": "When building an LLM-as-judge scorer, what should you include in the judge prompt to get reliable scores?",
+      "options": [
+        "Only the model's response, without the question",
+        "The question, the model response, a reference answer, and explicit criteria with defined scale points",
+        "Just a general instruction to rate quality on a scale of 1-10",
+        "The entire conversation history including system prompts"
+      ],
+      "correct": 1,
+      "explanation": "An effective judge prompt needs: the question (context), the response (what to evaluate), a reference answer (ground truth), and specific criteria with clear scoring definitions. Vague prompts produce noisy, unreliable scores."
+    },
+    {
+      "id": "q3",
+      "question": "Promptfoo is best described as:",
+      "options": [
+        "A benchmarking dataset for measuring hallucination rates",
+        "An open-source CLI tool for testing LLM prompts across providers with custom assertions",
+        "A cloud service for running large-scale human evaluations",
+        "A fine-tuning framework for improving model quality"
+      ],
+      "correct": 1,
+      "explanation": "Promptfoo is an open-source CLI evaluation tool that allows you to run prompts against multiple LLM providers, define custom assertions (exact match, contains, LLM-rubric), and integrate evaluation into CI/CD workflows."
+    },
+    {
+      "id": "q4",
+      "question": "What does 'evals-as-code' mean?",
+      "options": [
+        "Using code generation models to write evaluations automatically",
+        "Storing evaluation datasets, scorers, and thresholds in version-controlled code alongside the application",
+        "Running evaluations inside a code execution environment",
+        "Using exact-match code testing for all evaluation tasks"
+      ],
+      "correct": 1,
+      "explanation": "Evals-as-code means treating your evaluation suite as a software artifact: version-controlled, reviewed via pull requests, and deployed through CI/CD. This ensures evaluation changes are traceable, reproducible, and subject to the same rigor as application code."
+    },
+    {
+      "id": "q5",
+      "question": "When might you use stratified sampling in your eval pipeline?",
+      "options": [
+        "When you want to evaluate only the hardest test cases",
+        "To reduce evaluation cost by running a representative sample per CI run rather than the full dataset",
+        "When comparing two models across different hardware configurations",
+        "To ensure the model is evaluated only on its weakest categories"
+      ],
+      "correct": 1,
+      "explanation": "Running LLM-as-judge on a large golden dataset in every CI run can be expensive. Stratified sampling selects a representative subset (preserving category proportions) to run on each commit, saving cost while maintaining statistical validity for regression detection."
+    },
+    {
+      "id": "q6",
+      "question": "You run your eval suite on model v1 and get a helpfulness score of 0.87. After updating the retriever, you get 0.83. This is best described as:",
+      "options": [
+        "A configuration error that should be ignored",
+        "A potential regression that should be investigated before deploying the retriever update",
+        "Normal variance that is always expected between runs",
+        "Evidence that the golden dataset needs to be updated"
+      ],
+      "correct": 1,
+      "explanation": "A 4-point drop in helpfulness score is a potential regression. Before deploying the retriever update, you should investigate: did specific categories regress? Is the difference statistically significant? Did retrieval quality drop? Eval suites exist precisely to catch these changes."
+    },
+    {
+      "id": "q7",
+      "question": "When testing a customer support bot, which source of test questions would be most representative of real-world performance?",
+      "options": [
+        "Manually crafted questions by developers",
+        "Synthetic questions generated entirely by an LLM",
+        "Sampled real user queries from production logs",
+        "Questions from academic NLP benchmarks"
+      ],
+      "correct": 2,
+      "explanation": "Real user queries are the most representative because they reflect actual user language, concerns, and edge cases. Developer-crafted and synthetic questions often miss the diversity and quirks of real usage. Production logs are the gold standard for realistic evaluation."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Eval suite",
+      "back": "A version-controlled, automated system for measuring AI application quality. Consists of a golden dataset, a set of scorers, an evaluation pipeline, and regression detection logic. Run on every model or code change."
+    },
+    {
+      "id": "f2",
+      "front": "Golden dataset",
+      "back": "A curated collection of representative test cases with questions, reference answers, and expected properties. The ground truth for an eval suite. Should cover diverse difficulty levels and use-case categories."
+    },
+    {
+      "id": "f3",
+      "front": "Scorer",
+      "back": "A function that takes a model response (and optionally a reference answer and question) and returns a quality score. Types include: exact match, key-fact coverage, semantic similarity, LLM-as-judge, safety classifier."
+    },
+    {
+      "id": "f4",
+      "front": "LLM-as-judge (eval suite)",
+      "back": "Using a capable LLM to score model outputs according to explicit criteria. The judge is prompted with the question, response, reference answer, and a rubric. Produces human-correlated quality scores at scale."
+    },
+    {
+      "id": "f5",
+      "front": "Promptfoo",
+      "back": "An open-source CLI evaluation framework for LLM applications. Supports multi-provider testing, custom assertions (contains, llm-rubric, exact-match), CI integration, and comparison of prompt/model variants."
+    },
+    {
+      "id": "f6",
+      "front": "Braintrust",
+      "back": "A hosted evaluation platform for LLM applications with dataset management, experiment tracking, score comparison UI, and integrations with major LLM providers. Designed for teams iterating on prompts and models."
+    },
+    {
+      "id": "f7",
+      "front": "Regression detection",
+      "back": "Comparing eval scores before and after a change to detect quality degradations. Typically involves threshold checks (score must be >= X) and relative comparisons (score must not drop more than Y% from baseline)."
+    },
+    {
+      "id": "f8",
+      "front": "Evals-as-code",
+      "back": "The practice of storing evaluation datasets, scorers, thresholds, and pipelines as version-controlled code in the same repository as the application. Enables traceability, reproducibility, and review of evaluation changes."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Building LLM Evaluation Suites",
+      "youtube_id": "NEreVeHGKgo",
+      "description": "A practical guide to constructing evaluation suites for LLM applications, covering golden dataset creation, scorer implementation, and CI/CD integration."
+    },
+    {
+      "title": "LLM Evaluation Frameworks in Practice",
+      "youtube_id": "VPRSBzXzavo",
+      "description": "Overview of evaluation frameworks including Promptfoo, Braintrust, and LangSmith, with guidance on choosing the right tool for your use case."
+    }
+  ],
+  "has_practical": true,
+  "practical_description": "Build a minimal eval suite for a customer support bot: create a golden dataset of 10 questions, implement three scorers (key-fact coverage, LLM-as-judge helpfulness, safety check), run the pipeline, and display per-question scores in a table with pass/fail indicators."
+}

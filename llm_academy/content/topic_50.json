@@ -1,0 +1,170 @@
+{
+  "id": "topic_50",
+  "level": 8,
+  "level_name": "Safety & Security",
+  "order": 4,
+  "title": "Responsible AI: Bias, Privacy, Ethics",
+  "emoji": "⚖️",
+  "duration_minutes": 20,
+  "eli8": "## Should AI Be Fair? 🤔\n\nImagine a robot judge at a science fair. If the robot was mostly trained watching science fairs where boys won, it might unfairly give boys higher scores — even if girls did just as well! That's what we call **bias** in AI.\n\nNow imagine the robot memorized every student's home address from past applications. If someone hacked it, they'd get everyone's private addresses. That's a **privacy** problem.\n\nAnd if nobody thought carefully about whether it was even a good idea to use a robot judge at all — that's an **ethics** problem!\n\n## Three Big Ideas 💡\n\n**Bias** — When AI treats different groups of people unfairly:\n- 🙍 A hiring AI that prefers men's resumes over women's equally good resumes\n- 📸 A face recognition app that works great on light skin but poorly on dark skin\n- 🏦 A loan approval AI that charges higher interest to certain neighborhoods\n\nThese happen because AI learned from historical data that already had these unfair patterns baked in!\n\n**Privacy** — AI can accidentally remember and reveal private things:\n- 🔐 A model trained on personal emails might accidentally reproduce someone's private message\n- 🏥 A medical AI trained on patient records could leak health information\n- 📋 Smart AI systems need to forget personal details they don't need anymore\n\n**Ethics** — The big-picture questions:\n- 🌍 Who is responsible when AI makes a mistake that hurts someone?\n- ⚡ Training AI uses a LOT of electricity — is that okay for the environment?\n- 🗳️ Should AI systems make important decisions about people's lives?\n\n## What Are People Doing About It? 🛠️\n\n- Governments are making rules (like the EU AI Act)\n- Companies are publishing \"model cards\" explaining what their AI can and can't do\n- Researchers are building tools to measure and fix bias\n- AI labs have Responsible AI policies to make sure they don't build dangerous things too fast",
+  "detail": "## Responsible AI: Bias, Privacy, and Ethics — Technical Overview\n\n### Bias in LLMs\n\n**Types of Bias:**\n\n- **Training Data Bias**: The training corpus reflects historical and societal inequities. A model trained predominantly on English-language Western text will perform worse on other languages and cultural contexts.\n- **Representation Bias**: Some groups are underrepresented in training data. Facial recognition systems trained on majority-white datasets achieve significantly lower accuracy on darker skin tones (Buolamwini & Gebru, Gender Shades, 2018 — demonstrated up to 34.7% accuracy gap).\n- **Measurement Bias**: The label or proxy used to define ground truth is itself biased. Using historical hiring decisions as labels for a resume screening model perpetuates past discriminatory practices.\n- **Aggregation Bias**: Using a single model for a heterogeneous population when a more granular approach is needed.\n\n**Bias Detection Tools:**\n\n- **Fairlearn** (Microsoft): Computes fairness metrics (equalized odds, demographic parity) and provides mitigation algorithms (reweighting, post-processing).\n- **AI Fairness 360** (IBM): A comprehensive toolkit with 70+ fairness metrics and 11 mitigation algorithms.\n- **Disaggregated Evaluation**: Always report model performance broken down by demographic subgroups, not just aggregate accuracy. A model with 95% average accuracy might have 70% accuracy on a minority subgroup.\n\n```python\nfrom fairlearn.metrics import MetricFrame, selection_rate\nfrom sklearn.metrics import accuracy_score\n\nmetric_frame = MetricFrame(\n    metrics={\"accuracy\": accuracy_score, \"selection_rate\": selection_rate},\n    y_true=y_test,\n    y_pred=y_pred,\n    sensitive_features=gender_feature\n)\nprint(metric_frame.by_group)\n# Shows accuracy and selection_rate broken down by gender group\n```\n\n### Privacy\n\n**Memorization of Training Data:**\n\nLLMs can memorize and regurgitate training data. Carlini et al. (2021) extracted personally identifiable information — names, email addresses, phone numbers — verbatim from GPT-2 using targeted prompts. Larger models memorize more. This has significant implications for models trained on user data.\n\n**Differential Privacy:**\n\nA mathematical framework (formal definition: ε-differential privacy) that bounds how much any single training example can influence model outputs. Training with DP-SGD (Differentially Private Stochastic Gradient Descent) adds calibrated noise during training. Tradeoff: privacy budget (lower ε = stronger privacy = more noise = lower utility).\n\n**Data Minimization:**\n\nCollect only data necessary for the task. Do not use sensitive attributes in training if they are not needed for the model's function. Delete personal data once the training purpose is fulfilled.\n\n**GDPR Compliance:**\n\nThe EU General Data Protection Regulation applies to AI systems processing EU residents' data:\n- Right to explanation for automated decisions\n- Right to erasure (\"right to be forgotten\") — technically challenging for LLMs that have memorized training data\n- Data minimization and purpose limitation principles\n- Requirements for Data Protection Impact Assessments for high-risk AI\n\n### Ethical Frameworks\n\nBioethics principles adapted to AI:\n- **Beneficence**: AI systems should benefit users and society\n- **Non-maleficence**: Avoid causing harm (to users, third parties, society)\n- **Autonomy**: Preserve human agency and informed consent; AI should not manipulate or deceive\n- **Justice**: Benefits and risks of AI should be distributed equitably across groups\n\n### Regulatory Landscape\n\n**EU AI Act** (2024): First comprehensive AI regulation. Categorizes AI systems by risk:\n- *Unacceptable risk*: banned (social scoring by governments, real-time biometric surveillance)\n- *High risk*: strict requirements (credit scoring, hiring, critical infrastructure, law enforcement)\n- *Limited/minimal risk*: transparency obligations\n\nLLM foundation models above a compute threshold (10^25 FLOPs) face systemic risk requirements including adversarial testing, incident reporting, and cybersecurity measures.\n\n**Anthropic's Responsible Scaling Policy (RSP):**\n\nA commitment to pause development or deployment if a model reaches capability thresholds that could lead to catastrophic risks (particularly CBRN — chemical, biological, radiological, nuclear). Introduces AI Safety Levels (ASL) analogous to biosafety levels. Requires independent safety evaluations before advancing models to higher capability tiers.\n\n### Model Cards and System Cards\n\n**Model Cards** (Mitchell et al., 2019): Standardized documentation for ML models specifying:\n- Intended use cases and out-of-scope uses\n- Training data description\n- Performance metrics disaggregated by group\n- Ethical considerations and known limitations\n\n**System Cards**: Applied to deployed AI systems, including product-level context, safety testing results, and red-teaming findings. Anthropic publishes system cards for Claude models.\n\n### Environmental Impact\n\nTraining large LLMs has significant energy costs. GPT-3 training consumed approximately 1,287 MWh and generated ~552 metric tons of CO2. Inference at scale also accumulates energy cost. The AI community is developing energy-efficient architectures (sparse models, better hardware) and companies are publishing sustainability reports. Environmental impact is an underweighted ethical consideration in AI development.\n\n### Red-Teaming for Bias\n\nBeyond automated metrics, structured red-teaming involving diverse human evaluators tests models for culturally specific harms, stereotype reinforcement, and differential treatment. Effective red-teaming includes evaluators from the communities most likely to be harmed.",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "A facial recognition system achieves 99% accuracy on light-skinned faces but 72% on dark-skinned faces. This performance gap is an example of:",
+      "options": [
+        "Model Denial of Service",
+        "Representation bias in training data",
+        "Differential privacy failure",
+        "Insecure output handling"
+      ],
+      "correct": 1,
+      "explanation": "Representation bias occurs when certain groups are underrepresented in training data, leading to systematically worse performance for those groups. The Gender Shades study by Buolamwini & Gebru documented exactly this pattern in commercial facial recognition systems."
+    },
+    {
+      "id": "q2",
+      "question": "Which fairness metric measures whether positive outcomes are granted at equal rates across demographic groups, regardless of ground truth labels?",
+      "options": [
+        "Equalized Odds",
+        "Calibration",
+        "Demographic Parity (Selection Rate Parity)",
+        "Precision Parity"
+      ],
+      "correct": 2,
+      "explanation": "Demographic parity (also called statistical parity) requires that the model's positive prediction rate be equal across groups. Equalized odds additionally requires equal true positive and false positive rates — a stricter condition."
+    },
+    {
+      "id": "q3",
+      "question": "Research by Carlini et al. demonstrated that LLMs can reproduce training data verbatim. What privacy principle does training with DP-SGD help enforce?",
+      "options": [
+        "Data sovereignty",
+        "Differential privacy — bounding the influence of any single training example on model outputs",
+        "Zero-knowledge proofs — preventing the model from learning from any individual's data",
+        "GDPR right to explanation"
+      ],
+      "correct": 1,
+      "explanation": "Differential privacy (DP-SGD) adds calibrated noise during training to bound how much any individual training example can influence the model, making memorization and extraction attacks harder."
+    },
+    {
+      "id": "q4",
+      "question": "Anthropic's Responsible Scaling Policy (RSP) is primarily designed to:",
+      "options": [
+        "Maximize the rate of model capability improvement",
+        "Define thresholds at which capability increases require additional safety evaluations before proceeding",
+        "Regulate AI use in EU member states",
+        "Ensure models are trained on ethically sourced data only"
+      ],
+      "correct": 1,
+      "explanation": "Anthropic's RSP establishes AI Safety Levels (ASL) and commits to pausing development or deployment when models reach capability thresholds that could enable catastrophic risks, pending independent safety evaluation."
+    },
+    {
+      "id": "q5",
+      "question": "Under the EU AI Act, which category would a hiring algorithm that screens job applicants fall into?",
+      "options": [
+        "Minimal risk — no requirements",
+        "Limited risk — transparency obligations only",
+        "High risk — strict requirements including documentation, human oversight, and accuracy standards",
+        "Unacceptable risk — banned"
+      ],
+      "correct": 2,
+      "explanation": "The EU AI Act explicitly classifies AI systems used in employment decisions (including hiring and promotion) as high-risk, requiring conformity assessments, technical documentation, human oversight, and bias testing."
+    },
+    {
+      "id": "q6",
+      "question": "What does a model card provide that a benchmark leaderboard does not?",
+      "options": [
+        "Information about the model's parameter count",
+        "Aggregate accuracy metrics on standard benchmarks",
+        "Disaggregated performance by demographic group, intended use, known limitations, and ethical considerations",
+        "The model's training loss curve"
+      ],
+      "correct": 2,
+      "explanation": "Model cards (Mitchell et al., 2019) go beyond benchmark scores to document intended and out-of-scope uses, performance disaggregated by group, training data description, and known biases or limitations."
+    },
+    {
+      "id": "q7",
+      "question": "Which of the following best describes 'measurement bias' in an AI training dataset?",
+      "options": [
+        "The model is evaluated on a benchmark that is too easy",
+        "The labels used to train the model reflect historical biases rather than true ground truth",
+        "The training data is too small to represent the population",
+        "The model performs worse on longer inputs"
+      ],
+      "correct": 1,
+      "explanation": "Measurement bias occurs when the proxy used as ground truth is itself biased. Using historical hiring decisions as labels for a resume screening model encodes past discriminatory practices as if they were the correct answer."
+    },
+    {
+      "id": "q8",
+      "question": "Training GPT-3 consumed approximately 1,287 MWh of electricity. This fact is relevant to which dimension of responsible AI?",
+      "options": [
+        "Fairness — energy use affects model accuracy for minority groups",
+        "Privacy — high energy use correlates with greater data memorization",
+        "Environmental ethics — the carbon footprint of large model training is a societal cost",
+        "Security — energy-intensive training creates vulnerabilities to model theft"
+      ],
+      "correct": 2,
+      "explanation": "The energy and carbon cost of training large AI models is an environmental ethics consideration. Responsible AI frameworks increasingly include environmental impact alongside fairness, privacy, and safety."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Training Data Bias",
+      "back": "When the data used to train a model reflects historical inequities, social stereotypes, or unequal representation, causing the model to produce systematically unfair or inaccurate outputs for certain groups."
+    },
+    {
+      "id": "f2",
+      "front": "Fairness / Demographic Parity",
+      "back": "A fairness constraint requiring that a model's positive prediction rate be equal across demographic groups. Different fairness metrics (equalized odds, calibration) formalize different notions of fairness."
+    },
+    {
+      "id": "f3",
+      "front": "Differential Privacy (DP)",
+      "back": "A mathematical privacy guarantee that bounds how much any single training example can influence a model's outputs. DP-SGD adds calibrated noise during training. Stronger privacy (lower ε) reduces model utility."
+    },
+    {
+      "id": "f4",
+      "front": "GDPR (General Data Protection Regulation)",
+      "back": "EU law governing personal data processing. Relevant to AI: right to explanation for automated decisions, right to erasure, data minimization, and requirement for impact assessments on high-risk AI systems."
+    },
+    {
+      "id": "f5",
+      "front": "Anthropic's Responsible Scaling Policy (RSP)",
+      "back": "A commitment to evaluate and potentially pause AI development when models reach defined capability thresholds (AI Safety Levels) that could enable catastrophic risks, particularly in CBRN domains."
+    },
+    {
+      "id": "f6",
+      "front": "Model Card",
+      "back": "Standardized documentation for an ML model (Mitchell et al., 2019) that describes intended use, training data, disaggregated performance metrics, known limitations, and ethical considerations."
+    },
+    {
+      "id": "f7",
+      "front": "EU AI Act",
+      "back": "The first comprehensive AI regulation (2024), classifying AI systems by risk level. High-risk categories include hiring, credit scoring, and law enforcement. Foundation models above 10^25 FLOPs face systemic risk obligations."
+    },
+    {
+      "id": "f8",
+      "front": "Memorization (LLMs)",
+      "back": "The ability of LLMs to reproduce verbatim text from their training data. Carlini et al. demonstrated extraction of PII from GPT-2. Larger models memorize more. Mitigated by differential privacy and PII scrubbing during training."
+    },
+    {
+      "id": "f9",
+      "front": "Disaggregated Evaluation",
+      "back": "Reporting model performance metrics broken down by demographic subgroups (gender, race, age, etc.) rather than only aggregate accuracy. Essential for detecting representation bias and fairness gaps."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Intro to Large Language Models — Alignment & Safety",
+      "youtube_id": "zjkBMFhNj_g",
+      "description": "Andrej Karpathy covers alignment, safety, and the societal considerations of deploying LLMs at scale, grounding the ethical frameworks discussed in this topic in concrete model behavior."
+    },
+    {
+      "title": "But What Is a Neural Network?",
+      "youtube_id": "aircAruvnKk",
+      "description": "3Blue1Brown's foundational explanation of neural networks provides the basis for understanding how training data shapes model behavior — and therefore how bias enters AI systems at the learning stage."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

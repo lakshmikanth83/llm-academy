@@ -1,0 +1,136 @@
+{
+  "id": "topic_63",
+  "level": 11,
+  "level_name": "Capstone & Interview Prep",
+  "order": 3,
+  "title": "System Design for AI Apps",
+  "emoji": "📐",
+  "duration_minutes": 30,
+  "eli8": "# 📐 Drawing the Blueprint for AI Apps!\n\nBefore builders start building, an architect draws a blueprint. System design is like being the architect of an AI app!\n\nWhen an interviewer says \"Design a chatbot that can answer questions about our 10 million company documents\" — they want to see if you can THINK like an engineer. Not just code, but plan!\n\n## 🗺️ The 5-Step Blueprint\n\n**Step 1: Ask questions first!** 🙋\n- How many users? (10 or 10 million?)\n- How fast must it respond? (instant or okay to wait?)\n- How accurate must it be? (doctor? joke-teller?)\n- What's the budget?\n\n**Step 2: Draw the big picture** 🖼️\n- What are the main boxes? (database, API, model)\n- How does data flow between them?\n\n**Step 3: Data pipeline** 📊\n- Where do documents live? (S3 cloud storage)\n- How do we process them? (chunking, embedding)\n- Where do we search them? (vector database)\n\n**Step 4: The serving layer** 🍽️\n- What API handles requests? (FastAPI)\n- Do we cache answers? (Redis)\n- How many servers? (auto-scaling!)\n\n**Step 5: How do we know it's working?** 📏\n- How do we measure quality? (evaluation)\n- What do we watch in production? (monitoring)\n\n## 🎯 The Secret Weapon: Trade-offs\n\nInterviewers LOVE when you say \"We could do X, but the trade-off is Y. For this use case, I'd choose X because...\"\n\nThere's rarely one right answer in system design — they want to see you THINK! 🧠",
+  "detail": "## System Design for AI Applications\n\nSystem design interviews for AI/LLM engineer roles test your ability to architect complete, production-grade systems. The framework below applies to any AI system design question.\n\n### The 5-Step Framework\n\n**1. Clarify requirements (spend 3-5 minutes here)**\n- Scale: DAU, documents/queries per second, data volume\n- Latency: real-time (<500ms), interactive (<2s), batch (minutes)\n- Accuracy: what are acceptable hallucination/error rates?\n- Cost: compute budget, latency vs. cost trade-offs\n- Constraints: on-prem vs. cloud, data privacy, compliance\n\n**2. High-level architecture** — draw boxes and arrows:\n- Data stores (vector DB, relational DB, object storage)\n- Compute (API servers, embedding service, LLM)\n- Cross-cutting (cache, queue, monitoring)\n\n**3. Data pipeline**\n**4. Serving layer**\n**5. Evaluation & monitoring**\n\n---\n\n### Scenario 1: Company Knowledge Base Chatbot\n\n*\"Design a RAG chatbot for 10M internal company documents, 50K employees, P95 latency < 3s.\"*\n\n```\nIngestion Pipeline:\n  S3 → Chunker Service (ECS, parallel) → Embedding Service\n       → Pinecone (with org/dept metadata filters)\n\nQuery Pipeline:\n  Employee → React Frontend → FastAPI Gateway\n    → Embed query (text-embedding-3-small)\n    → Pinecone search (filter by user's department)\n    → Cross-encoder reranking (top-5 from top-20)\n    → Claude (Sonnet, prompt caching for system prompt)\n    → Streaming response\n\nInfrastructure:\n  - Redis: cache responses for common questions\n  - Auto-scaling API servers (ECS/EKS)\n  - LangSmith: trace every query\n\nMonitoring:\n  - P95 latency dashboard (Grafana)\n  - Faithfulness score weekly reports\n  - Cost per query tracking\n  - Thumbs up/down → evaluation dataset\n```\n\n**Key decisions to explain:**\n- Pinecone over Chroma: managed, horizontally scalable, metadata filtering\n- Streaming responses: perceived latency 5× better than waiting for full response\n- Prompt caching: same system prompt on every query → 90% savings on that prefix\n- Cross-encoder rerank: better precision than pure embedding similarity\n\n---\n\n### Scenario 2: AI Code Review System\n\n*\"Design an AI that reviews GitHub PRs for bugs and style issues.\"*\n\n```\n1. GitHub webhook → POST /review endpoint\n2. Extract: PR diff, repo context (relevant files)\n3. Per-file pipeline:\n   - Chunk the diff (by function/class, not arbitrary lines)\n   - Retrieve similar code from codebase for context\n   - Prompt: code_review_template.format(diff, context, guidelines)\n4. Aggregate per-file reviews → summary comment\n5. Post via GitHub API: inline comments + PR-level summary\n\nEvaluation signal:\n  - Developer acceptance rate of suggestions\n  - False positive rate (reported by developers)\n  - Time saved metric (survey)\n```\n\n---\n\n### Scenario 3: Customer Support AI\n\n*\"Design an AI handling 100K support tickets/day.\"*\n\n```\nTier 1 (automated):\n  Incoming message\n  → Intent classifier (Haiku — cheap, fast)\n  → Route: billing / technical / refund / escalate\n\nTier 2 (AI response):\n  → RAG over product docs + past resolutions\n  → Guardrails check (off-topic, PII, sentiment)\n  → Sonnet response generation\n\nTier 3 (human escalation):\n  → Confidence score < threshold → human queue\n  → Angry/sensitive sentiment → priority queue\n  → AI provides human with context summary\n\nMonitoring:\n  - Escalation rate (target: <15%)\n  - Resolution rate (closed without follow-up)\n  - CSAT score per AI-handled ticket\n```\n\n---\n\n### Build vs. Buy Decision Framework\n\n| Component | Build | Buy/Managed |\n|-----------|-------|-------------|\n| Embedding | sentence-transformers (free, offline) | OpenAI/Cohere API (quality, convenience) |\n| Vector DB | Chroma (dev), pgvector (existing PG) | Pinecone, Weaviate (scale, managed) |\n| LLM | vLLM + Llama (privacy, cost at scale) | Claude/GPT API (quality, simplicity) |\n| Monitoring | Prometheus + Grafana (control) | Datadog, LangSmith (convenience) |\n\n### Scalability Ladder\n\n- **100 users**: Single FastAPI + Chroma + LLM API call. Simple, cheap.\n- **10K users**: Add Redis cache, multiple API replicas, managed vector DB.\n- **1M users**: vLLM for self-hosted LLM, distributed vector DB, semantic cache, CDN.\n- **10M users**: Multi-region, async queue for non-real-time, dedicated embedding service, streaming.\n\n### Cost Estimation Worksheet\n\n```\nFor 100K queries/day:\n- Average tokens: 2000 input + 500 output\n- Model: Claude Sonnet ($3 in / $15 out per MTok)\n- Daily cost: 100K × (2000×$3 + 500×$15) / 1M\n             = 100K × ($6 + $7.5) / 1M\n             = 100K × $0.0135 = $1,350/day\n\nOptimizations:\n- Prompt caching system prompt (1000 tokens each):\n  Save 100K × 1000 × $3 × 0.9 / 1M = $270/day (20% savings)\n- Model routing 30% to Haiku:\n  ~$400/day savings\n```",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "In a system design interview for a RAG chatbot, what should you clarify FIRST before drawing the architecture?",
+      "options": [
+        "Which programming language to use",
+        "The scale (users, data volume), latency requirements, accuracy needs, and cost constraints",
+        "Whether to use OpenAI or Anthropic as the LLM provider",
+        "The number of developers on the team"
+      ],
+      "correct": 1,
+      "explanation": "Requirements clarification is the most important first step. Scale (10 vs 10M users), latency (real-time vs batch), and constraints (budget, privacy) completely change which architecture is appropriate. Never draw boxes before understanding requirements."
+    },
+    {
+      "id": "q2",
+      "question": "For a company knowledge base with 10M documents, why would you choose Pinecone over Chroma?",
+      "options": [
+        "Pinecone is always cheaper than Chroma",
+        "Pinecone is open source while Chroma requires a license",
+        "Pinecone is a managed service that scales horizontally with metadata filtering, production SLAs, and no server management — Chroma is excellent for development but not optimized for this scale",
+        "Pinecone supports more embedding model integrations than Chroma"
+      ],
+      "correct": 2,
+      "explanation": "At 10M documents, you need horizontal scalability, metadata filtering (for multi-tenant isolation by department), and production SLAs. Chroma is great for development and small-scale production but requires more operational management at scale."
+    },
+    {
+      "id": "q3",
+      "question": "In the customer support AI scenario, why add a separate intent classifier (cheap model) before the main RAG pipeline?",
+      "options": [
+        "To reduce costs by routing only relevant queries to the expensive RAG pipeline",
+        "Because the RAG pipeline cannot process customer support queries",
+        "The intent classifier handles natural language; the RAG pipeline handles structured data only",
+        "Regulatory compliance requires intent classification before any LLM call"
+      ],
+      "correct": 0,
+      "explanation": "A cheap, fast classifier (Haiku ~$0.25/MTok) routes tickets to the appropriate handler before engaging the full RAG + expensive model pipeline. This reduces cost (some tickets route directly to humans) and latency for simple cases."
+    },
+    {
+      "id": "q4",
+      "question": "When designing an AI code review system, why should diffs be chunked by function/class rather than arbitrary line counts?",
+      "options": [
+        "GitHub API limits chunks to function-level granularity",
+        "Semantic chunking by function preserves code structure — the reviewer needs the full function context to understand a change, not arbitrary line windows",
+        "Line-count chunking is more expensive to compute",
+        "Function-level chunking is required for embedding models to work correctly"
+      ],
+      "correct": 1,
+      "explanation": "Code reviews require semantic context. A bug in a 5-line function change is only understandable with the full function. Arbitrary line-count chunks may split a function in half, making the review meaningless."
+    },
+    {
+      "id": "q5",
+      "question": "What is the 'scalability ladder' concept in AI system design?",
+      "options": [
+        "A ranking of cloud providers by scalability performance",
+        "The progression of architecture complexity as user count increases — starting simple (single server) and adding components (cache, replicas, queues) only when the previous level can't handle load",
+        "A framework for scaling ML model size (7B → 13B → 70B)",
+        "A metric for measuring how quickly an auto-scaler responds to traffic spikes"
+      ],
+      "correct": 1,
+      "explanation": "The scalability ladder means starting with the simplest architecture that works (prevents over-engineering) and adding complexity (cache, replicas, queues, multi-region) only at each scale threshold. Interviewers appreciate this incremental thinking."
+    },
+    {
+      "id": "q6",
+      "question": "In the cost estimation for 100K queries/day with Claude Sonnet, what optimization provides the largest savings?",
+      "options": [
+        "Switching to a cheaper cloud provider",
+        "Reducing output token limit from 500 to 400",
+        "Model routing (sending 30% of simple queries to Claude Haiku) and prompt caching the repeated system prompt",
+        "Enabling GZIP compression on API responses"
+      ],
+      "correct": 2,
+      "explanation": "Model routing and prompt caching are the highest-ROI cost optimizations. Routing 30% of queries to Haiku ($0.25/$1.25 per MTok vs $3/$15) can save $400/day at this scale. Prompt caching the system prompt saves ~$270/day. Together that's ~$670/day vs. ~$27/day for reducing output by 20%."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "System design framework (5 steps)",
+      "back": "1) Clarify requirements (scale, latency, accuracy, cost). 2) High-level architecture diagram. 3) Data pipeline (ingestion, chunking, embedding, storage). 4) Serving layer (API, cache, load balancing, LLM). 5) Evaluation and monitoring."
+    },
+    {
+      "id": "f2",
+      "front": "Ingestion pipeline",
+      "back": "The offline batch process that prepares data for a RAG system: source documents → text extraction → chunking → embedding → vector database storage. Runs when new data is added."
+    },
+    {
+      "id": "f3",
+      "front": "Serving layer",
+      "back": "The real-time components that handle user requests: API gateway → query embedding → vector search → LLM generation → response. Includes load balancing, caching, and auto-scaling."
+    },
+    {
+      "id": "f4",
+      "front": "Human fallback",
+      "back": "The escalation path when an AI system cannot confidently handle a request — routing to a human agent with an AI-generated context summary. Critical for support systems to maintain quality and safety."
+    },
+    {
+      "id": "f5",
+      "front": "Build vs. buy trade-off",
+      "back": "Build: lower cost at scale, full control, customization. Buy/managed: faster time-to-market, no operational overhead, SLAs included. General rule: buy until it becomes a core differentiator or cost becomes prohibitive."
+    },
+    {
+      "id": "f6",
+      "front": "Scalability (100 vs 1M users)",
+      "back": "100 users: single server, simple architecture. 10K: add cache + replicas. 1M: managed vector DB, self-hosted LLM, semantic cache, CDN. 10M: multi-region, async queues, dedicated microservices."
+    },
+    {
+      "id": "f7",
+      "front": "Cost estimation in system design",
+      "back": "Estimate: queries/day × avg_tokens × price_per_token. Then calculate savings from optimizations (prompt caching, model routing). Showing this math in an interview demonstrates production-mindedness."
+    }
+  ],
+  "videos": [
+    {
+      "title": "AI System Design: Building RAG from Scratch",
+      "youtube_id": "T-D1OfcDW1M",
+      "description": "Architectural walkthrough of designing a production RAG system — covers data pipeline, serving layer, evaluation, and how to scale from prototype to millions of users."
+    },
+    {
+      "title": "Designing RAG Systems at Scale",
+      "youtube_id": "ZqWXbG5_-oE",
+      "description": "Deep dive into system design decisions for large-scale RAG applications — vector database selection, hybrid search, re-ranking, caching strategies, and monitoring."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

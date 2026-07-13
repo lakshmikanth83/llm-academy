@@ -1,0 +1,153 @@
+{
+  "id": "topic_10",
+  "level": 2,
+  "level_name": "How LLMs Work",
+  "order": 5,
+  "title": "How LLMs are Trained",
+  "emoji": "🏋️",
+  "duration_minutes": 20,
+  "eli8": "# From a Baby to a Helpful Genius 🏋️\n\nTraining an AI like ChatGPT or Claude happens in stages — think of it like raising and educating a person:\n\n## Stage 1: Reading Everything 📚 (Pre-training)\n\nImagine a baby who reads the *entire internet* — every book, every Wikipedia article, every website — before learning to speak. That's **pre-training**!\n\nThe model learns by playing one game over and over:\n> \"Predict the next word!\"\n\nGiven: *\"The sky is...\"* → The model guesses: *\"blue\"* ✓\nGiven: *\"Paris is the capital of...\"* → The model guesses: *\"France\"* ✓\n\nAfter billions of these guesses (and trillions of words!), the model absorbs incredible amounts of knowledge.\n\n**How big is this?** Training GPT-3 used the same amount of electricity a US household uses in **150 years** ⚡!\n\n## Stage 2: Learning Manners 🎓 (Fine-tuning)\n\nThe pre-trained model is smart but awkward — it just completes text, it doesn't know how to have a helpful conversation.\n\n**Supervised Fine-Tuning (SFT)**: Humans write example conversations:\n- ❓ Question: \"How do I bake a cake?\"\n- ✅ Good answer: \"Here's a step-by-step guide...\"\n\nThe model practices thousands of these examples until it learns the right tone and format.\n\n## Stage 3: Learning from Human Opinions 👍👎 (RLHF)\n\n**RLHF** (Reinforcement Learning from Human Feedback) is the final polish:\n\n1. The AI generates several different answers\n2. Humans say which answer is best 👍\n3. A **reward model** learns to predict what humans prefer\n4. The AI practices generating answers that get high scores\n\nIt's like training a dog with treats 🐕 — but the treats are human approval!\n\nThis is how Claude learns to be helpful, honest, and harmless.",
+  "detail": "# How LLMs are Trained\n\n## Stage 1: Pre-training\n\nPre-training is the foundation — the model learns language, facts, and reasoning by predicting the next token on web-scale text.\n\n**Objective**: Autoregressive language modeling — minimize negative log-likelihood:\n```\nL = -Σ log P(token_t | token_1, ..., token_{t-1})\n```\n\n**Data sources** (for GPT-3 style training):\n- Common Crawl (filtered web pages): ~60% of tokens\n- WebText2 (Reddit outlinks): ~22%\n- Books1, Books2: ~8%\n- Wikipedia: ~3%\n- Code (GitHub): ~1–8% (varies by model)\n\n**Data filtering**: Quality filtering is critical — MinHashLSH deduplication, language detection, heuristic filters (remove text with high symbol ratio, adult content, personally identifiable information).\n\n**Compute scale**: GPT-3 training required 3.14 × 10²³ FLOPs. At $3/A100 GPU-hour, this costs roughly $4–12M. LLaMA 3 405B: 3.8 × 10²⁵ FLOPs.\n\n**Chinchilla scaling law** (Hoffmann et al., 2022): For compute-optimal training, scale model size and training tokens proportionally. Rule of thumb: ~20 training tokens per model parameter.\n\n## Stage 2: Supervised Fine-Tuning (SFT)\n\nAfter pre-training, the model is a text completion engine — it doesn't follow instructions or maintain a conversational format. SFT teaches the model to be a helpful assistant by training on curated instruction-response pairs:\n\n```json\n{\n  \"messages\": [\n    {\"role\": \"user\", \"content\": \"Explain quantum entanglement simply\"},\n    {\"role\": \"assistant\", \"content\": \"Quantum entanglement is when two particles...\"}\n  ]\n}\n```\n\nSFT datasets: OpenAssistant, Dolly, FLAN, ShareGPT (filtered), and proprietary human-written examples. Typical scale: 10K–500K examples. Loss is computed only on the assistant's response tokens.\n\n## Stage 3: RLHF (Reinforcement Learning from Human Feedback)\n\nIntroduced by Christiano et al. (2017), applied to LLMs by InstructGPT (Ouyang et al., 2022).\n\n**Step 1 — Reward Model Training**:\n- Sample multiple completions from the SFT model for each prompt\n- Human annotators rank completions from best to worst\n- Train a reward model (RM) to predict the ranking:\n  ```\n  RM(prompt, response) → scalar reward\n  ```\n\n**Step 2 — RL Fine-tuning with PPO**:\n- Use Proximal Policy Optimization (PPO) to optimize the LLM to maximize reward\n- Add a KL divergence penalty to prevent the model from drifting too far from the SFT policy:\n  ```\n  Objective = E[RM(response)] - β · KL(π_RL || π_SFT)\n  ```\n\n## DPO: Direct Preference Optimization\n\nDPO (Rafailov et al., 2023) eliminates the need for a separate reward model and RL training loop. It directly optimizes the language model on preference pairs (chosen vs. rejected) using a cross-entropy objective derived from the Bradley-Terry preference model:\n\n```python\n# Simplified DPO loss\ndef dpo_loss(model, ref_model, prompt, chosen, rejected, beta=0.1):\n    # Log probability ratios\n    log_ratio_chosen = model.log_prob(chosen|prompt) - ref_model.log_prob(chosen|prompt)\n    log_ratio_rejected = model.log_prob(rejected|prompt) - ref_model.log_prob(rejected|prompt)\n    # Maximize margin\n    loss = -F.logsigmoid(beta * (log_ratio_chosen - log_ratio_rejected))\n    return loss.mean()\n```\n\nDPO is simpler, more stable, and commonly used today. Many open models (Llama-3-Instruct, Mistral-Instruct) are trained with DPO or related methods (KTO, IPO).\n\n## Constitutional AI (Anthropic)\n\nAnthropic's approach uses a written set of principles (a \"constitution\") to guide model behavior:\n\n1. **Supervised learning phase**: Model critiques and revises its own outputs according to constitutional principles\n2. **RL from AI Feedback (RLAIF)**: AI feedback (guided by the constitution) replaces some human feedback\n\nThis scales feedback generation and makes the model's values more explicit and auditable.\n\n## Compute and Environmental Scale\n\n| Model | Training FLOPs | Approximate Cost |\n|-------|---------------|------------------|\n| GPT-3 175B | 3.14 × 10²³ | ~$4–12M |\n| LLaMA 2 70B | 1.7 × 10²⁴ | ~$20M |\n| GPT-4 (est.) | ~2 × 10²⁵ | ~$100M+ |\n| LLaMA 3 405B | 3.8 × 10²⁵ | ~$100–300M |",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What is the training objective used in LLM pre-training?",
+      "options": [
+        "Classify the sentiment of each sentence in the training corpus",
+        "Predict the next token given all previous tokens (autoregressive language modeling)",
+        "Learn to translate between pairs of languages seen in the training data",
+        "Rank responses by human preference using reinforcement learning"
+      ],
+      "correct": 1,
+      "explanation": "Pre-training uses autoregressive (next-token prediction) language modeling: given all previous tokens, the model predicts the next token. Trained on trillions of tokens, this objective leads the model to internalize language patterns, facts, and reasoning."
+    },
+    {
+      "id": "q2",
+      "question": "According to the Chinchilla scaling law, what is the optimal ratio of training tokens to model parameters?",
+      "options": [
+        "~5 training tokens per parameter",
+        "~20 training tokens per parameter",
+        "~100 training tokens per parameter",
+        "~1,000 training tokens per parameter"
+      ],
+      "correct": 1,
+      "explanation": "The Chinchilla paper (Hoffmann et al., 2022) found that compute-optimal training requires roughly 20 training tokens per model parameter. GPT-3 (175B params) was undertrained by this metric — it would need ~3.5T tokens for optimal compute efficiency."
+    },
+    {
+      "id": "q3",
+      "question": "What is the purpose of Supervised Fine-Tuning (SFT) after pre-training?",
+      "options": [
+        "To teach the model new factual knowledge not seen during pre-training",
+        "To convert the text-completion model into an instruction-following assistant by training on curated question-answer examples",
+        "To compress the model's weights to reduce inference latency",
+        "To align the model's vocabulary with a new tokenizer"
+      ],
+      "correct": 1,
+      "explanation": "Pre-training produces a text completer, not an assistant. SFT trains on instruction-response pairs so the model learns the format, tone, and behavior expected in a conversational assistant context. Loss is typically computed only on the response tokens."
+    },
+    {
+      "id": "q4",
+      "question": "In RLHF, what is the role of the reward model?",
+      "options": [
+        "It generates synthetic training data to augment the SFT dataset",
+        "It scores model responses to predict how much a human would prefer them, providing a training signal for PPO optimization",
+        "It enforces constitutional principles by rejecting harmful outputs",
+        "It measures the KL divergence between the current policy and the reference model"
+      ],
+      "correct": 1,
+      "explanation": "The reward model is trained on human preference data (pairwise rankings of model outputs). It learns to assign a scalar reward predicting human preference. This reward signal is then used to fine-tune the LLM with PPO to maximize expected reward."
+    },
+    {
+      "id": "q5",
+      "question": "How does Direct Preference Optimization (DPO) differ from RLHF with PPO?",
+      "options": [
+        "DPO uses constitutional principles to generate feedback; RLHF uses human annotators",
+        "DPO directly optimizes the language model on preference pairs without a separate reward model or RL training loop",
+        "DPO requires more training compute but produces better-aligned models",
+        "DPO is only used for fine-tuning small models; RLHF is for large models"
+      ],
+      "correct": 1,
+      "explanation": "DPO reformulates preference learning as a supervised classification problem directly on the language model. It eliminates the need to train a separate reward model and run RL (PPO), making the pipeline simpler and more stable. Many modern open models use DPO."
+    },
+    {
+      "id": "q6",
+      "question": "What is Constitutional AI, developed by Anthropic?",
+      "options": [
+        "A legal framework for AI regulation",
+        "An approach where a written set of principles guides model behavior, using AI feedback (critiques and revisions) to scale alignment training",
+        "A method of training models only on constitutionally protected speech",
+        "A reward model architecture based on legal precedent"
+      ],
+      "correct": 1,
+      "explanation": "Constitutional AI uses a written 'constitution' of principles. The model critiques and revises its own outputs according to these principles (supervised phase), and AI-generated feedback guided by the constitution replaces some human feedback in the RL phase, making alignment more scalable and transparent."
+    },
+    {
+      "id": "q7",
+      "question": "Why is data quality filtering critical during LLM pre-training?",
+      "options": [
+        "Lower quality data makes training faster but reduces context window size",
+        "Web-crawled data contains duplicates, low-quality text, harmful content, and PII that would degrade model quality, increase training costs, and introduce safety risks if included unchanged",
+        "Unfiltered data exceeds the context window of modern tokenizers",
+        "Data filtering is required to comply with licensing restrictions on all web data"
+      ],
+      "correct": 1,
+      "explanation": "Raw web data (Common Crawl) contains near-duplicate content, machine-generated spam, harmful content, personally identifiable information, and low-quality text. Filtering via deduplication (MinHashLSH), quality heuristics, and content classifiers is essential to get high-quality training signal."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Pre-training",
+      "back": "The first and largest training stage for LLMs: training on web-scale text (trillions of tokens) using next-token prediction. The model learns language, facts, reasoning, and code. Extremely compute-intensive ($millions–$hundreds of millions)."
+    },
+    {
+      "id": "f2",
+      "front": "Supervised Fine-Tuning (SFT)",
+      "back": "A post-pretraining stage where the model is trained on curated instruction-response examples to learn conversational behavior. Transforms a text completer into an instruction-following assistant. Typically 10K–500K examples."
+    },
+    {
+      "id": "f3",
+      "front": "RLHF (Reinforcement Learning from Human Feedback)",
+      "back": "A training paradigm where human annotators rank model outputs, a reward model learns to predict preferences, and the LLM is fine-tuned with PPO to maximize reward. Used in InstructGPT, ChatGPT, early Claude."
+    },
+    {
+      "id": "f4",
+      "front": "Reward model",
+      "back": "A model trained on human preference rankings that assigns a scalar score to (prompt, response) pairs, predicting how much a human would prefer that response. Used as the optimization target in RLHF."
+    },
+    {
+      "id": "f5",
+      "front": "PPO (Proximal Policy Optimization)",
+      "back": "The RL algorithm used in RLHF. Optimizes the LLM to maximize reward model scores while adding a KL penalty to prevent the model from drifting too far from the SFT baseline. Objective: E[reward] - β·KL(policy || SFT)."
+    },
+    {
+      "id": "f6",
+      "front": "DPO (Direct Preference Optimization)",
+      "back": "A simpler alternative to RLHF that directly optimizes the LLM on preference pairs (chosen vs. rejected responses) without a separate reward model or RL loop. Derived from the Bradley-Terry preference model."
+    },
+    {
+      "id": "f7",
+      "front": "Constitutional AI",
+      "back": "Anthropic's alignment approach using a written set of principles (constitution). The model critiques and revises its own outputs (CAI-SL), and AI-generated feedback guided by the constitution replaces human feedback in RL (RLAIF)."
+    },
+    {
+      "id": "f8",
+      "front": "Instruction tuning",
+      "back": "The general process of fine-tuning a pre-trained language model on instruction-response pairs to make it follow user instructions. Encompasses both SFT and alignment fine-tuning. FLAN, Alpaca, and Dolly are open instruction-tuning datasets."
+    }
+  ],
+  "videos": [
+    {
+      "title": "RLHF: Reinforcement Learning from Human Feedback explained",
+      "youtube_id": "VPRSBzXzavo",
+      "description": "Detailed walkthrough of the full RLHF pipeline: collecting human preference data, training the reward model, and applying PPO to align the language model. Covers InstructGPT and ChatGPT training details."
+    },
+    {
+      "title": "Intro to Large Language Models — Andrej Karpathy",
+      "youtube_id": "zjkBMFhNj_g",
+      "description": "Karpathy's accessible overview of the complete LLM training pipeline — pre-training, SFT, RLHF — and how models like GPT-4 and LLaMA are built. Essential context for understanding the training process end-to-end."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

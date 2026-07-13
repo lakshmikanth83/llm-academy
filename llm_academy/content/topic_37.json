@@ -1,0 +1,148 @@
+{
+  "id": "topic_37",
+  "level": 6,
+  "level_name": "Agents & Multi-Agent Systems",
+  "order": 5,
+  "title": "Agentic Workflows",
+  "emoji": "🔄",
+  "duration_minutes": 20,
+  "eli8": "## Agentic Workflows — The AI's Flowchart 🗂️\n\nYou know how a video game has a **flow**: you start at level 1, beat the boss, THEN unlock level 2, and if you fail, you try again? It doesn't just randomly jump around — it follows a smart path based on what happens!\n\nAn **agentic workflow** works the same way — it's a flowchart that an AI navigates based on what's happening.\n\n### The Difference From a Simple Pipeline 🔁\n\nA regular pipeline is like following a recipe strictly:\n1. Add flour\n2. Add eggs\n3. Bake\n4. Done.\n\nNo matter what, you follow those steps. Even if you burned the first batch!\n\nAn **agentic workflow** is smarter — it can:\n- 🔄 **Loop**: \"Draft not good enough? Revise it and try again!\"\n- ↔️ **Branch**: \"If the research found enough info, write the report. If not, search more.\"\n- ⏸️ **Wait for a human**: \"This action is irreversible — ask the human first!\"\n- 🔀 **Run in parallel**: \"Research topic A AND topic B at the same time!\"\n\n### A Real Example — Writing a Research Report 📝\n\nHere's how an agentic workflow might handle a research report:\n\n1. 📋 **Plan**: Break the topic into subtopics\n2. 🔍 **Research**: Search the web for each subtopic\n3. ✅ **Check**: Did we find enough? If no → search more (loop back!)\n4. ✍️ **Draft**: Write the report\n5. 👤 **Human approval**: \"Does this look right?\" (wait for human!)\n6. 🖨️ **Publish**: If approved → publish! If not → revise (loop back!)\n\nSee how it can jump back, wait, branch? That's the power of agentic workflows — they're **smart** flowcharts, not dumb recipes! 🧠",
+  "detail": "## Agentic Workflows\n\nAn **agentic workflow** is a structured graph of LLM calls, tool invocations, and control logic that the agent navigates dynamically based on intermediate outputs. Unlike a fixed chain (deterministic step sequence), an agentic workflow can loop, branch, retry, and involve human checkpoints.\n\n## Core Components\n\n### Nodes\nEach node is a unit of work:\n- **LLM node**: calls the language model with a specific prompt\n- **Tool node**: executes a tool (web search, code runner, file write)\n- **Human node**: pauses and waits for human input\n- **Conditional node**: routes to different next nodes based on logic\n\n### Edges\nEdges define how nodes connect:\n- **Static edge**: always go from node A to node B\n- **Conditional edge**: the next node is determined by evaluating the current state (LLM output, tool result, a counter)\n\n### State\nA shared data structure (usually a typed dict or Pydantic model) that flows through all nodes. Every node can read from and write to state.\n\n```python\nfrom typing import TypedDict\n\nclass WorkflowState(TypedDict):\n    task: str\n    research_notes: list[str]\n    draft: str\n    approved: bool\n    revision_count: int\n```\n\n## LangGraph: Agentic Workflows as Graphs\n\nLangGraph is the most capable framework for agentic workflows:\n\n```python\nfrom langgraph.graph import StateGraph, END\n\ndef research_node(state: WorkflowState) -> WorkflowState:\n    # search web, update state.research_notes\n    ...\n\ndef draft_node(state: WorkflowState) -> WorkflowState:\n    # draft report from research_notes\n    ...\n\ndef route_after_draft(state: WorkflowState) -> str:\n    if state[\"approved\"]:\n        return \"publish\"\n    elif state[\"revision_count\"] < 3:\n        return \"revise\"\n    else:\n        return END\n\ngraph = StateGraph(WorkflowState)\ngraph.add_node(\"research\", research_node)\ngraph.add_node(\"draft\", draft_node)\ngraph.add_conditional_edges(\"draft\", route_after_draft, {\n    \"publish\": \"publish_node\",\n    \"revise\": \"draft\",  # loop back!\n    END: END\n})\n```\n\n## Key Workflow Patterns\n\n### Conditional Routing\nThe LLM's output determines the next step. Example: a classifier LLM routes customer queries to billing agent, technical support agent, or general FAQ agent.\n\n### Human-in-the-Loop\nSome actions are irreversible (send email, delete file, make payment). Best practice: pause the workflow and require human approval before proceeding.\n```python\n# LangGraph interrupt_before / interrupt_after\ngraph.compile(interrupt_before=[\"send_email_node\"])\n```\n\n### Retry Logic\nOn tool failure or unsatisfactory output, the workflow loops back with a modified approach:\n- Different search query if results were poor\n- Different model if one fails\n- Human escalation after N failed retries\n\n### Parallel Subgraphs\nIndependent subgraphs execute concurrently and their results are merged:\n```python\n# Fan-out to parallel research tasks, fan-in to synthesis\ngraph.add_node(\"research_a\", ...)\ngraph.add_node(\"research_b\", ...)\ngraph.add_node(\"synthesis\", ...)  # waits for both\n```\n\n## Long-Running Workflows and Checkpointing\n\nFor workflows spanning hours, days, or multiple sessions:\n- **Checkpointing**: persist the workflow state to a database (PostgreSQL, Redis) after each node\n- **Resume**: if a node fails or the process crashes, resume from the last checkpoint\n- **Human handoff**: pause indefinitely, resume when human responds\n\n```python\nfrom langgraph.checkpoint.postgres import PostgresSaver\ncheckpointer = PostgresSaver.from_conn_string(db_url)\ngraph = graph.compile(checkpointer=checkpointer)\n```\n\n## Workflow vs. Chain vs. Agent\n\n| Concept | Structure | Dynamic? | Stateful? |\n|---|---|---|---|\n| Chain | Fixed linear sequence | No | No |\n| Agent | Unstructured ReAct loop | Yes | Yes |\n| Workflow | Structured graph with logic | Yes | Yes |\n\nWorkflows occupy the sweet spot: more structured and predictable than a pure agent loop, more flexible and capable than a fixed chain.\n\n## Real-World Applications\n\n- **Code review pipeline**: analyze PR → identify issues → suggest fixes → await human approval → apply\n- **Content generation**: research → outline → draft → fact-check → edit → publish\n- **Customer support**: classify → route → resolve → verify resolution → close ticket\n- **Data analysis**: ingest → clean → analyze → visualize → report → alert if anomalies",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What distinguishes an agentic workflow from a fixed chain?",
+      "options": [
+        "Agentic workflows use smaller language models to save cost",
+        "Agentic workflows can loop, branch, and adapt based on intermediate outputs",
+        "Fixed chains support conditional routing; agentic workflows do not",
+        "Agentic workflows always complete in a fixed number of steps"
+      ],
+      "correct": 1,
+      "explanation": "A fixed chain always follows the same sequence of steps regardless of what happens. An agentic workflow can loop (retry), branch (different paths based on output), run in parallel, and pause for human input — it is a dynamic, stateful graph."
+    },
+    {
+      "id": "q2",
+      "question": "In LangGraph, what is the 'state' in a StateGraph?",
+      "options": [
+        "The current GPU utilization of the machine running the agent",
+        "A shared typed data structure that flows through all nodes and accumulates the workflow's information",
+        "The list of tools the agent is allowed to use",
+        "The current temperature setting for the LLM"
+      ],
+      "correct": 1,
+      "explanation": "In LangGraph's StateGraph, 'state' is a typed data structure (typically a TypedDict or Pydantic model) that every node can read from and write to. It accumulates all the information produced during the workflow — research notes, drafts, approvals, counters, etc."
+    },
+    {
+      "id": "q3",
+      "question": "What is a 'conditional edge' in a workflow graph?",
+      "options": [
+        "An edge that only appears in the graph under certain resource conditions",
+        "An edge where the destination node is determined dynamically by evaluating the current state",
+        "An edge that requires human approval before the next node runs",
+        "An edge that connects nodes running in parallel subgraphs"
+      ],
+      "correct": 1,
+      "explanation": "A conditional edge evaluates a routing function against the current state to determine which node to go to next. This is the mechanism that enables branching — the same node can route to different successors based on what the LLM returned or what a tool produced."
+    },
+    {
+      "id": "q4",
+      "question": "What is the purpose of 'human-in-the-loop' in agentic workflows?",
+      "options": [
+        "To slow down the workflow so humans can keep up with reading the output",
+        "To pause execution before irreversible or high-stakes actions and require human approval",
+        "To replace the LLM with a human agent for specific nodes",
+        "To reduce API costs by having humans complete some steps manually"
+      ],
+      "correct": 1,
+      "explanation": "Human-in-the-loop pauses the workflow at critical junctures — before sending emails, deleting files, making payments, or any irreversible action — and waits for a human to review and approve before proceeding. This is a key safety mechanism."
+    },
+    {
+      "id": "q5",
+      "question": "What does 'checkpointing' enable in long-running workflows?",
+      "options": [
+        "It limits how many tool calls an agent can make per session",
+        "It validates that each node's output meets a quality threshold before proceeding",
+        "It persists workflow state to storage so the workflow can resume after failure or interruption",
+        "It creates a human-readable log of every LLM call made"
+      ],
+      "correct": 2,
+      "explanation": "Checkpointing saves the workflow state to persistent storage (database, file) after each node completes. If the process crashes, the server restarts, or a human needs to be consulted, the workflow can resume from exactly where it left off instead of starting over."
+    },
+    {
+      "id": "q6",
+      "question": "In a parallel subgraph pattern, what happens at the 'fan-in' node?",
+      "options": [
+        "It distributes the task to multiple parallel agents",
+        "It waits for all parallel branches to complete, then merges their results",
+        "It selects the best result from the parallel branches and discards the others",
+        "It converts sequential execution into parallel by queuing up nodes"
+      ],
+      "correct": 1,
+      "explanation": "The fan-in node (synthesis node) waits until all parallel subgraphs have completed and then merges their outputs. For example, research_a and research_b might run in parallel, and the synthesis node combines their findings into a unified result."
+    },
+    {
+      "id": "q7",
+      "question": "Which scenario best illustrates 'retry logic' in an agentic workflow?",
+      "options": [
+        "Running the same prompt twice to get two different creative options",
+        "After a web search returns poor results, routing back to the search node with a revised query",
+        "Saving the workflow state after every node in case of failure",
+        "Running a critic agent after every draft to check for errors"
+      ],
+      "correct": 1,
+      "explanation": "Retry logic means that when an action produces unsatisfactory results (empty search, error, low-quality output), the workflow loops back to try again with a modified approach — a different search query, a different tool, or a different prompt strategy."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Agentic Workflow",
+      "back": "A structured graph of LLM calls, tool invocations, and control logic that an agent navigates dynamically. Can loop, branch, retry, run parallel subgraphs, and pause for human input."
+    },
+    {
+      "id": "f2",
+      "front": "Conditional Edge (LangGraph)",
+      "back": "A graph edge where the destination node is determined dynamically by evaluating the current state. Enables branching — different paths based on LLM output or tool results."
+    },
+    {
+      "id": "f3",
+      "front": "Human-in-the-Loop",
+      "back": "A workflow pattern that pauses execution before irreversible or high-stakes actions and requires human approval before proceeding. A critical safety mechanism for autonomous agents."
+    },
+    {
+      "id": "f4",
+      "front": "Checkpointing (workflow)",
+      "back": "Persisting workflow state to durable storage after each node completes. Enables long-running workflows to resume after crashes, interruptions, or async human handoffs."
+    },
+    {
+      "id": "f5",
+      "front": "StateGraph (LangGraph)",
+      "back": "LangGraph's primary workflow primitive: a directed graph of nodes and edges operating on a shared typed state object. Nodes read/write state; edges define transitions, including conditional ones."
+    },
+    {
+      "id": "f6",
+      "front": "Retry (workflow)",
+      "back": "A loop back to a previous node triggered by a failed or unsatisfactory result. The retry may use a different approach: revised query, different tool, escalation to human after N attempts."
+    },
+    {
+      "id": "f7",
+      "front": "Parallel Subgraph",
+      "back": "A workflow pattern where independent branches execute concurrently (fan-out), and their results are merged at a synthesis node (fan-in). Reduces latency for independent subtasks."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Agentic Workflows with LangGraph — Deep Dive",
+      "youtube_id": "nzG8jfqvKdQ",
+      "description": "A comprehensive tutorial on building agentic workflows using LangGraph, covering StateGraph, conditional edges, human-in-the-loop, and checkpointing for production deployments."
+    },
+    {
+      "title": "LangGraph Tutorial — Building Complex Agent Workflows",
+      "youtube_id": "mrjq3lFz23s",
+      "description": "Step-by-step walkthrough of LangGraph's node-edge-state architecture, building a multi-step research and writing workflow with branching and retry logic."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

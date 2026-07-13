@@ -1,0 +1,146 @@
+{
+  "id": "topic_57",
+  "level": 10,
+  "level_name": "Production & Cloud",
+  "order": 2,
+  "title": "Cloud Services for AI Apps",
+  "emoji": "☁️",
+  "duration_minutes": 20,
+  "eli8": "# ☁️ Renting a Supercomputer!\n\nImagine you need a really powerful blender to make smoothies for a party. You could **buy** one — but that's expensive and you'd only use it once. Or you could **rent** one just for the party and return it when you're done. That's exactly what cloud services are!\n\n## 💻 Renting Computing Power\n\nAI apps need a LOT of computing power — especially for training models. Cloud companies like Amazon (AWS), Google (GCP), and Microsoft (Azure) let you rent their powerful computers:\n\n- 🎮 **GPU instances** — like renting a super-powerful gaming PC for a few hours to train your model\n- When you're done training, you return it and stop paying!\n- The most powerful GPUs (like A100s and H100s) cost hundreds of dollars per hour — but you only pay for what you use\n\n## ⚡ Serverless — Pay for EXACTLY What You Use\n\nServerless is the ultimate rental:\n- Your code sits sleeping until someone calls it\n- It wakes up, does the job, goes back to sleep\n- You pay for only the **seconds it was awake**\n- Perfect for AI APIs that get called sometimes, not all the time\n\nThink of it like a light switch — electricity flows only when the light is on! 💡\n\n## 💾 Storing Your AI Stuff\n\nCloud storage (like Amazon S3) is like a giant, safe filing cabinet in the sky:\n- Store your trained model files (can be gigabytes!)\n- Save training datasets\n- Keep logs and results\n- Costs pennies per gigabyte per month\n\n## 💸 Smart Saving: Spot Instances\n\nHere's a cool trick! Cloud companies have computers sitting idle. They sell that spare time at **70% discount** — called spot instances. If they need it back, they give you a 2-minute warning. Great for training jobs (just save your progress!), bad for your main website (needs to always be on). Smart AI engineers use spot instances for training to save tons of money! 🎉",
+  "detail": "## Cloud Services for AI Applications\n\nCloud platforms provide on-demand access to the GPU compute, managed storage, and AI-specific services that LLM applications require at every stage of development and production.\n\n### Compute Options\n\n**GPU Instances** are virtual machines with attached GPUs:\n- **AWS EC2**: `p3.2xlarge` (V100), `p4d.24xlarge` (8×A100), `p5.48xlarge` (8×H100)\n- **GCP**: `a2-highgpu-1g` (A100), `a3-highgpu-8g` (H100)\n- Use for: model fine-tuning, self-hosted inference for large models, batch processing\n\n**Managed GPU Inference**:\n- **AWS SageMaker**: fully managed endpoints — deploy a model with one API call, auto-scaling included\n- **Modal**: serverless GPU functions with fast cold starts (~1s). Define infrastructure as Python decorators:\n  ```python\n  import modal\n  app = modal.App()\n  @app.function(gpu=\"A10G\")\n  def run_inference(prompt: str) -> str:\n      model = load_model()\n      return model.generate(prompt)\n  ```\n- **Replicate**: deploy open-source models (Llama, Mistral) via REST API; pay per prediction\n\n### Serverless Compute\n\n**AWS Lambda** and **Google Cloud Run** are ideal for inference endpoints with bursty traffic:\n- Lambda: up to 15 min timeout, 10GB memory, no GPU (CPU-only models)\n- Cloud Run: container-based, scales to zero, up to 32GB RAM, GPU preview available\n- Best for: embedding generation, lightweight classification, API wrappers over external LLM APIs\n\n**When to use serverless vs always-on**:\n- Serverless: <100 req/min average, latency tolerance >1s, cost is primary concern\n- Always-on: real-time latency requirements, model too large to load per request, >1000 req/min\n\n### Storage\n\n- **S3 / GCS**: blob storage for model artifacts (weights, tokenizers), training datasets, evaluation results. Typical cost: $0.023/GB/month\n- **RDS / Cloud SQL**: relational database for conversation history, user metadata, evaluation logs\n- **ElastiCache (Redis)**: in-memory cache for response caching and session state\n\n### Managed AI Services\n\n- **Amazon Bedrock**: managed access to Claude, Llama, Mistral, Stable Diffusion via unified API\n- **Amazon Bedrock Knowledge Bases**: managed RAG pipeline — upload documents, Bedrock handles chunking, embedding, and retrieval\n- **Azure AI Search**: vector + keyword hybrid search, integrates with Azure OpenAI\n- **Google Vertex AI**: managed training, serving, and evaluation for custom models\n\n### Experiment Tracking: MLflow on Cloud\n\nMLflow tracks experiments (hyperparameters, metrics, artifacts) and can be hosted on Databricks, Azure ML, or self-hosted on a cloud VM:\n\n```python\nimport mlflow\nmlflow.set_tracking_uri(\"https://your-mlflow-server.com\")\nwith mlflow.start_run():\n    mlflow.log_param(\"model\", \"claude-haiku\")\n    mlflow.log_metric(\"ragas_faithfulness\", 0.87)\n    mlflow.log_artifact(\"prompts/system_v2.txt\")\n```\n\n### Cost Optimization Strategies\n\n**Spot / Preemptible instances**: 60-90% cheaper than on-demand. Ideal for training jobs with checkpointing. Implement checkpoint saving every N steps so interrupted jobs resume.\n\n**Reserved instances**: commit to 1-3 years for 40-60% discount. Use for steady production inference workloads.\n\n**Right-sizing**: monitor GPU utilization; if consistently <50%, downgrade instance type.\n\n**Architecture pattern**:\n```\nBursty traffic  → Cloud Run (serverless, scale-to-zero)\nSteady traffic  → Reserved EC2 + auto-scaling group\nBatch jobs      → Spot instances with checkpointing\nDev/experiment  → On-demand (pay-as-you-go, no commitment)\n```",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What is the primary cost advantage of using spot/preemptible instances for AI training?",
+      "options": [
+        "They provide faster GPUs than on-demand instances",
+        "They are 60-90% cheaper than on-demand because they use spare cloud capacity",
+        "They have no time limit on training jobs",
+        "They come with pre-installed ML frameworks"
+      ],
+      "correct": 1,
+      "explanation": "Spot instances use spare cloud capacity and are sold at 60-90% discount. The trade-off is they can be reclaimed with short notice, so training jobs need checkpointing to resume."
+    },
+    {
+      "id": "q2",
+      "question": "When would serverless (e.g., Cloud Run) be preferred over an always-on instance for LLM inference?",
+      "options": [
+        "When the model requires loading a 70B parameter model on every request",
+        "When you need sub-100ms latency for real-time chat responses",
+        "When traffic is bursty and unpredictable, and cost optimization matters more than cold-start latency",
+        "When you need to run 24/7 background fine-tuning jobs"
+      ],
+      "correct": 2,
+      "explanation": "Serverless shines when traffic is bursty — it scales to zero (no idle cost) and up instantly. The trade-off is cold-start latency. It's not suitable for large model serving or sub-200ms latency requirements."
+    },
+    {
+      "id": "q3",
+      "question": "What is Amazon S3 most commonly used for in a machine learning workflow?",
+      "options": [
+        "Running inference on large language models",
+        "Storing model artifacts, training datasets, and evaluation results as blob objects",
+        "Managing API rate limits for Bedrock calls",
+        "Hosting vector databases for RAG applications"
+      ],
+      "correct": 1,
+      "explanation": "S3 (Simple Storage Service) is object/blob storage — ideal for model weights, datasets, and artifacts. It's not a database or compute service."
+    },
+    {
+      "id": "q4",
+      "question": "AWS SageMaker's primary value proposition for ML teams is:",
+      "options": [
+        "Providing the cheapest possible GPU compute on the market",
+        "A fully managed platform for training, deploying, and scaling ML models with auto-scaling endpoints",
+        "An API wrapper around OpenAI models with AWS billing",
+        "A serverless function runner specialized for Python ML code"
+      ],
+      "correct": 1,
+      "explanation": "SageMaker handles the infrastructure complexity of ML — managed training jobs, model registry, one-click deployment to auto-scaling endpoints, and monitoring. Teams pay a premium over raw EC2 for this convenience."
+    },
+    {
+      "id": "q5",
+      "question": "MLflow is used in cloud ML workflows primarily to:",
+      "options": [
+        "Serve models at production scale with auto-scaling",
+        "Track experiments — logging hyperparameters, metrics, and artifacts across runs for comparison",
+        "Manage cloud costs and resource quotas",
+        "Vectorize documents for a RAG pipeline"
+      ],
+      "correct": 1,
+      "explanation": "MLflow is an experiment tracking tool. It logs parameters, metrics (like eval scores), and artifacts (like prompt versions) across runs so teams can compare experiments and reproduce results."
+    },
+    {
+      "id": "q6",
+      "question": "Which service would you choose to deploy a managed RAG pipeline on AWS without building the chunking, embedding, and retrieval infrastructure yourself?",
+      "options": [
+        "AWS Lambda",
+        "Amazon S3",
+        "Amazon Bedrock Knowledge Bases",
+        "AWS Glue"
+      ],
+      "correct": 2,
+      "explanation": "Amazon Bedrock Knowledge Bases is a fully managed RAG service — you upload documents, and AWS handles chunking, embedding (via Titan or other models), vector storage, and retrieval. No infrastructure to manage."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Spot instance",
+      "back": "Discounted cloud VM using spare capacity, 60-90% cheaper than on-demand. Can be reclaimed with short notice. Ideal for training jobs with checkpointing, not suitable for latency-sensitive production services."
+    },
+    {
+      "id": "f2",
+      "front": "Serverless (Cloud Run / Lambda)",
+      "back": "Compute that scales to zero when idle and scales up on demand. You pay only for execution time. Ideal for bursty, infrequent workloads. Trade-off: cold starts add latency when waking from zero."
+    },
+    {
+      "id": "f3",
+      "front": "AWS SageMaker",
+      "back": "A fully managed AWS ML platform that handles training infrastructure, model versioning, and one-click deployment to auto-scaling inference endpoints. Abstracts away EC2/container management."
+    },
+    {
+      "id": "f4",
+      "front": "Modal",
+      "back": "A serverless GPU cloud platform where ML infrastructure is defined as Python decorators. Supports fast cold starts (~1s) for GPU functions. Popular for running open-source model inference without managing servers."
+    },
+    {
+      "id": "f5",
+      "front": "Replicate",
+      "back": "A platform for running and deploying open-source ML models (Llama, Stable Diffusion, Whisper) via a simple REST API. Charges per prediction. Ideal for prototyping with open-source models without GPU setup."
+    },
+    {
+      "id": "f6",
+      "front": "S3 (Simple Storage Service)",
+      "back": "AWS object/blob storage for large files. In ML, used to store model weights, training datasets, evaluation artifacts, and logs. Costs ~$0.023/GB/month with 11 nines of durability."
+    },
+    {
+      "id": "f7",
+      "front": "MLflow",
+      "back": "An open-source experiment tracking framework. Logs hyperparameters, metrics, artifacts, and code versions across training runs. Can be self-hosted or run on Databricks/Azure ML."
+    },
+    {
+      "id": "f8",
+      "front": "CDN (Content Delivery Network)",
+      "back": "A geographically distributed network of servers that cache and serve content from locations close to users. In AI apps, used for static frontend assets and sometimes cached embedding results."
+    },
+    {
+      "id": "f9",
+      "front": "Managed RAG (Bedrock Knowledge Bases)",
+      "back": "A fully managed service where you upload documents and the cloud provider handles chunking, embedding, vector storage, and retrieval. Reduces engineering effort for standard RAG use cases."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Cloud AI Services and Deployment Patterns",
+      "youtube_id": "VPRSBzXzavo",
+      "description": "Overview of major cloud AI services across AWS, GCP, and Azure, with practical guidance on choosing compute, storage, and managed services for LLM applications."
+    },
+    {
+      "title": "MLOps on the Cloud: From Experiment to Production",
+      "youtube_id": "nzG8jfqvKdQ",
+      "description": "Walkthrough of cloud MLOps patterns including experiment tracking with MLflow, model registries, and managed inference endpoints on major cloud providers."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

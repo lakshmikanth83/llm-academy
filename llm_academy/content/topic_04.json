@@ -1,0 +1,148 @@
+{
+  "id": "topic_04",
+  "level": 1,
+  "level_name": "Foundations",
+  "order": 4,
+  "title": "What is a Language Model?",
+  "emoji": "💬",
+  "duration_minutes": 15,
+  "eli8": "# What is a Language Model? 💬\n\n## Super-Powered Autocomplete ✨\n\nYou know when you're texting and your phone suggests the next word? Type \"Happy\" and it suggests \"Birthday\" — type \"I'm going to the\" and it suggests \"store\" or \"park\"?\n\nA **language model** does the exact same thing — but WAY more powerfully. Instead of suggesting one word, it can write entire sentences, stories, code, and answers to questions!\n\n## Predict the Next Word 🔮\n\nHere's the secret trick:\n\n> \"The cat sat on the ___\"\n\nWhat comes next? Probably **mat**, **floor**, **couch**, or **chair**. Probably NOT **spaceship** or **banana**.\n\nA language model has read billions of books, websites, and articles. So it knows that after \"The cat sat on the\", the word **mat** appears much more often than **spaceship**. It picks the most likely next word.\n\n**Then it keeps going:** it picks the next word, then the next, then the next — building up full sentences one word at a time! This is called **autoregressive generation** (auto = on its own, regressive = looking back at what came before). 🔄\n\n## It Learned from Everything! 📖\n\nBefore ChatGPT could talk to you, it first **read** an enormous amount of text:\n- 📚 Millions of books\n- 🌐 Huge chunks of the internet\n- 💻 GitHub code repositories\n- 📰 News articles\n\nThis \"reading\" phase is called **pre-training**. The model doesn't memorize everything — it learns the *patterns* of language: grammar, facts, reasoning styles, how to explain things.\n\n## Language Model vs. Chatbot 🤖\n\nHere's something surprising:\n- A **language model** just predicts the next word\n- A **chatbot** (like ChatGPT) is a language model that has been *further trained* to be helpful and have conversations\n\nIt's like the difference between a pianist who can play anything vs. a pianist who's been coached specifically to entertain at parties. Same underlying skill, different tuning! 🎹",
+  "detail": "# Language Models: Technical Overview\n\n## Formal Definition\n\nA language model (LM) defines a **probability distribution over sequences of tokens**. Given a sequence of tokens `t_1, t_2, ..., t_n`, the model assigns a probability:\n\n```\nP(t_1, t_2, ..., t_n) = P(t_1) * P(t_2|t_1) * P(t_3|t_1,t_2) * ... * P(t_n|t_1,...,t_{n-1})\n```\n\nThis is the **chain rule of probability**. A language model learns to estimate `P(t_n | t_1, ..., t_{n-1})` — the probability of the next token given all preceding tokens.\n\n## A Brief History\n\n### N-gram Models\nThe earliest statistical LMs used n-grams — fixed windows of n preceding words:\n\n```python\n# Bigram model: P(word | previous_word)\nbigram_counts = {\n    (\"the\", \"cat\"): 120,\n    (\"cat\", \"sat\"): 85,\n    (\"sat\", \"on\"): 200,\n}\n# P(\"sat\" | \"cat\") = count(\"cat sat\") / count(\"cat ...\")\n```\n\nN-gram models are fast but suffer from the **data sparsity problem**: most n-gram sequences never appear in training data, so probabilities cannot be estimated. They also have no way to generalize — \"big house\" and \"large house\" are completely unrelated representations.\n\n### Neural Language Models\nFeedforward neural LMs (Bengio et al., 2003) replaced sparse counts with learned **word embeddings** — dense vector representations that capture semantic similarity. \"cat\" and \"kitten\" would have similar vectors. This allowed generalization across semantically related words.\n\n### Recurrent Neural Networks (RNNs / LSTMs)\nRNNs process sequences token-by-token, maintaining a hidden state that in principle summarizes all prior context. LSTMs (Long Short-Term Memory, Hochreiter & Schmidhuber 1997) added gating mechanisms to remember long-range dependencies better. Dominated NLP from ~2014–2017.\n\n### Transformers (2017–present)\nThe **\"Attention Is All You Need\"** paper (Vaswani et al., 2017) introduced the Transformer architecture. Unlike RNNs, Transformers attend to all tokens in the context simultaneously, enabling massive parallelism during training and much longer effective context windows. All modern LLMs are Transformer-based.\n\n## Autoregressive Generation\n\nModern LLMs generate text autoregressively:\n\n```\nPrompt:  \"The capital of France is\"\nStep 1:  model predicts → \"Paris\"   (p=0.94)\nFeed back: \"The capital of France is Paris\"\nStep 2:  model predicts → \".\"       (p=0.87)\nFeed back: \"The capital of France is Paris.\"\n... and so on\n```\n\nEach predicted token is appended to the input for the next prediction. This is why generation is sequential and cannot be parallelized at inference time.\n\n## What is a Token?\n\nLMs do not operate on characters or words but on **tokens** — sub-word units produced by algorithms like **Byte Pair Encoding (BPE)** or SentencePiece.\n\n```\n\"unhappiness\" → [\"un\", \"happiness\"]  (2 tokens)\n\"ChatGPT\"     → [\"Chat\", \"G\", \"PT\"] (3 tokens)\n```\n\nTokenization allows the model to handle rare or novel words by decomposing them into known sub-words. A rough rule of thumb: ~1 token ≈ 0.75 English words.\n\n## Pre-training\n\nPre-training is the initial training phase on massive unlabeled text corpora. The training objective for autoregressive LMs is **next-token prediction (NTP)**: given the preceding tokens, predict the next one. This is a form of self-supervised learning — the \"labels\" come from the data itself (the next token in the sequence).\n\nScale matters: GPT-3 was trained on 300 billion tokens; LLaMA 3 on 15 trillion tokens.\n\n## Language Model vs. Chat Assistant\n\nA base language model (pre-training only) will complete any text in a plausible way but will not reliably follow instructions or refuse harmful requests. To create a chat assistant:\n\n1. **Supervised Fine-Tuning (SFT)**: Fine-tune on (prompt, ideal response) pairs written by human annotators.\n2. **Reinforcement Learning from Human Feedback (RLHF)**: Train a reward model on human preference rankings, then fine-tune the LM with RL to maximize reward.\n\nThis two-step process shapes the model's behavior from \"plausible text completion\" to \"helpful, harmless, and honest assistant.\"\n\n## Perplexity\n\nPerplexity is the standard intrinsic evaluation metric for language models:\n\n```\nPerplexity = exp(average negative log-likelihood)\n```\n\nIntuitively: perplexity is the \"average number of words the model is choosing between\" at each position. Lower perplexity = better model. A model that assigns high probability to the true next token (is rarely surprised) has low perplexity. GPT-4 achieves perplexity near 1 on many benchmarks — it is almost never surprised.\n\n## GPT Architecture at a Glance\n\n- **Embedding layer**: Converts token IDs to dense vectors\n- **Positional encoding**: Adds sequence position information\n- **N x Transformer blocks**: Each block contains multi-head self-attention + feed-forward network + layer norms\n- **Output head**: Linear projection + softmax over the vocabulary\n\nThis architecture, trained at scale, is the foundation of GPT-4, Claude, LLaMA, Mistral, and virtually every major LLM in use today.",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What does a language model fundamentally learn to do?",
+      "options": [
+        "Translate between programming languages",
+        "Predict the next token given all preceding tokens in a sequence",
+        "Retrieve relevant documents from a database",
+        "Classify text into predefined sentiment categories"
+      ],
+      "correct": 1,
+      "explanation": "A language model's core objective is next-token prediction: given a sequence of tokens, assign probability to every possible next token. All other capabilities (answering questions, writing code, reasoning) emerge from this single training objective applied at scale."
+    },
+    {
+      "id": "q2",
+      "question": "What is autoregressive generation?",
+      "options": [
+        "Training the model on data collected automatically from the web",
+        "Generating all output tokens simultaneously in a single forward pass",
+        "Predicting one token at a time, feeding each prediction back as input for the next step",
+        "Using reinforcement learning to improve generation quality"
+      ],
+      "correct": 2,
+      "explanation": "Autoregressive generation is sequential: the model predicts token 1, appends it to the input, predicts token 2 from the extended sequence, and so on. This is why LLM inference cannot be trivially parallelized."
+    },
+    {
+      "id": "q3",
+      "question": "In the context of language models, what is a 'token'?",
+      "options": [
+        "A single character in the input text",
+        "A complete word in the model's vocabulary",
+        "A sub-word unit produced by algorithms like BPE, roughly 0.75 words on average",
+        "A sentence boundary marker"
+      ],
+      "correct": 2,
+      "explanation": "Tokens are sub-word units from tokenization algorithms like Byte Pair Encoding. They are not words (too many rare words) or characters (too fine-grained). Sub-word tokenization balances vocabulary size with the ability to handle novel words."
+    },
+    {
+      "id": "q4",
+      "question": "What is perplexity in the context of language models?",
+      "options": [
+        "The amount of memory a model uses during inference",
+        "A measure of how surprised the model is by the test data — lower means better",
+        "The maximum number of tokens a model can process in one prompt",
+        "The number of layers in the Transformer architecture"
+      ],
+      "correct": 1,
+      "explanation": "Perplexity is exp(average negative log-likelihood) — it measures how well the model predicts held-out text. Intuitively, it is the average number of choices the model is weighing per token. Lower perplexity means the model assigns higher probability to the correct next tokens."
+    },
+    {
+      "id": "q5",
+      "question": "What is the key difference between a base language model and a chat assistant like ChatGPT?",
+      "options": [
+        "The chat assistant has more parameters",
+        "The chat assistant uses a different tokenizer",
+        "The chat assistant has been further fine-tuned (SFT + RLHF) to follow instructions and be helpful",
+        "The chat assistant only handles question-answering, not text generation"
+      ],
+      "correct": 2,
+      "explanation": "A base model completes text in a plausible way but won't reliably follow instructions. Supervised Fine-Tuning (SFT) and Reinforcement Learning from Human Feedback (RLHF) shape its behavior into a helpful, instruction-following assistant."
+    },
+    {
+      "id": "q6",
+      "question": "What is 'pre-training' in the context of large language models?",
+      "options": [
+        "The phase where human annotators label training data",
+        "The initial training phase on massive text corpora using next-token prediction as a self-supervised objective",
+        "Fine-tuning a model for a specific downstream task",
+        "Testing the model on benchmark datasets before deployment"
+      ],
+      "correct": 1,
+      "explanation": "Pre-training is self-supervised learning on huge corpora: the model predicts the next token, with the labels coming from the data itself (the next word in the sequence). It is the phase where the model acquires broad world knowledge and language understanding."
+    },
+    {
+      "id": "q7",
+      "question": "What was the major limitation of n-gram language models compared to neural language models?",
+      "options": [
+        "N-gram models required GPU hardware to train",
+        "N-gram models could not be used for text generation",
+        "N-gram models suffered from data sparsity and could not generalize across semantically similar phrases",
+        "N-gram models only worked for English"
+      ],
+      "correct": 2,
+      "explanation": "N-gram models rely on exact co-occurrence counts, so they fail on rare or unseen n-grams (data sparsity). They also cannot generalize — 'large dog' and 'big dog' are unrelated representations. Neural models with embeddings solve both problems."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Language Model",
+      "back": "A model that defines a probability distribution over sequences of tokens. Specifically, it estimates P(next token | all preceding tokens). Used for text generation, completion, translation, summarization, and more."
+    },
+    {
+      "id": "f2",
+      "front": "Autoregressive Generation",
+      "back": "A text generation strategy where the model predicts one token at a time, and each predicted token is appended to the input context for the next prediction step. The process continues until an end-of-sequence token is produced."
+    },
+    {
+      "id": "f3",
+      "front": "Token",
+      "back": "The basic unit of text that LLMs process. Produced by tokenization algorithms (BPE, SentencePiece). Not a word or a character — typically a sub-word unit. One token ≈ 0.75 English words on average."
+    },
+    {
+      "id": "f4",
+      "front": "Perplexity",
+      "back": "A metric for language model quality: exp(average negative log-likelihood on held-out text). It represents the average number of equally likely choices the model faces per token. Lower perplexity = better model."
+    },
+    {
+      "id": "f5",
+      "front": "Pre-training",
+      "back": "The initial, large-scale training phase of an LLM on massive text corpora. Uses next-token prediction as a self-supervised objective (no human-provided labels needed). The model acquires general language understanding and world knowledge."
+    },
+    {
+      "id": "f6",
+      "front": "Next-Token Prediction (NTP)",
+      "back": "The self-supervised training objective of autoregressive LLMs: given tokens t_1 through t_{n-1}, predict t_n. Because the labels come from the data itself, no manual annotation is required, allowing training on internet-scale corpora."
+    },
+    {
+      "id": "f7",
+      "front": "Transformer Architecture",
+      "back": "The neural network architecture underlying all major modern LLMs, introduced in 'Attention Is All You Need' (2017). Key innovation: self-attention allows every token to attend to every other token in the context simultaneously, enabling parallelism and long-range dependencies."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Intro to Large Language Models — Andrej Karpathy",
+      "youtube_id": "zjkBMFhNj_g",
+      "description": "Karpathy's accessible one-hour introduction to how LLMs work under the hood: training, tokenization, context windows, RLHF, and the state of the field — by one of the original GPT-2 authors."
+    },
+    {
+      "title": "Language Models Explained",
+      "youtube_id": "osKoXfn9IzA",
+      "description": "A clear walkthrough of how language models are built, from n-grams to neural approaches, explaining the intuition behind next-token prediction and how scale enables emergent capabilities."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

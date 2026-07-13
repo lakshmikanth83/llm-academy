@@ -1,0 +1,463 @@
+[
+  {
+    "level": 1,
+    "name": "Foundations",
+    "emoji": "\ud83c\udf31",
+    "topics": [
+      {
+        "id": "topic_01",
+        "title": "What is AI?",
+        "emoji": "\ud83e\udd16",
+        "duration_minutes": 15
+      },
+      {
+        "id": "topic_02",
+        "title": "What is Machine Learning?",
+        "emoji": "\ud83d\udcda",
+        "duration_minutes": 15
+      },
+      {
+        "id": "topic_03",
+        "title": "Neural Networks",
+        "emoji": "\ud83e\uddec",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_04",
+        "title": "What is a Language Model?",
+        "emoji": "\ud83d\udcac",
+        "duration_minutes": 15
+      },
+      {
+        "id": "topic_05",
+        "title": "LLMs vs SLMs",
+        "emoji": "\u2696\ufe0f",
+        "duration_minutes": 15
+      }
+    ]
+  },
+  {
+    "level": 2,
+    "name": "How LLMs Work",
+    "emoji": "\ud83e\udde0",
+    "topics": [
+      {
+        "id": "topic_06",
+        "title": "Tokens & Tokenization",
+        "emoji": "\ud83e\uddf1",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_07",
+        "title": "Embeddings",
+        "emoji": "\ud83d\uddfa\ufe0f",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_08",
+        "title": "Transformers & Attention",
+        "emoji": "\ud83d\udd26",
+        "duration_minutes": 25
+      },
+      {
+        "id": "topic_09",
+        "title": "Inside the Engine: FFN, RoPE, KV Cache, MoE",
+        "emoji": "\u2699\ufe0f",
+        "duration_minutes": 25
+      },
+      {
+        "id": "topic_10",
+        "title": "How LLMs are Trained",
+        "emoji": "\ud83c\udfcb\ufe0f",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_11",
+        "title": "Context Windows & Memory",
+        "emoji": "\ud83e\udde0",
+        "duration_minutes": 15
+      },
+      {
+        "id": "topic_12",
+        "title": "Temperature & Sampling",
+        "emoji": "\ud83c\udf21\ufe0f",
+        "duration_minutes": 15
+      },
+      {
+        "id": "topic_13",
+        "title": "Inference & Latency",
+        "emoji": "\u26a1",
+        "duration_minutes": 15
+      }
+    ]
+  },
+  {
+    "level": 3,
+    "name": "Talking to LLMs",
+    "emoji": "\ud83d\udcac",
+    "topics": [
+      {
+        "id": "topic_14",
+        "title": "Prompt Engineering Basics",
+        "emoji": "\u270d\ufe0f",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_15",
+        "title": "Zero-shot, One-shot, Few-shot",
+        "emoji": "\ud83c\udfaf",
+        "duration_minutes": 15
+      },
+      {
+        "id": "topic_16",
+        "title": "Chain of Thought & Reasoning",
+        "emoji": "\ud83d\udd17",
+        "duration_minutes": 15
+      },
+      {
+        "id": "topic_17",
+        "title": "Prompt Chaining",
+        "emoji": "\u26d3\ufe0f",
+        "duration_minutes": 15
+      },
+      {
+        "id": "topic_18",
+        "title": "System Prompts & Roles",
+        "emoji": "\ud83c\udfad",
+        "duration_minutes": 15
+      },
+      {
+        "id": "topic_19",
+        "title": "Context Engineering",
+        "emoji": "\ud83d\udccb",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_20",
+        "title": "Structured Outputs",
+        "emoji": "\ud83d\udcca",
+        "duration_minutes": 15
+      }
+    ]
+  },
+  {
+    "level": 4,
+    "name": "Using LLMs: APIs & the Tool Landscape",
+    "emoji": "\ud83e\uddf0",
+    "topics": [
+      {
+        "id": "topic_21",
+        "title": "Using LLM APIs",
+        "emoji": "\ud83d\udd0c",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_22",
+        "title": "Function & Tool Calling",
+        "emoji": "\ud83d\udd27",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_23",
+        "title": "The Big Players: Claude, ChatGPT, Gemini, Grok, Llama",
+        "emoji": "\ud83c\udfc6",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_24",
+        "title": "Coding Assistants: Claude Code, Codex, Copilot, Cursor",
+        "emoji": "\ud83d\udcbb",
+        "duration_minutes": 15
+      },
+      {
+        "id": "topic_25",
+        "title": "Enterprise Platforms: Azure AI, AWS Bedrock, Google Vertex, Databricks",
+        "emoji": "\u2601\ufe0f",
+        "duration_minutes": 20
+      }
+    ]
+  },
+  {
+    "level": 5,
+    "name": "Embeddings, Vector Search & RAG",
+    "emoji": "\ud83d\udd0d",
+    "topics": [
+      {
+        "id": "topic_26",
+        "title": "Embedding Models & Similarity Metrics",
+        "emoji": "\ud83d\udcd0",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_27",
+        "title": "Vector Databases",
+        "emoji": "\ud83d\uddc4\ufe0f",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_28",
+        "title": "Chunking Strategies",
+        "emoji": "\u2702\ufe0f",
+        "duration_minutes": 15
+      },
+      {
+        "id": "topic_29",
+        "title": "RAG End-to-End",
+        "emoji": "\ud83d\udcd6",
+        "duration_minutes": 30
+      },
+      {
+        "id": "topic_30",
+        "title": "Advanced Retrieval",
+        "emoji": "\ud83d\udd2c",
+        "duration_minutes": 25
+      },
+      {
+        "id": "topic_31",
+        "title": "RAG Failures & Architecture Patterns",
+        "emoji": "\ud83c\udfd7\ufe0f",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_32",
+        "title": "Agentic RAG",
+        "emoji": "\ud83e\udd14",
+        "duration_minutes": 20
+      }
+    ]
+  },
+  {
+    "level": 6,
+    "name": "Agents & Multi-Agent Systems",
+    "emoji": "\ud83e\udd16",
+    "topics": [
+      {
+        "id": "topic_33",
+        "title": "What is an AI Agent?",
+        "emoji": "\ud83e\uddbe",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_34",
+        "title": "ReAct & Planning",
+        "emoji": "\ud83d\uddfa\ufe0f",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_35",
+        "title": "Agent Memory",
+        "emoji": "\ud83d\udcbe",
+        "duration_minutes": 15
+      },
+      {
+        "id": "topic_36",
+        "title": "Multi-Agent Systems",
+        "emoji": "\ud83d\udc65",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_37",
+        "title": "Agentic Workflows",
+        "emoji": "\ud83d\udd04",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_38",
+        "title": "Frameworks: LangChain, LangGraph, AutoGen, CrewAI",
+        "emoji": "\ud83d\udee0\ufe0f",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_39",
+        "title": "MCP \u2014 Model Context Protocol",
+        "emoji": "\ud83d\udd0c",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_40",
+        "title": "Agent-to-Agent Protocols (A2A)",
+        "emoji": "\ud83d\udce1",
+        "duration_minutes": 15
+      }
+    ]
+  },
+  {
+    "level": 7,
+    "name": "Evaluation & Testing",
+    "emoji": "\ud83d\udccf",
+    "topics": [
+      {
+        "id": "topic_41",
+        "title": "Hallucinations",
+        "emoji": "\ud83d\udc7b",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_42",
+        "title": "Eval Methods: Exact Match, LLM-as-Judge, Rubrics",
+        "emoji": "\u2696\ufe0f",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_43",
+        "title": "Benchmarks & Metrics",
+        "emoji": "\ud83d\udcca",
+        "duration_minutes": 15
+      },
+      {
+        "id": "topic_44",
+        "title": "RAGAS & Evaluating RAG Pipelines",
+        "emoji": "\ud83d\udd2c",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_45",
+        "title": "Testing Methodologies for AI Apps",
+        "emoji": "\ud83e\uddea",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_46",
+        "title": "Build Your Own Eval Suite",
+        "emoji": "\ud83c\udfd7\ufe0f",
+        "duration_minutes": 30
+      }
+    ]
+  },
+  {
+    "level": 8,
+    "name": "Safety & Security",
+    "emoji": "\ud83d\udee1\ufe0f",
+    "topics": [
+      {
+        "id": "topic_47",
+        "title": "Guardrails",
+        "emoji": "\ud83d\udea7",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_48",
+        "title": "Prompt Injection",
+        "emoji": "\ud83d\udc89",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_49",
+        "title": "OWASP LLM Top 10",
+        "emoji": "\ud83d\udd34",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_50",
+        "title": "Responsible AI: Bias, Privacy, Ethics",
+        "emoji": "\u2696\ufe0f",
+        "duration_minutes": 20
+      }
+    ]
+  },
+  {
+    "level": 9,
+    "name": "Fine-tuning, SLMs & Local Models",
+    "emoji": "\ud83d\udd27",
+    "topics": [
+      {
+        "id": "topic_51",
+        "title": "Fine-tuning vs RAG vs Prompting",
+        "emoji": "\ud83d\udd00",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_52",
+        "title": "LoRA & QLoRA",
+        "emoji": "\ud83c\udf9b\ufe0f",
+        "duration_minutes": 25
+      },
+      {
+        "id": "topic_53",
+        "title": "Fine-tuning a Small Language Model",
+        "emoji": "\ud83c\udfcb\ufe0f",
+        "duration_minutes": 30
+      },
+      {
+        "id": "topic_54",
+        "title": "Quantization",
+        "emoji": "\ud83d\udcc9",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_55",
+        "title": "Running Models Locally: Ollama & vLLM",
+        "emoji": "\ud83d\udda5\ufe0f",
+        "duration_minutes": 20
+      }
+    ]
+  },
+  {
+    "level": 10,
+    "name": "Production & Cloud",
+    "emoji": "\u2601\ufe0f",
+    "topics": [
+      {
+        "id": "topic_56",
+        "title": "Productionizing AI Apps",
+        "emoji": "\ud83d\ude80",
+        "duration_minutes": 25
+      },
+      {
+        "id": "topic_57",
+        "title": "Cloud Services for AI Apps",
+        "emoji": "\u2601\ufe0f",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_58",
+        "title": "Observability & Monitoring",
+        "emoji": "\ud83d\udc41\ufe0f",
+        "duration_minutes": 20
+      },
+      {
+        "id": "topic_59",
+        "title": "Cost & Model Routing",
+        "emoji": "\ud83d\udcb0",
+        "duration_minutes": 15
+      },
+      {
+        "id": "topic_60",
+        "title": "Scaling & Serving",
+        "emoji": "\ud83d\udcc8",
+        "duration_minutes": 20
+      }
+    ]
+  },
+  {
+    "level": 11,
+    "name": "Capstone & Interview Prep",
+    "emoji": "\ud83c\udf93",
+    "topics": [
+      {
+        "id": "topic_61",
+        "title": "Capstone Project",
+        "emoji": "\ud83c\udfc6",
+        "duration_minutes": 60
+      },
+      {
+        "id": "topic_62",
+        "title": "Interview Question Bank",
+        "emoji": "\ud83d\udcbc",
+        "duration_minutes": 30
+      },
+      {
+        "id": "topic_63",
+        "title": "System Design for AI Apps",
+        "emoji": "\ud83d\udcd0",
+        "duration_minutes": 30
+      },
+      {
+        "id": "topic_64",
+        "title": "Portfolio & Resume Guidance",
+        "emoji": "\ud83d\udcc4",
+        "duration_minutes": 20
+      }
+    ]
+  }
+]

@@ -1,0 +1,153 @@
+{
+  "id": "topic_30",
+  "level": 5,
+  "level_name": "Embeddings, Vector Search & RAG",
+  "order": 5,
+  "title": "Advanced Retrieval",
+  "emoji": "🔬",
+  "duration_minutes": 25,
+  "eli8": "## 🔍 Basic vs. Advanced Search\n\nBasic RAG search is like searching Google with just ONE keyword. You might miss a lot!\n\nAdvanced retrieval is like Google's **full search engine** — it uses multiple tricks at the same time:\n\n## 🧩 Trick 1: Hybrid Search\n\nInstead of searching just by \"meaning\" (vector search), you ALSO search by **exact keywords** (like ctrl+F in a document). Then you **combine** both results!\n\n- 🧠 \"Meaning search\" finds: documents about the same TOPIC\n- 🔤 \"Keyword search\" finds: documents with the EXACT same words\n- 💪 **Together**: they find things that are both topically related AND use the right words!\n\n## 🏆 Trick 2: Reranking\n\nAfter you retrieve 20 documents, a smarter (but slower) AI **re-reads** each one against your question and gives them new scores. Then you keep only the TOP 5.\n\nIt's like:\n1. 🔍 A librarian quickly grabs 20 possibly-relevant books\n2. 🧐 A professor carefully reads all 20 and picks the best 5\n\n## 🤔 Trick 3: Query Magic\n\nSometimes your question is hard to search for. Advanced RAG can **rewrite your question** in clever ways:\n\n- 🪄 **HyDE**: \"What would the ANSWER look like? Let me search for THAT!\"\n- 📝 **Multi-query**: Ask 3 different versions of your question, then combine the results\n- 🔍 This finds documents that basic search would completely miss!\n\n## 🌈 Trick 4: MMR (Diversity)\n\nInstead of returning 5 nearly-identical results, MMR finds results that are **different from each other** but still relevant. More diverse = more complete answer!",
+  "detail": "## Beyond Naive RAG\n\nNaive RAG retrieves the top-K most similar chunks to the query embedding. This works for simple cases but fails when:\n- Queries use different vocabulary than documents (keyword mismatch)\n- The most relevant document is not the most semantically similar (e.g., technical abbreviations)\n- Retrieved chunks are redundant (all say the same thing)\n- The query is ambiguous or poorly phrased\n\nAdvanced retrieval techniques address each of these failure modes.\n\n## Hybrid Search\n\nCombines **dense (vector) retrieval** with **sparse (BM25 keyword) retrieval**:\n\n- **Dense retrieval**: semantic similarity via embeddings\n- **BM25**: classic information retrieval scoring based on term frequency and inverse document frequency\n\n### Reciprocal Rank Fusion (RRF)\n\nMerges results from multiple ranked lists without needing normalized scores:\n\n```python\ndef reciprocal_rank_fusion(rankings: list[list[str]], k: int = 60) -> dict[str, float]:\n    \"\"\"\n    rankings: list of result lists, each sorted by relevance\n    Returns merged score dict: {doc_id: fused_score}\n    \"\"\"\n    scores = {}\n    for ranking in rankings:\n        for rank, doc_id in enumerate(ranking):\n            scores[doc_id] = scores.get(doc_id, 0) + 1 / (k + rank + 1)\n    return dict(sorted(scores.items(), key=lambda x: x[1], reverse=True))\n\n# Example\ndense_results  = [\"doc_3\", \"doc_1\", \"doc_7\", \"doc_2\"]\nsparse_results = [\"doc_1\", \"doc_5\", \"doc_3\", \"doc_8\"]\nfused = reciprocal_rank_fusion([dense_results, sparse_results])\n# doc_1 and doc_3 appear in both lists → higher fused score\n```\n\nRRF parameter `k=60` is a smoothing constant; results are robust to this choice.\n\n### Weaviate Hybrid Search Example\n\n```python\nresults = collection.query.hybrid(\n    query=\"python exception handling\",\n    alpha=0.5,        # 0 = pure BM25, 1 = pure vector, 0.5 = balanced\n    limit=10\n)\n```\n\n## Metadata Pre-Filtering\n\nApply attribute filters **before** vector search to constrain the search space:\n\n```python\n# Only search documents from 2024, in the 'engineering' category\nresults = collection.query(\n    query_embeddings=query_emb,\n    n_results=5,\n    where={\n        \"$and\": [\n            {\"year\": {\"$eq\": 2024}},\n            {\"category\": {\"$eq\": \"engineering\"}}\n        ]\n    }\n)\n```\n\nCaution: aggressive pre-filtering reduces the candidate pool, potentially missing good results. Use when filter cardinality is high (many matching documents remain after filtering).\n\n## Reranking\n\nAfter retrieving top-K candidates with a bi-encoder, a **cross-encoder reranker** scores each (query, chunk) pair more precisely:\n\n```python\nfrom sentence_transformers import CrossEncoder\n\nreranker = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')\n\n# Retrieved 20 candidates from vector DB\ncandidates = vector_db.query(query_emb, n_results=20)\n\n# Rerank: score every (query, doc) pair\npairs = [(query, doc) for doc in candidates]\nscores = reranker.predict(pairs)\n\n# Sort and keep top 5\nreranked = sorted(zip(scores, candidates), reverse=True)[:5]\n```\n\n**Cohere Rerank API** (hosted, no local model needed):\n```python\nresult = co.rerank(\n    query=query,\n    documents=candidates,\n    model=\"rerank-english-v3.0\",\n    top_n=5\n)\n```\n\nReranking typically improves NDCG@10 by 10–20% over bi-encoder retrieval alone.\n\n## Query Transformation\n\n### HyDE (Hypothetical Document Embeddings)\n\nInstead of embedding the query directly, generate a **hypothetical answer** and embed that:\n\n```python\n# Step 1: Generate a hypothetical answer\nhypothetical_answer = llm(f\"Write a short paragraph that would answer: {query}\")\n\n# Step 2: Embed the hypothetical answer (not the query)\nhyde_embedding = embed(hypothetical_answer)\n\n# Step 3: Search with the hypothetical embedding\nresults = vector_db.query(hyde_embedding, n_results=5)\n```\n\nWhy it works: the hypothetical answer lives in the same vector space as actual documents (both are document-like text), reducing the query-document gap.\n\n### Multi-Query Retrieval\n\nGenerate multiple phrasings of the query, retrieve for each, deduplicate:\n\n```python\nquery_variants = llm(f\"\"\"\nGenerate 3 different ways to search for: \"{query}\"\nReturn as a numbered list.\n\"\"\")\n\nall_results = set()\nfor variant in query_variants:\n    results = vector_db.query(embed(variant), n_results=5)\n    all_results.update(results)\n# all_results now covers a broader semantic space\n```\n\n## Contextual Compression\n\nInstead of returning entire chunks, extract only the sentences directly relevant to the query:\n\n```python\nfrom langchain.retrievers.document_compressors import LLMChainExtractor\nfrom langchain.retrievers import ContextualCompressionRetriever\n\ncompressor = LLMChainExtractor.from_llm(llm)\ncompression_retriever = ContextualCompressionRetriever(\n    base_compressor=compressor,\n    base_retriever=base_retriever\n)\n# Returns only the relevant sentences from each chunk\n```\n\n## MMR (Maximum Marginal Relevance)\n\nBalances **relevance** with **diversity** in the result set:\n- Avoids returning 5 nearly-identical chunks\n- Each successive result maximizes relevance to query minus similarity to already-selected results\n- Parameter `lambda` controls relevance vs. diversity tradeoff (0 = max diversity, 1 = max relevance)\n\n```python\nresults = vector_db.max_marginal_relevance_search(\n    query, k=5, fetch_k=20, lambda_mult=0.5\n)\n```",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What two retrieval signals does hybrid search combine?",
+      "options": [
+        "Embedding similarity and document length",
+        "Dense (vector/semantic) retrieval and sparse (BM25/keyword) retrieval",
+        "Cosine similarity and Euclidean distance",
+        "Cross-encoder scores and bi-encoder scores"
+      ],
+      "correct": 1,
+      "explanation": "Hybrid search combines dense retrieval (embedding similarity, capturing semantic meaning) with sparse retrieval (BM25 keyword matching, capturing exact terms). Together they handle cases where queries use either different vocabulary or exact matching terms."
+    },
+    {
+      "id": "q2",
+      "question": "What does RRF (Reciprocal Rank Fusion) do?",
+      "options": [
+        "It re-trains the embedding model on query-document pairs",
+        "It merges ranked result lists from multiple retrieval methods without requiring normalized scores",
+        "It compresses retrieved documents to remove redundant sentences",
+        "It expands the query with synonyms before retrieval"
+      ],
+      "correct": 1,
+      "explanation": "RRF merges ranked lists from different retrieval systems (e.g., dense and sparse) by assigning each document a score based on its rank position in each list: score += 1/(k + rank). Documents appearing high in multiple lists receive higher fused scores."
+    },
+    {
+      "id": "q3",
+      "question": "Why does reranking typically improve retrieval quality over bi-encoder retrieval alone?",
+      "options": [
+        "Rerankers use larger embedding dimensions",
+        "Rerankers process query and document together, enabling full cross-attention between them",
+        "Rerankers access external knowledge bases",
+        "Rerankers are trained on more data"
+      ],
+      "correct": 1,
+      "explanation": "Cross-encoder rerankers process the (query, document) pair as a single input, so the model can attend across both texts simultaneously. Bi-encoders encode independently, missing subtle interactions. This makes rerankers more accurate but too slow for first-stage retrieval."
+    },
+    {
+      "id": "q4",
+      "question": "What is the core idea behind HyDE (Hypothetical Document Embeddings)?",
+      "options": [
+        "Generating multiple query variants to improve coverage",
+        "Generating a hypothetical answer to the query, then using that answer's embedding for retrieval",
+        "Creating synthetic training data for the embedding model",
+        "Hypothetically removing metadata constraints to widen the search"
+      ],
+      "correct": 1,
+      "explanation": "HyDE generates a hypothetical answer (using an LLM) and embeds that answer instead of the original query. Since the hypothetical answer is document-like text, it lives closer in vector space to actual documents than the short query does, reducing query-document mismatch."
+    },
+    {
+      "id": "q5",
+      "question": "What problem does MMR (Maximum Marginal Relevance) solve in retrieval?",
+      "options": [
+        "It speeds up vector search using approximate algorithms",
+        "It prevents returning redundant, highly similar chunks by balancing relevance with diversity",
+        "It merges results from multiple vector databases",
+        "It filters out low-quality documents before indexing"
+      ],
+      "correct": 1,
+      "explanation": "MMR selects each successive result to maximize relevance to the query while minimizing redundancy with already-selected results. This produces a diverse set of retrieved chunks covering different aspects of the answer rather than multiple nearly-identical chunks."
+    },
+    {
+      "id": "q6",
+      "question": "What is contextual compression in retrieval?",
+      "options": [
+        "Reducing the number of dimensions in the embedding",
+        "Compressing the vector index to save storage space",
+        "Extracting only the sentences relevant to the query from a retrieved chunk",
+        "Summarizing all retrieved chunks into one before passing to the LLM"
+      ],
+      "correct": 2,
+      "explanation": "Contextual compression uses an LLM or extractor to identify and keep only the sentences within a retrieved chunk that are directly relevant to the query. This reduces noise in the context window and focuses the LLM on the most pertinent information."
+    },
+    {
+      "id": "q7",
+      "question": "In hybrid search, what does the alpha parameter (0 to 1) control in Weaviate?",
+      "options": [
+        "The number of results to return",
+        "The balance between dense (vector) and sparse (BM25) retrieval — 0 = pure BM25, 1 = pure vector",
+        "The minimum similarity score threshold",
+        "The reranking model's confidence cutoff"
+      ],
+      "correct": 1,
+      "explanation": "In Weaviate's hybrid search, alpha controls the blend: alpha=0 gives pure BM25 keyword results, alpha=1 gives pure vector semantic results, and alpha=0.5 gives equal weight to both. You tune alpha based on whether your queries are keyword-heavy or semantic."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Hybrid Search",
+      "back": "A retrieval approach combining dense (vector/semantic) and sparse (BM25/keyword) retrieval. Dense search captures semantic meaning; sparse search captures exact term matches. Results are merged via algorithms like RRF for better recall than either alone."
+    },
+    {
+      "id": "f2",
+      "front": "BM25",
+      "back": "Best Match 25 — a classic keyword retrieval algorithm that scores documents based on term frequency and inverse document frequency. The backbone of sparse retrieval. Used alongside vector search in hybrid systems."
+    },
+    {
+      "id": "f3",
+      "front": "RRF (Reciprocal Rank Fusion)",
+      "back": "An algorithm for merging multiple ranked result lists without needing normalized scores. Score formula: 1/(k + rank) for each appearance. Documents ranked highly in multiple lists receive higher fused scores. k=60 is the typical default."
+    },
+    {
+      "id": "f4",
+      "front": "Reranking",
+      "back": "A post-retrieval step that uses a cross-encoder to rescore the top-K retrieved candidates. Cross-encoders process (query, document) pairs together, giving more accurate relevance scores than bi-encoder retrieval. Common models: Cohere Rerank, ms-marco cross-encoders."
+    },
+    {
+      "id": "f5",
+      "front": "HyDE (Hypothetical Document Embeddings)",
+      "back": "A query transformation technique: generate a hypothetical answer to the query using an LLM, then use that answer's embedding for retrieval instead of the query's embedding. Reduces query-document gap since the hypothetical answer is document-like."
+    },
+    {
+      "id": "f6",
+      "front": "Query Rewriting / Multi-Query",
+      "back": "Generating multiple reformulations of the user's query (using an LLM), retrieving for each variant, and deduplicating the combined results. Improves coverage of the semantic space around the query's intent."
+    },
+    {
+      "id": "f7",
+      "front": "MMR (Maximum Marginal Relevance)",
+      "back": "A retrieval strategy that selects results to maximize relevance while minimizing redundancy with already-selected results. Produces a diverse set of retrieved chunks. Controlled by lambda: 0 = max diversity, 1 = max relevance."
+    },
+    {
+      "id": "f8",
+      "front": "Contextual Compression",
+      "back": "A post-retrieval technique that extracts only the sentences from a retrieved chunk that are directly relevant to the query, discarding irrelevant content. Reduces noise in the LLM's context window and focuses generation on pertinent information."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Advanced RAG Techniques",
+      "youtube_id": "ZqWXbG5_-oE",
+      "description": "A comprehensive walkthrough of advanced retrieval techniques including hybrid search, reranking, HyDE, and query expansion, with code examples and performance comparisons."
+    },
+    {
+      "title": "RAG Advanced Patterns and Optimization",
+      "youtube_id": "T-D1OfcDW1M",
+      "description": "Deep dive into production RAG patterns — metadata filtering, reranking, MMR, and contextual compression — with practical guidance on when to apply each technique."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

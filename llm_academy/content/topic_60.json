@@ -1,0 +1,136 @@
+{
+  "id": "topic_60",
+  "level": 10,
+  "level_name": "Production & Cloud",
+  "order": 5,
+  "title": "Scaling & Serving",
+  "emoji": "📈",
+  "duration_minutes": 20,
+  "eli8": "# 📈 Handling Millions of Users!\n\nImagine you're running a hot dog stand. One customer? Easy! But what happens when 1000 people show up at once? 🌭\n\nYou need smart tricks to handle everyone without making them wait forever.\n\n## 🚌 Batching: The Bus Trick\n\nInstead of one hot dog (request) at a time, you cook 20 hot dogs together on the grill!\n\n- **Without batching**: AI processes 1 question, then another, then another\n- **With batching**: AI processes 20 questions at the same time on the GPU\n- It's like a bus vs. 20 individual taxis — same destination, much more efficient! 🚌\n\n**vLLM** is a special server that does this automatically — it's the magic bus driver for AI!\n\n## 🔮 Speculative Decoding: Guessing Ahead\n\nImagine you're typing a text message and your phone guesses the next word. If it guesses right, you just tap it!\n\nSpeculative decoding works the same way:\n1. A tiny, fast model **guesses** the next few words\n2. The big model **verifies** the guess in one step\n3. If correct, you skip ahead — 2-3x faster! ⚡\n4. If wrong, the big model corrects it\n\n## 📋 Remember Common Starting Points (Prefix Caching)\n\nIf every user starts with the same long instructions (like \"You are a helpful assistant for...\"), why process them again and again?\n\n**Prefix caching** saves the processed version of common beginnings and reuses it instantly. It's like keeping a pre-made pizza base in the fridge — you start from there instead of making dough every time! 🍕\n\n## 🔄 Auto-Scaling: Automatic Hiring\n\nWhen your restaurant gets super busy, you call in extra staff. When it's quiet, they go home.\n\n**Auto-scaling** adds more server copies when traffic is high and removes them when traffic is low — you only pay for what you're actually using! Perfect for AI apps with busy periods and quiet times. 🌊",
+  "detail": "## Scaling & Serving LLM Applications\n\nAs LLM applications grow beyond prototype stage, the serving infrastructure becomes critical. Naive serving (one request at a time) wastes GPU memory and throughput. Modern serving systems use several techniques to maximize efficiency.\n\n### Dynamic Batching with vLLM\n\n**vLLM** is an open-source LLM serving engine that implements **continuous batching** (also called iteration-level scheduling):\n\n- Traditional batching: wait for N requests, process together, wait, process\n- Continuous batching: as soon as one sequence finishes, add a new request into its GPU slot\n- Result: GPU utilization goes from ~30% (naive) to >90%\n- Throughput improvement: 10-24× over naive serving (vLLM paper benchmark)\n\n```bash\n# Launch vLLM server\npip install vllm\npython -m vllm.entrypoints.openai.api_server \\\n  --model meta-llama/Llama-2-7b-chat-hf \\\n  --max-model-len 4096\n\n# It exposes an OpenAI-compatible API automatically\ncurl http://localhost:8000/v1/chat/completions ...\n```\n\n### Speculative Decoding\n\nLLMs generate tokens auto-regressively — one at a time. Speculative decoding breaks this bottleneck:\n\n1. A small **draft model** (3-7B params) quickly generates k candidate tokens\n2. The large **target model** verifies all k tokens in a single forward pass\n3. If draft tokens are accepted, you've produced k tokens in 1 large-model pass\n4. Any rejected token triggers fallback to the target model's generation\n\n**Result**: 2-3× speedup on text with predictable patterns (code, structured text). Works best when draft and target models share the same tokenizer.\n\n```python\n# Hugging Face supports speculative decoding natively\nfrom transformers import AutoModelForCausalLM, AutoTokenizer\n\ntarget = AutoModelForCausalLM.from_pretrained(\"mistralai/Mistral-7B-v0.1\")\ndraft = AutoModelForCausalLM.from_pretrained(\"TinyLlama/TinyLlama-1.1B\")\n\noutputs = target.generate(\n    inputs, assistant_model=draft, do_sample=False\n)\n```\n\n### Prefix Caching (KV Cache Reuse)\n\nThe Attention mechanism computes Key-Value tensors for every token. When many requests share a common prefix (e.g., a system prompt), those KV computations can be cached and reused:\n\n- vLLM supports automatic prefix caching with `--enable-prefix-caching`\n- 40-70% latency reduction on requests with repeated system prompts\n- Especially powerful for RAG (same retrieved docs used for multiple turns)\n\n### Auto-Scaling with Kubernetes\n\n**Horizontal Pod Autoscaler (HPA)** scales replicas based on metrics:\n\n```yaml\napiVersion: autoscaling/v2\nkind: HorizontalPodAutoscaler\nmetadata:\n  name: llm-api-hpa\nspec:\n  scaleTargetRef:\n    kind: Deployment\n    name: llm-api\n  minReplicas: 2\n  maxReplicas: 20\n  metrics:\n  - type: Resource\n    resource:\n      name: cpu\n      target:\n        type: Utilization\n        averageUtilization: 70\n  - type: External\n    external:\n      metric:\n        name: queue_depth\n      target:\n        type: AverageValue\n        averageValue: 5\n```\n\nFor GPU workloads: scale on GPU utilization or queue depth, not CPU.\n\n### Load Balancing Strategies\n\n- **Round-robin**: requests distributed evenly. Simple, works for homogeneous requests\n- **Least-connections**: route to instance with fewest active requests. Better for variable-length LLM responses\n- **Latency-aware**: route to fastest-responding instance. Best for user-facing services\n\n### Multi-GPU Serving\n\n**Tensor parallelism**: split a single model's weight matrices across multiple GPUs. Each GPU holds a slice and communicates via NVLink. Enables serving models too large for one GPU.\n\n```bash\n# vLLM with 4 GPUs via tensor parallelism\npython -m vllm.entrypoints.openai.api_server \\\n  --model meta-llama/Llama-2-70b-chat-hf \\\n  --tensor-parallel-size 4\n```\n\n**Pipeline parallelism**: split layers across GPUs (layer 0-15 on GPU0, layer 16-31 on GPU1). Lower communication overhead than tensor parallelism but introduces pipeline latency.\n\n**DeepSpeed-Inference** extends these with ZeRO-Inference memory optimization for serving models with limited GPU memory.\n\n### Scaling RAG Systems\n\n- Multiple vector DB replicas for read parallelism\n- Read replicas for ChromaDB/pgvector; Pinecone/Weaviate scale horizontally\n- Embedding generation is stateless — easy to run as independent auto-scaling service\n- Cache embeddings for frequently retrieved documents (CDN or Redis)\n\n### Capacity Planning Rule of Thumb\n\n- Benchmark single-instance throughput under realistic load\n- Target 60-70% utilization (headroom for spikes)\n- Plan for 2× expected peak (product launches, viral moments)\n- Keep scale-up time < 2 minutes for user-facing services",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What is the key improvement of continuous batching (vLLM) over traditional static batching?",
+      "options": [
+        "It compresses model weights to fit on a single GPU",
+        "As soon as one sequence finishes, a new request immediately fills that GPU slot — maintaining near-constant throughput without waiting for the full batch to finish",
+        "It uses multiple small models instead of one large model",
+        "It defers batch processing to off-peak hours to reduce cost"
+      ],
+      "correct": 1,
+      "explanation": "In static batching, the entire batch must complete before new requests join. Continuous batching adds new requests to free slots as sequences complete, dramatically increasing GPU utilization and overall throughput."
+    },
+    {
+      "id": "q2",
+      "question": "In speculative decoding, what is the role of the 'draft model'?",
+      "options": [
+        "It is a cached version of the target model from a previous request",
+        "A small, fast model that generates candidate token sequences which the larger target model then verifies in a single pass",
+        "A model trained specifically on the task domain for higher accuracy",
+        "A quantized version of the target model used as a fallback when the target is busy"
+      ],
+      "correct": 1,
+      "explanation": "The draft model (small, fast) quickly produces k candidate tokens. The target model verifies all k candidates simultaneously in one forward pass. Accepted tokens represent a speedup; rejected tokens fall back to target-model generation."
+    },
+    {
+      "id": "q3",
+      "question": "What does prefix caching optimize in LLM serving?",
+      "options": [
+        "It compresses system prompts using gzip before sending to the model",
+        "It reuses pre-computed Key-Value (KV) cache tensors for common prompt prefixes, avoiding redundant attention computation",
+        "It routes requests with matching prefixes to the same GPU for better cache locality",
+        "It stores the first 100 tokens of every response for auto-completion"
+      ],
+      "correct": 1,
+      "explanation": "The attention mechanism computes KV tensors for every token. When requests share a prefix (like a system prompt), those KV computations can be stored and reused, reducing latency by 40-70% for matching requests."
+    },
+    {
+      "id": "q4",
+      "question": "What is tensor parallelism in multi-GPU LLM serving?",
+      "options": [
+        "Running multiple independent copies of the model on separate GPUs for throughput",
+        "Splitting a model's weight matrices across multiple GPUs so each holds a fraction, enabling serving models too large for a single GPU",
+        "Distributing different layers of the model across GPUs sequentially",
+        "A method of compressing model weights using tensor decomposition"
+      ],
+      "correct": 1,
+      "explanation": "Tensor parallelism splits individual weight matrices across GPUs — each GPU holds a slice and they collaborate via NVLink. This allows a 70B model that requires 140GB VRAM to run across 4×40GB A100s."
+    },
+    {
+      "id": "q5",
+      "question": "For a Kubernetes HPA scaling an LLM API, what metric is generally better than CPU utilization for triggering scale-up?",
+      "options": [
+        "Disk I/O throughput",
+        "Network egress bytes per second",
+        "Request queue depth or GPU utilization — because LLMs are GPU-bound, not CPU-bound",
+        "Memory swap usage"
+      ],
+      "correct": 2,
+      "explanation": "LLM inference workloads are GPU-bound. CPU utilization stays low while GPUs are saturated. Scaling based on GPU utilization or request queue depth triggers scale-up when the actual bottleneck (the GPU) is saturated."
+    },
+    {
+      "id": "q6",
+      "question": "Pipeline parallelism differs from tensor parallelism in that:",
+      "options": [
+        "Pipeline parallelism works only for training, not inference",
+        "Pipeline parallelism splits model layers across GPUs sequentially; tensor parallelism splits individual matrices within each layer",
+        "Pipeline parallelism requires the same model architecture on each GPU",
+        "Pipeline parallelism is strictly faster than tensor parallelism in all cases"
+      ],
+      "correct": 1,
+      "explanation": "In pipeline parallelism, layers 0-N run on GPU0, layers N+1-2N on GPU1, etc. In tensor parallelism, each layer's matrices are split across all GPUs simultaneously. Tensor parallelism has higher communication overhead but lower latency; pipeline has lower communication but introduces pipeline bubbles."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Dynamic batching (continuous batching)",
+      "back": "An LLM serving technique (implemented in vLLM) where free GPU slots are filled immediately as sequences complete, rather than waiting for a full static batch to finish. Achieves 10-24× throughput improvement over naive serving."
+    },
+    {
+      "id": "f2",
+      "front": "Speculative decoding",
+      "back": "A serving optimization where a small draft model generates k candidate tokens which the target model verifies in one parallel pass. Accepted tokens yield a 2-3× speedup. Best for text with predictable patterns."
+    },
+    {
+      "id": "f3",
+      "front": "Prefix caching",
+      "back": "Storing pre-computed KV-cache tensors for common prompt prefixes (e.g., system prompts). Subsequent requests reusing that prefix skip recomputing those tokens, reducing latency 40-70%."
+    },
+    {
+      "id": "f4",
+      "front": "Tensor parallelism",
+      "back": "A multi-GPU technique that splits individual weight matrices across GPUs, each holding a fraction. GPUs communicate via NVLink. Enables serving models too large for a single GPU's memory."
+    },
+    {
+      "id": "f5",
+      "front": "Pipeline parallelism",
+      "back": "A multi-GPU technique where model layers are split sequentially across GPUs (GPU0 runs layers 0-15, GPU1 runs layers 16-31). Lower communication overhead than tensor parallelism but introduces inter-stage latency."
+    },
+    {
+      "id": "f6",
+      "front": "HPA (Horizontal Pod Autoscaler)",
+      "back": "A Kubernetes controller that automatically adjusts the number of pod replicas based on observed metrics (CPU, GPU utilization, queue depth). Scales up during peak load and down during quiet periods."
+    },
+    {
+      "id": "f7",
+      "front": "Continuous batching",
+      "back": "Another term for dynamic batching — the key property is that the batch composition changes at every token generation step, not just between full requests. New requests join as slots free up."
+    }
+  ],
+  "videos": [
+    {
+      "title": "vLLM: High-Throughput LLM Serving",
+      "youtube_id": "UPbi7bT5klk",
+      "description": "Technical deep dive into vLLM's continuous batching, PagedAttention, and prefix caching mechanisms that enable high-throughput LLM serving on commodity GPUs."
+    },
+    {
+      "title": "LLM Serving at Scale: From 1 User to 1 Million",
+      "youtube_id": "Mn_9W1nCFLo",
+      "description": "Practical walkthrough of scaling LLM serving infrastructure — dynamic batching, speculative decoding, multi-GPU tensor parallelism, and Kubernetes auto-scaling patterns."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

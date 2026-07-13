@@ -1,0 +1,153 @@
+{
+  "id": "topic_14",
+  "level": 3,
+  "level_name": "Talking to LLMs",
+  "order": 1,
+  "title": "Prompt Engineering Basics",
+  "emoji": "✍️",
+  "duration_minutes": 20,
+  "eli8": "## Giving Good Directions 🗺️\n\nImagine you have a super-smart friend who will do *exactly* what you say — but they take every word literally. If you say \"draw something,\" they might draw a tiny dot and call it done! But if you say \"draw a cartoon cat wearing sunglasses sitting on a beach,\" they'll nail it.\n\nThat's what **prompt engineering** is: getting really good at giving instructions to an AI so it gives you exactly what you want.\n\n## What Makes a Great Prompt? ✨\n\nThink of a good prompt like ordering at a restaurant:\n- **Just saying \"food\"** = bad prompt. The waiter is confused!\n- **Saying \"a medium pepperoni pizza, extra crispy crust, no olives\"** = great prompt. You get exactly what you want!\n\nHere are the key ingredients:\n- 🎯 **The task** — what do you actually want? (\"Write a summary\")\n- 📚 **Context** — background information (\"Here is a long article about dolphins...\")\n- 📋 **Format** — how should it look? (\"Give me 3 bullet points\")\n- 🧩 **Examples** — show what you mean (\"Like this: • Dolphins are smart\")\n- 🚧 **Constraints** — any rules (\"Use simple words, no jargon\")\n\n## The Magic of Being Specific 🪄\n\nLet's compare two prompts:\n\n❌ **Vague:** \"Write something about climate.\"\n\n✅ **Specific:** \"Write a 3-sentence explanation of why the Arctic is melting, for a 12-year-old, using at least one fun fact.\"\n\nSame AI, *wildly* different results! The second one gives the AI a task, an audience, a length, and a content requirement.\n\nYou can also give the AI a **role** to play:\n- \"You are a friendly science teacher...\"\n- \"You are a pirate who knows about coding...\"\n\nThis is called **role prompting** and it changes how the AI \"thinks\" about its answer!\n\n**Remember:** The AI isn't guessing what you want — it's doing its best with the clues you give. More clues = better answer! 🌟",
+  "detail": "## What Is Prompt Engineering?\n\nPrompt engineering is the practice of designing and iterating on the input text (prompt) given to a language model to reliably produce desired outputs. Unlike traditional software where behavior is deterministic, LLM outputs are probabilistic — the same model can behave very differently depending on how a request is framed.\n\n## Anatomy of a Good Prompt\n\nA well-structured prompt typically contains some or all of these components:\n\n1. **Role / Persona** — Establishes the model's \"voice\" and expertise level\n   ```\n   You are an expert Python developer with 10 years of experience.\n   ```\n\n2. **Task description** — Clear statement of what to do\n   ```\n   Refactor the following function to improve readability and performance.\n   ```\n\n3. **Context** — Background information the model needs\n   ```\n   This is part of a high-traffic web API that handles 10,000 requests/second.\n   ```\n\n4. **Examples** — Demonstrations of the desired input/output pattern (few-shot)\n   ```\n   Input: [messy function]\n   Output: [clean function]\n   ```\n\n5. **Format specification** — Explicit output structure\n   ```\n   Return your response as a JSON object with keys: 'refactored_code', 'changes_made', 'performance_gains'.\n   ```\n\n6. **Constraints** — Boundaries and rules\n   ```\n   Do not change the function signature. Keep the same variable names where possible.\n   ```\n\n## The CLEAR Framework\n\nA memorable structure for prompt construction:\n- **C**ontext — Set the scene\n- **L**anguage — Specify tone and vocabulary level\n- **E**xamples — Show, don't just tell\n- **A**ction — State the precise task verb (summarize, classify, translate, generate)\n- **R**esults — Define what success looks like\n\n## Role Prompting\n\nAssigning a persona reliably shifts the model's output distribution toward that domain's language patterns, level of technicality, and typical response structure:\n\n```\nYou are a senior security engineer conducting a code review. Review the following code for SQL injection vulnerabilities and output a severity-rated list of findings.\n```\n\nThis works because the training data for \"senior security engineer\" outputs clusters around specific patterns of analysis.\n\n## Output Format Specification\n\nExplicitly naming the desired format dramatically increases parsing reliability:\n- **JSON** — for programmatic consumption\n- **Markdown table** — for human-readable comparisons\n- **Numbered list** — for step-by-step procedures\n- **CSV** — for data imports\n\nExample:\n```\nOutput your analysis as a JSON array of objects, each with fields: issue (string), severity (\"low\"|\"medium\"|\"high\"), line_number (integer).\n```\n\n## Common Prompt Anti-Patterns\n\n| Anti-Pattern | Example | Problem |\n|---|---|---|\n| Vague task | \"Write something\" | Undefined success criteria |\n| Context overload | 50 pages of background | Key info buried, diluted attention |\n| Conflicting constraints | \"Be concise. Cover every angle.\" | Model can't satisfy both |\n| Implicit format | No format specified | Output varies run-to-run |\n| Negative-only instructions | \"Don't use jargon\" | Better to say what to do |\n\n## Prompt Iteration Workflow\n\nPrompt engineering is empirical. A production-quality workflow:\n1. **Baseline** — Write a minimal prompt, observe outputs\n2. **Identify failure modes** — Where does it go wrong?\n3. **Hypothesize** — What's missing: context, examples, constraints?\n4. **Modify** — Add one element at a time\n5. **Evaluate** — Test on a diverse set of inputs\n6. **Regression test** — Ensure fixes don't break working cases\n\n## Real-World Applications\n\n- **Code generation** — IDE copilots, automated refactoring\n- **Content pipelines** — Blog drafts, product descriptions at scale\n- **Data extraction** — Pull structured data from unstructured documents\n- **Customer support** — Intent classification, response drafting\n- **Education** — Adaptive explanations at different grade levels",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "Which component of a prompt tells the AI *how* the output should be structured?",
+      "options": [
+        "Context",
+        "Format specification",
+        "Task description",
+        "Constraint"
+      ],
+      "correct": 1,
+      "explanation": "Format specification defines the desired output structure (e.g., JSON, bullet list, markdown table). Context provides background, task description states what to do, and constraints define rules — but none of those directly specify output shape."
+    },
+    {
+      "id": "q2",
+      "question": "What does role prompting accomplish?",
+      "options": [
+        "It forces the model to only use information from a specific domain",
+        "It shifts the model's output distribution toward the language patterns and expertise of the assigned persona",
+        "It prevents the model from hallucinating",
+        "It increases the maximum output length"
+      ],
+      "correct": 1,
+      "explanation": "Role prompting works by activating training patterns associated with that persona's typical outputs — language level, format conventions, and domain vocabulary. It does not restrict knowledge or prevent hallucination."
+    },
+    {
+      "id": "q3",
+      "question": "In the CLEAR framework, what does the 'A' stand for?",
+      "options": [
+        "Audience",
+        "Accuracy",
+        "Action",
+        "Alignment"
+      ],
+      "correct": 2,
+      "explanation": "CLEAR = Context, Language, Examples, Action, Results. 'Action' refers to stating the precise task verb (summarize, classify, generate, translate) so the model knows exactly what operation to perform."
+    },
+    {
+      "id": "q4",
+      "question": "Which of the following is an example of a conflicting constraint anti-pattern?",
+      "options": [
+        "Asking for output in JSON format",
+        "Asking the model to be both extremely concise and to cover every possible angle thoroughly",
+        "Providing a role and a task in the same prompt",
+        "Including three few-shot examples"
+      ],
+      "correct": 1,
+      "explanation": "Conflicting constraints give the model two mutually exclusive requirements. Being 'extremely concise' and 'covering every angle thoroughly' cannot both be satisfied — the model will make an arbitrary tradeoff, producing inconsistent results."
+    },
+    {
+      "id": "q5",
+      "question": "You want an LLM to extract product names and prices from a receipt image description and return them for use in a spreadsheet import. Which output format is most appropriate?",
+      "options": [
+        "A numbered prose list",
+        "A markdown essay",
+        "CSV or JSON",
+        "A haiku"
+      ],
+      "correct": 2,
+      "explanation": "CSV or JSON are machine-readable formats ideal for spreadsheet imports. Prose and markdown require additional parsing steps. Specifying the format explicitly in the prompt makes downstream processing reliable."
+    },
+    {
+      "id": "q6",
+      "question": "What is the recommended approach when iterating on a prompt?",
+      "options": [
+        "Rewrite the entire prompt from scratch each iteration",
+        "Change multiple elements simultaneously to find what works fastest",
+        "Change one element at a time and evaluate on a diverse set of inputs",
+        "Use only positive instructions and never add constraints"
+      ],
+      "correct": 2,
+      "explanation": "Changing one element at a time is the empirical scientific approach: it lets you isolate which modification caused the improvement or regression. Changing multiple things at once makes it impossible to attribute outcomes."
+    },
+    {
+      "id": "q7",
+      "question": "Which prompt is most likely to produce a consistent, useful response?",
+      "options": [
+        "Tell me about dogs.",
+        "Write a fun fact about dogs.",
+        "Write one surprising fact about dog behavior for a children's science newsletter, in one sentence, starting with 'Did you know'.",
+        "Dogs are interesting. Write something."
+      ],
+      "correct": 2,
+      "explanation": "The third option specifies the task (one surprising fact), topic (dog behavior), audience (children's science newsletter), format (one sentence), and even an opening pattern. Each element constrains the output space toward what the user actually wants."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "What is a prompt?",
+      "back": "The input text given to a language model that instructs it what to do. It may include a task, context, examples, format requirements, and constraints."
+    },
+    {
+      "id": "f2",
+      "front": "System prompt",
+      "back": "A prompt sent in the 'system' role before the user conversation begins. It sets persistent instructions, persona, and constraints for the entire interaction. Typically invisible to end users."
+    },
+    {
+      "id": "f3",
+      "front": "User prompt",
+      "back": "The message sent in the 'user' role during a conversation. This is what the end user types. The model is trained to respond helpfully to user messages within the bounds set by the system prompt."
+    },
+    {
+      "id": "f4",
+      "front": "Role prompting",
+      "back": "Assigning the model a persona or expert identity at the start of the prompt (e.g., 'You are a senior data scientist'). This shifts output style, vocabulary, and analytical approach toward that domain."
+    },
+    {
+      "id": "f5",
+      "front": "Output format specification",
+      "back": "Explicitly telling the model the desired structure of its response — JSON, markdown table, numbered list, CSV, etc. Reduces output variability and makes downstream parsing reliable."
+    },
+    {
+      "id": "f6",
+      "front": "Instruction clarity",
+      "back": "The degree to which a prompt's task is unambiguous. High clarity means there is only one reasonable interpretation of what is being asked. Vague prompts produce variable results."
+    },
+    {
+      "id": "f7",
+      "front": "The CLEAR framework",
+      "back": "A prompt structure mnemonic: Context (background), Language (tone/vocabulary level), Examples (demonstrations), Action (task verb), Results (what success looks like)."
+    },
+    {
+      "id": "f8",
+      "front": "Prompt anti-pattern",
+      "back": "A common mistake in prompt design: vague task, context overload, conflicting constraints, missing format, or negative-only instructions. Anti-patterns produce inconsistent or low-quality outputs."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Prompt Engineering Guide — Getting the Most from LLMs",
+      "youtube_id": "1bUy-1hGZpI",
+      "description": "A comprehensive walkthrough of prompt engineering principles including instruction clarity, few-shot examples, and output formatting techniques."
+    },
+    {
+      "title": "Advanced Prompting Techniques",
+      "youtube_id": "FKByLkRZyMU",
+      "description": "Deep dive into prompting strategies including role prompting, chain-of-thought, and structuring complex instructions for reliable results."
+    }
+  ],
+  "has_practical": true,
+  "practical_description": "An interactive sandbox where you submit the same task using a vague prompt vs. a structured CLEAR-framework prompt side by side, revealing how each component change shifts the model's output."
+}

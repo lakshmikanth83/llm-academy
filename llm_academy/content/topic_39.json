@@ -1,0 +1,158 @@
+{
+  "id": "topic_39",
+  "level": 6,
+  "level_name": "Agents & Multi-Agent Systems",
+  "order": 7,
+  "title": "MCP — Model Context Protocol",
+  "emoji": "🔌",
+  "duration_minutes": 20,
+  "eli8": "## MCP — The USB-C for AI! 🔌\n\nYou know how USB-C is awesome because you can use the *same cable* to charge your phone, connect your laptop, plug in your headphones, and connect to a screen? Before USB-C, you needed a DIFFERENT cable for everything — so annoying! 😤\n\nWell, AI apps had the same problem. If you wanted your AI to:\n- Read your files\n- Search the web  \n- Check your GitHub\n- Look at your Slack messages\n\n...someone had to build a *custom connector* for EVERY SINGLE tool. And if you had 10 different AI apps, you needed 10 × 4 = 40 custom connectors! That's a nightmare! 😱\n\n### MCP Saves the Day! 🦸\n\n**MCP** (Model Context Protocol) is like inventing USB-C for AI tools. Now:\n- Tool makers build ONE MCP server (like making a USB-C port)\n- AI apps become MCP clients (like making a USB-C device)\n- They ALL connect to each other automatically!\n\nSo instead of 40 custom connectors, you just need everyone to support MCP. Simple!\n\n### What Can MCP Servers Do? 🛠️\n\nAn MCP server can offer three types of things to AI apps:\n\n- 📚 **Resources**: Give the AI data to read (files, database rows, web pages)\n- 🔧 **Tools**: Let the AI take actions (create a file, send a message, run a search)\n- 📝 **Prompts**: Pre-built conversation templates the AI can use\n\n### Real Examples 🌍\n\nThere are now 500+ MCP servers built by the community!\n- A **Filesystem MCP server** lets any AI read and write your local files\n- A **GitHub MCP server** lets any AI create issues and pull requests\n- A **PostgreSQL MCP server** lets any AI query your database\n- A **Slack MCP server** lets any AI read and post messages\n\nMCP makes the whole AI ecosystem work together like a superteam! 🚀",
+  "detail": "## Model Context Protocol (MCP)\n\n**MCP** is an open protocol developed by Anthropic (released November 2024) that standardizes how AI applications connect to data sources and tools. It solves the N×M integration problem: without a standard, every AI app must build custom connectors to every tool, requiring N×M integrations for N apps and M tools. With MCP, both sides implement one standard and they all interconnect.\n\n## Architecture\n\n```\n┌─────────────────────────────────┐\n│         MCP Host                │\n│  (Claude Desktop, IDE, App)     │\n│                                 │\n│  ┌─────────────┐                │\n│  │ MCP Client  │◄──── protocol ────► MCP Server\n│  └─────────────┘                │      (tool provider)\n└─────────────────────────────────┘\n```\n\n### MCP Host\nThe AI application that embeds an LLM — Claude Desktop, VS Code with an AI extension, a custom application. The host manages user interaction and LLM calls.\n\n### MCP Client\nA protocol handler embedded in the host. It manages connections to MCP servers, negotiates capabilities, and routes requests. One host can connect to multiple MCP servers simultaneously.\n\n### MCP Server\nA lightweight process that exposes capabilities over the MCP protocol. It runs locally (stdio) or remotely (HTTP+SSE). Any tool or data source can be wrapped as an MCP server.\n\n## Transport Mechanisms\n\n| Transport | Use Case |\n|---|---|\n| **stdio** | Local servers, same machine, subprocess communication |\n| **HTTP + SSE** | Remote servers, cloud-hosted tools, streaming responses |\n\n## Core Primitives\n\n### Resources\nData sources the LLM can read (analogous to GET requests):\n- File contents, database records, API responses\n- Identified by URIs: `file:///path/to/file`, `postgres://db/table`\n- Can be static or dynamic (subscriptions for live data)\n\n### Tools\nActions the LLM can invoke (analogous to POST requests):\n- Defined with a name, description, and JSON Schema for parameters\n- The LLM decides when and how to call them\n- Examples: `create_file`, `search_github`, `send_slack_message`\n\n### Prompts\nPre-built conversation templates or workflows:\n- Reusable interaction patterns exposed by the server\n- Example: a Git MCP server might offer a `commit_message_helper` prompt\n\n## Building an MCP Server (Python)\n\n```python\nfrom mcp.server import Server\nfrom mcp.server.models import InitializationOptions\nimport mcp.types as types\n\nserver = Server(\"my-weather-server\")\n\n@server.list_tools()\nasync def handle_list_tools() -> list[types.Tool]:\n    return [\n        types.Tool(\n            name=\"get_weather\",\n            description=\"Get current weather for a city\",\n            inputSchema={\n                \"type\": \"object\",\n                \"properties\": {\"city\": {\"type\": \"string\"}},\n                \"required\": [\"city\"]\n            }\n        )\n    ]\n\n@server.call_tool()\nasync def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent]:\n    if name == \"get_weather\":\n        city = arguments[\"city\"]\n        weather = fetch_weather_api(city)  # your implementation\n        return [types.TextContent(type=\"text\", text=str(weather))]\n```\n\nRun over stdio:\n```python\nfrom mcp.server.stdio import stdio_server\nasync with stdio_server() as (read_stream, write_stream):\n    await server.run(read_stream, write_stream, InitializationOptions(...))\n```\n\n## MCP vs. Function Calling\n\n| Aspect | Function Calling | MCP |\n|---|---|---|\n| **Scope** | Per-session, per-application | Reusable across any MCP host |\n| **Discovery** | Defined in each API call | Server advertises capabilities |\n| **Deployment** | Code in the app | Separate server process |\n| **Reuse** | Must re-implement per app | Build once, use everywhere |\n\n## Growing Ecosystem\n\nAs of 2025, the MCP ecosystem includes 500+ community servers:\n- **Official**: filesystem, GitHub, Slack, Google Drive, PostgreSQL, web browser\n- **Community**: Jira, Linear, Notion, Stripe, Twilio, AWS, Docker\n- **IDE integration**: Claude Code, Cursor, Continue, VS Code\n\n## Security Considerations\n\n- Servers run as separate processes with their own permissions\n- Tool call schemas must be validated to prevent injection\n- Users should review what capabilities an MCP server exposes before connecting\n- OAuth2 support for authenticated remote MCP servers",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What fundamental problem does MCP (Model Context Protocol) solve?",
+      "options": [
+        "It reduces the cost of LLM API calls by caching responses",
+        "It standardizes AI-to-tool connections, eliminating the need for N×M custom integrations",
+        "It provides a protocol for AI models to communicate with each other",
+        "It defines a standard format for training data used in fine-tuning"
+      ],
+      "correct": 1,
+      "explanation": "Without MCP, every AI app must build custom connectors to every tool, requiring N×M integrations. MCP provides a standard both sides implement, so any MCP host can connect to any MCP server automatically — the 'USB-C for AI tools' analogy."
+    },
+    {
+      "id": "q2",
+      "question": "What are the three core primitives that an MCP server can expose?",
+      "options": [
+        "Models, Datasets, and Evaluations",
+        "Inputs, Outputs, and Transforms",
+        "Resources, Tools, and Prompts",
+        "Functions, Classes, and Modules"
+      ],
+      "correct": 2,
+      "explanation": "MCP servers expose three primitives: Resources (data the LLM can read, like files or database records), Tools (actions the LLM can invoke, like creating a file or sending a message), and Prompts (pre-built conversation templates or workflows)."
+    },
+    {
+      "id": "q3",
+      "question": "What transport mechanism does a local MCP server running as a subprocess typically use?",
+      "options": [
+        "WebSockets",
+        "gRPC",
+        "stdio (standard input/output)",
+        "HTTP polling"
+      ],
+      "correct": 2,
+      "explanation": "Local MCP servers communicate via stdio — standard input and output streams. The MCP host spawns the server as a subprocess and communicates by writing to its stdin and reading from its stdout. Remote servers use HTTP + SSE."
+    },
+    {
+      "id": "q4",
+      "question": "How does MCP differ from function calling (tool use) in LLM APIs?",
+      "options": [
+        "MCP tools can only read data; function calling can also write data",
+        "Function calling is more secure because tools are defined in code, not in a server",
+        "MCP tools are reusable across any MCP-compatible app; function calling tools must be re-implemented per application",
+        "MCP requires the LLM to be fine-tuned on tool descriptions; function calling does not"
+      ],
+      "correct": 2,
+      "explanation": "The key difference is reusability. Function calling defines tools in each API call and app, requiring reimplementation everywhere. MCP servers are built once and work with any MCP-compatible host — Claude Desktop, VS Code, custom apps — without any additional integration work."
+    },
+    {
+      "id": "q5",
+      "question": "In the MCP architecture, what is the role of the MCP client?",
+      "options": [
+        "It is the external tool or data source that the AI app connects to",
+        "It is the LLM that generates responses using tool outputs",
+        "It is a protocol handler embedded in the host that manages connections to MCP servers",
+        "It is the end user who interacts with the AI application"
+      ],
+      "correct": 2,
+      "explanation": "The MCP client is a protocol handler embedded inside the MCP host (the AI application). It manages connections to one or more MCP servers, negotiates capabilities, and routes tool/resource/prompt requests between the LLM and the appropriate server."
+    },
+    {
+      "id": "q6",
+      "question": "What is an MCP 'Resource' analogous to in web API terms?",
+      "options": [
+        "A POST request that creates or modifies data",
+        "A WebSocket connection for streaming data",
+        "A GET request that retrieves data without side effects",
+        "A DELETE request that removes data"
+      ],
+      "correct": 2,
+      "explanation": "MCP Resources represent data sources the LLM can read — analogous to GET requests. They are identified by URIs and return content. Tools are the write/action equivalent (analogous to POST requests)."
+    },
+    {
+      "id": "q7",
+      "question": "Which Python decorator in the MCP SDK defines which tools a server exposes to clients?",
+      "options": [
+        "@server.register_tools()",
+        "@server.list_tools()",
+        "@server.expose_tools()",
+        "@server.tool_definitions()"
+      ],
+      "correct": 1,
+      "explanation": "In the MCP Python SDK, the @server.list_tools() decorator marks the function that returns the list of Tool objects the server exposes. When a client connects, it calls this to discover what the server can do."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "MCP (Model Context Protocol)",
+      "back": "An open protocol by Anthropic (2024) standardizing how AI applications connect to tools and data sources. Solves the N×M integration problem by providing a universal 'USB-C for AI tools' standard."
+    },
+    {
+      "id": "f2",
+      "front": "MCP Server",
+      "back": "A process that exposes capabilities (Resources, Tools, Prompts) to AI apps over the MCP protocol. Can run locally via stdio or remotely via HTTP+SSE. Build once, works with any MCP host."
+    },
+    {
+      "id": "f3",
+      "front": "MCP Host",
+      "back": "The AI application embedding an LLM that connects to MCP servers (e.g., Claude Desktop, VS Code with AI extension, a custom app). Manages user interaction and LLM calls."
+    },
+    {
+      "id": "f4",
+      "front": "MCP Client",
+      "back": "A protocol handler embedded in an MCP host that manages connections to MCP servers, negotiates capabilities, and routes requests. One host can connect to multiple servers simultaneously."
+    },
+    {
+      "id": "f5",
+      "front": "Resource (MCP)",
+      "back": "A data source an LLM can read via MCP. Analogous to a GET request. Identified by URI (e.g., file:///path, postgres://db/table). Examples: file contents, database rows, API responses."
+    },
+    {
+      "id": "f6",
+      "front": "Tool (MCP)",
+      "back": "An action an LLM can invoke via MCP. Analogous to a POST request. Defined with a name, description, and JSON Schema for parameters. Examples: create_file, search_github, send_slack_message."
+    },
+    {
+      "id": "f7",
+      "front": "Prompt (MCP)",
+      "back": "A pre-built conversation template or workflow exposed by an MCP server. Reusable interaction patterns the LLM can request and use, e.g., a commit_message_helper prompt from a Git server."
+    },
+    {
+      "id": "f8",
+      "front": "stdio (MCP transport)",
+      "back": "The transport mechanism for local MCP servers: the host spawns the server as a subprocess and communicates via standard input/output streams. Simple, secure, and no network required."
+    },
+    {
+      "id": "f9",
+      "front": "SSE (MCP transport)",
+      "back": "Server-Sent Events over HTTP: the transport for remote MCP servers. Enables streaming responses and works across network boundaries. Used when the MCP server is cloud-hosted."
+    }
+  ],
+  "videos": [
+    {
+      "title": "MCP Explained — Model Context Protocol",
+      "youtube_id": "FKByLkRZyMU",
+      "description": "A clear explainer on what MCP is, why Anthropic created it, how the host-client-server architecture works, and why it matters for the AI ecosystem."
+    },
+    {
+      "title": "Building Your First MCP Server — Tutorial",
+      "youtube_id": "1bUy-1hGZpI",
+      "description": "Hands-on walkthrough of building an MCP server with the Python SDK, defining Resources and Tools, and connecting it to Claude Desktop."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

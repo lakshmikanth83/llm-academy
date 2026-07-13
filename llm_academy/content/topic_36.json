@@ -1,0 +1,153 @@
+{
+  "id": "topic_36",
+  "level": 6,
+  "level_name": "Agents & Multi-Agent Systems",
+  "order": 4,
+  "title": "Multi-Agent Systems",
+  "emoji": "👥",
+  "duration_minutes": 20,
+  "eli8": "## One AI Is Good... A Team of AIs Is Better! 🏆\n\nImagine you have to build an entire school project by yourself: do all the research, write the essay, draw the diagrams, and check everything for mistakes. That's A LOT for one person!\n\nBut what if you had a **team**? One friend does research, one writes, one draws, and one proofreads. Everyone does what they're best at, and a team leader (that's you!) keeps everything organized. You'd finish faster AND get a better result! 🎯\n\nThat's exactly what **multi-agent systems** do — instead of one AI trying to do everything, a whole *team* of specialized AIs works together!\n\n## The AI Company 🏢\n\nThink of a multi-agent system like a tiny company:\n\n- 👔 **Manager AI (Orchestrator)**: Receives the big task, breaks it into smaller jobs, and assigns them to the right workers. Collects all the results and combines them into a final answer.\n- 🔬 **Researcher AI**: Expert at searching the web and finding information\n- ✍️ **Writer AI**: Expert at turning information into clear, well-written text\n- 🔍 **Critic AI**: Expert at finding mistakes and suggesting improvements\n- 💻 **Coder AI**: Expert at writing and running code\n\nEach AI only does its specialty — and does it really well!\n\n## Why Teams Beat Solo? 🚀\n\n- ⚡ **Speed**: Different agents can work at the same time (in parallel!)\n- 🎯 **Quality**: Each agent is optimized for its specific job\n- 🛡️ **Safety**: If one agent crashes, the others keep going\n- ✅ **Checking**: Agents can review each other's work — no blind spots!\n\nBut teams can also have problems: agents might disagree, give conflicting answers, or keep passing a task around in circles forever. Good system design avoids these traps! 🧠",
+  "detail": "## Multi-Agent Systems\n\nA **multi-agent system** (MAS) is an architecture where multiple LLM-powered agents collaborate to solve tasks that are too complex, too large, or too broad for a single agent. Each agent may have specialized capabilities, its own memory, and a distinct role.\n\n## Core Architectural Patterns\n\n### 1. Orchestrator-Worker\nThe most common pattern:\n- **Orchestrator**: receives the high-level task, decomposes it into subtasks, routes subtasks to appropriate workers, synthesizes results\n- **Workers**: specialized agents that execute a specific class of subtask (research, coding, writing, verification)\n\n```\nUser → Orchestrator → [ResearchAgent | CoderAgent | WriterAgent]\n                    ↑_____________results_________________________↑\n```\n\n### 2. Pipeline\nAgents pass their output sequentially, each transforming the artifact:\n```\nDataAgent → AnalysisAgent → WriterAgent → ReviewAgent → Final Output\n```\nEach stage has one clear responsibility. Output of one is always input to the next.\n\n### 3. Peer-to-Peer Debate\nMultiple agents receive the same problem and produce independent answers. A judge (or the group) resolves disagreements via:\n- **Majority voting**: pick the most common answer\n- **Critique rounds**: agents critique each other until consensus\n- **Judge agent**: a separate LLM evaluates all answers\n\nResearch shows debate between models improves answer quality on reasoning tasks.\n\n## Benefits of Multi-Agent Systems\n\n| Benefit | Mechanism |\n|---|---|\n| **Specialization** | Each agent is prompted/fine-tuned for a narrow task |\n| **Parallelism** | Independent subtasks run concurrently, reducing latency |\n| **Checkpointing** | Results from completed agents are saved; failures don't restart everything |\n| **Fault isolation** | One agent failure doesn't crash the whole system |\n| **Self-checking** | Critic agents review outputs before they proceed |\n\n## Communication Between Agents\n\n- **Shared state / message bus**: a central store all agents read from and write to\n- **Direct tool calls**: agent A calls agent B as if B were a tool\n- **Task queue**: orchestrator posts tasks; workers pull from queue\n\n## Failure Modes\n\n1. **Cascading errors**: a mistake in an early agent propagates and amplifies through downstream agents\n2. **Infinite loops**: agents keep handing a task back and forth without resolution\n3. **Conflicting outputs**: two agents produce contradictory results; orchestrator doesn't resolve properly\n4. **Agent over-trust**: orchestrator accepts worker output uncritically, amplifying hallucinations\n\n**Mitigations**: maximum step limits, output validation schemas, critic agents, human-in-the-loop checkpoints.\n\n## Frameworks\n\n### LangGraph Multi-Agent\nDefines agents as nodes in a directed graph. Edges encode routing logic. The state machine pattern makes complex agent interactions explicit and inspectable.\n\n### AutoGen (Microsoft)\n`ConversableAgent` class enables two-agent and group-chat patterns. Excellent for code generation + execution loops:\n```python\nassistant = AssistantAgent(\"assistant\", llm_config=llm_config)\nuser_proxy = UserProxyAgent(\"user_proxy\", code_execution_config={\"work_dir\": \"coding\"})\nuser_proxy.initiate_chat(assistant, message=\"Write a Python script to visualize sales data\")\n```\nThe user proxy runs the generated code, returns errors, and the assistant iterates until it works.\n\n### CrewAI\nRole-based crews with backstory, goal, and allowed tools per agent. Simpler API than LangGraph for straightforward pipelines.\n\n## When to Use Multi-Agent Systems\n\n- Task requires diverse specialized capabilities (research + code + writing)\n- Task is long enough that a single context window is insufficient\n- Parallel execution would meaningfully reduce latency\n- Independent verification by a second agent adds important safety\n\n**When NOT to**: simple tasks that one agent can handle cleanly — added coordination overhead outweighs benefits.",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "In an orchestrator-worker multi-agent system, what is the orchestrator's primary role?",
+      "options": [
+        "Execute all tool calls directly, then pass results to workers",
+        "Decompose the task into subtasks, route them to workers, and synthesize results",
+        "Store long-term memory for all worker agents",
+        "Translate between different agents' communication formats"
+      ],
+      "correct": 1,
+      "explanation": "The orchestrator receives the high-level task, breaks it into subtasks, assigns each to the appropriate specialist worker agent, and then combines the results into a final output. It is the coordination layer, not the execution layer."
+    },
+    {
+      "id": "q2",
+      "question": "What is the 'parallelism' benefit in multi-agent systems?",
+      "options": [
+        "All agents use the same LLM simultaneously",
+        "Independent subtasks can run concurrently across multiple agents, reducing total latency",
+        "Agents share the same context window to save memory",
+        "The orchestrator generates multiple plans and picks the fastest one"
+      ],
+      "correct": 1,
+      "explanation": "Parallelism means that independent subtasks (e.g., research agent and code agent working on different parts of a task) can execute simultaneously rather than sequentially, potentially cutting wall-clock time significantly."
+    },
+    {
+      "id": "q3",
+      "question": "What is a 'cascading error' in a multi-agent pipeline?",
+      "options": [
+        "An error that occurs only at the final synthesis step",
+        "A mistake in an early agent that propagates and amplifies through downstream agents",
+        "When the orchestrator itself crashes due to too many agents",
+        "A timeout error when agents take too long to respond"
+      ],
+      "correct": 1,
+      "explanation": "In a pipeline, each agent's output becomes the next agent's input. If an early agent produces incorrect output (e.g., bad research), that error gets incorporated into subsequent work, potentially amplifying into a much worse final output — a cascade."
+    },
+    {
+      "id": "q4",
+      "question": "In AutoGen's code generation pattern, what does the UserProxyAgent do?",
+      "options": [
+        "It generates code based on the user's request",
+        "It executes the generated code and returns results or errors to the assistant",
+        "It stores all code artifacts in a vector database",
+        "It evaluates the code quality using a rubric"
+      ],
+      "correct": 1,
+      "explanation": "In AutoGen's two-agent coding pattern, the AssistantAgent generates code and the UserProxyAgent actually executes it. If the code errors, UserProxyAgent returns the error to AssistantAgent, which iterates until the code runs successfully."
+    },
+    {
+      "id": "q5",
+      "question": "Which communication pattern describes agents reading from and writing to a shared central store?",
+      "options": [
+        "Direct tool calls",
+        "Peer-to-peer debate",
+        "Shared state / message bus",
+        "Task queue"
+      ],
+      "correct": 2,
+      "explanation": "A shared state or message bus is a central data store that all agents can read from and write to. This decouples agents from each other — they don't need to call each other directly; they communicate via the shared state."
+    },
+    {
+      "id": "q6",
+      "question": "When is it NOT advisable to use a multi-agent system?",
+      "options": [
+        "When the task requires parallel subtask execution",
+        "When the task requires diverse capabilities like research, coding, and writing",
+        "When a single agent can handle the task cleanly and coordination overhead would outweigh benefits",
+        "When independent verification of outputs is needed"
+      ],
+      "correct": 2,
+      "explanation": "Multi-agent systems add coordination complexity, latency, and cost. For simple tasks a single agent handles well, the overhead of orchestrating multiple agents is waste. Always evaluate whether the complexity is justified by the task requirements."
+    },
+    {
+      "id": "q7",
+      "question": "Which multi-agent pattern involves agents independently producing answers that are then resolved via voting or critique?",
+      "options": [
+        "Orchestrator-worker",
+        "Pipeline",
+        "Peer-to-peer debate",
+        "Task queue"
+      ],
+      "correct": 2,
+      "explanation": "In the peer-to-peer debate pattern, multiple agents work on the same problem independently and produce their own answers. These are then reconciled through majority voting, critique rounds, or a judge agent — research shows this improves reasoning quality."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Multi-Agent System",
+      "back": "An architecture where multiple LLM-powered agents collaborate on a task, each with specialized capabilities and roles. Enables parallelism, specialization, and independent verification."
+    },
+    {
+      "id": "f2",
+      "front": "Orchestrator (multi-agent)",
+      "back": "The coordinating agent that receives a high-level task, decomposes it into subtasks, routes subtasks to worker agents, and synthesizes their results into a final output."
+    },
+    {
+      "id": "f3",
+      "front": "Worker Agent",
+      "back": "A specialized agent in a multi-agent system that executes a specific type of subtask (e.g., research, coding, writing, verification) at the direction of an orchestrator."
+    },
+    {
+      "id": "f4",
+      "front": "Pipeline (multi-agent)",
+      "back": "A sequential multi-agent pattern where each agent transforms the artifact and passes it to the next. Output of one agent is always the input to the next."
+    },
+    {
+      "id": "f5",
+      "front": "Peer-to-Peer Debate",
+      "back": "A multi-agent pattern where agents independently produce answers to the same problem, then reconcile disagreements via voting, critique rounds, or a judge agent. Improves reasoning quality."
+    },
+    {
+      "id": "f6",
+      "front": "Consensus (multi-agent)",
+      "back": "A mechanism for resolving disagreements between agents. Methods include majority voting, iterative critique rounds, and judge agents that evaluate all outputs."
+    },
+    {
+      "id": "f7",
+      "front": "Specialization (multi-agent)",
+      "back": "The benefit of having each agent focused on a narrow task type (research, coding, writing), with prompts and tools optimized for that specific function — improving quality compared to a single generalist agent."
+    },
+    {
+      "id": "f8",
+      "front": "AutoGen",
+      "back": "Microsoft's multi-agent framework featuring ConversableAgent. Best known for its code generation + execution loop pattern where an assistant generates code and a user proxy executes it, iterating until success."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Multi-Agent AI Systems — Architecture and Patterns",
+      "youtube_id": "J84e1L1_fMM",
+      "description": "A comprehensive walkthrough of multi-agent system design patterns — orchestrator-worker, pipeline, and peer debate — with real-world examples and failure mode analysis."
+    },
+    {
+      "title": "CrewAI — Building Role-Based Multi-Agent Teams",
+      "youtube_id": "sPzc6hMg7So",
+      "description": "Hands-on tutorial building a CrewAI system with specialized agents (researcher, writer, reviewer) collaborating on a content creation task."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

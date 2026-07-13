@@ -1,0 +1,148 @@
+{
+  "id": "topic_19",
+  "level": 3,
+  "level_name": "Talking to LLMs",
+  "order": 6,
+  "title": "Context Engineering",
+  "emoji": "📋",
+  "duration_minutes": 20,
+  "eli8": "## The AI's Reading List 📚\n\nBefore you ask the AI a question, it needs to know some things. Those \"things\" go into its **context window** — like a temporary reading list it can refer to while answering you.\n\nBut here's the catch: the context window is like a backpack with limited space. You can't stuff in your entire library! So **context engineering** is the art of choosing *exactly* the right things to put in that backpack.\n\n## Too Much, Too Little, Just Right 🐻\n\nImagine asking a friend for restaurant advice:\n\n- ❌ **Too little context:** \"Where should I eat?\" (They have no idea where you are, your budget, if you're vegetarian...)\n- ❌ **Too much context:** You give them your entire 5-year food diary (they'll get lost in useless details!)\n- ✅ **Just right:** \"I'm in downtown Seattle, budget $30, want vegetarian Italian, tonight at 7pm.\"\n\nContext engineering is figuring out what \"just right\" looks like for every question.\n\n## What Goes Into the Context? 📦\n\nThe AI's backpack can hold:\n- 📋 **Instructions** — what to do (your system prompt)\n- 📖 **Examples** — how you want it done (few-shot)\n- 📄 **Documents** — relevant info it needs to read\n- 💬 **Conversation history** — what you've discussed so far\n- 🔧 **Tool results** — answers from web searches or calculators\n\n**Pro tip:** Put the most important stuff *last* — just before your question! The AI pays extra attention to what it just read. This is called the **recency effect** 🎯",
+  "detail": "## Context Engineering as a Discipline\n\nContext engineering is the practice of deliberately selecting, structuring, and managing the information placed in an LLM's context window to maximize response quality while staying within token budget constraints. As context windows have grown (from 4k to 128k+ tokens), context engineering has shifted from merely fitting content to optimizing *what* content to include.\n\n## The Context Window Budget\n\nEvery model has a fixed context window (measured in tokens). The budget must cover:\n\n| Component | Typical Token Range |\n|---|---|\n| System prompt | 100–2,000 |\n| Conversation history | 500–10,000 |\n| Retrieved documents (RAG) | 2,000–50,000 |\n| Few-shot examples | 500–3,000 |\n| Tool results | 200–5,000 |\n| Current user query | 10–500 |\n| Reserved for response | 500–4,000 |\n\nExceeding the context window causes either truncation or an error. Staying well within it is also suboptimal — unused budget is wasted retrieval opportunity.\n\n## Types of Context\n\n**1. Instructions** — System prompt and task description. Highest priority content; must survive any truncation strategy.\n\n**2. Examples** — Few-shot demonstrations. High value per token spent; cut if budget is very tight.\n\n**3. Retrieved documents (RAG)** — External information fetched by a retrieval system. Most variable in size; primary target for relevance filtering.\n\n**4. Conversation history** — Previous turns. Grows unbounded; requires compression or sliding window strategies.\n\n**5. Tool results** — Outputs from web search, code execution, database queries. Must be size-limited before insertion.\n\n**6. Memory summaries** — Compressed representations of long prior conversations.\n\n## Relevance Ranking Before Insertion\n\nFor RAG pipelines, not all retrieved chunks deserve equal placement. A relevance-ranked insertion strategy:\n1. Retrieve top-K candidates (e.g., top 20)\n2. Re-rank using a cross-encoder or keyword overlap score\n3. Insert only top-N into context (e.g., top 5-8)\n4. Place highest-relevance chunks nearest to the query (recency bias)\n\n```python\ndef build_rag_context(query, retrieved_chunks, max_tokens=4000):\n    ranked = rerank(query, retrieved_chunks)  # cross-encoder scoring\n    context = \"\"\n    token_count = 0\n    for chunk in ranked:\n        chunk_tokens = count_tokens(chunk)\n        if token_count + chunk_tokens > max_tokens:\n            break\n        context += chunk + \"\\n\\n\"\n        token_count += chunk_tokens\n    return context\n```\n\n## Recency Bias\n\nTransformer attention has an empirically observed recency bias: information near the end of the context (just before the query) receives higher effective attention weight than information in the middle. This is related to the \"lost in the middle\" problem (Liu et al., 2023).\n\n**Practical implication:** Place the most critical information — the most relevant retrieved document, the most important instruction — near the end of the context, just before the user query.\n\n## Conversation History Compression\n\nFor long conversations, including full history is expensive. Compression strategies:\n- **Sliding window**: keep only the last N turns\n- **Progressive summarization**: replace older turns with a rolling summary\n- **Entity tracking**: maintain a structured \"state\" of key facts mentioned\n\n```python\ndef compress_history(history, max_turns=10):\n    if len(history) <= max_turns:\n        return history\n    old_turns = history[:-max_turns]\n    summary_prompt = f\"Summarize this conversation history in 3 bullet points: {old_turns}\"\n    summary = llm(summary_prompt)\n    return [{\"role\": \"system\", \"content\": f\"Earlier conversation summary: {summary}\"}] + history[-max_turns:]\n```\n\n## Prompt Caching\n\nBoth Anthropic (Claude) and OpenAI support prompt caching: if the beginning of the messages array is identical between requests, the KV cache from the previous request is reused. This can reduce latency by ~80% and cost by ~90% for the cached portion.\n\nCache-friendly patterns:\n- Put static content (system prompt, documents, examples) at the beginning\n- Put dynamic content (user query, conversation history) at the end\n\n```python\nclient.messages.create(\n    model=\"claude-3-5-sonnet-20241022\",\n    system=[{\"type\": \"text\", \"text\": large_static_document,\n              \"cache_control\": {\"type\": \"ephemeral\"}}],\n    messages=[{\"role\": \"user\", \"content\": user_query}]\n)\n```\n\n## Context Poisoning\n\nA security concern: malicious content inserted into the context (via user input, retrieved documents, or tool results) that attempts to override instructions or extract sensitive information. Mitigation: sanitize retrieved content, validate tool outputs, and use models with strong instruction-following.",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What is context engineering?",
+      "options": [
+        "Writing longer and more detailed prompts",
+        "The practice of deliberately selecting and structuring what information goes into the context window to maximize response quality within token budget constraints",
+        "A technique for extending the model's context window beyond its architectural limit",
+        "Training the model on domain-specific documents"
+      ],
+      "correct": 1,
+      "explanation": "Context engineering is about curating what goes into the limited context window — not just adding more content. It involves relevance ranking, compression, and placement decisions to get the best quality output within token budget constraints."
+    },
+    {
+      "id": "q2",
+      "question": "What is the 'lost in the middle' problem?",
+      "options": [
+        "Long documents are truncated in the middle when they exceed the context window",
+        "Information placed in the middle of a long context tends to receive less effective attention than information at the start or end",
+        "The model loses track of the user's question when the context is too long",
+        "Token counting is imprecise in the middle of a conversation"
+      ],
+      "correct": 1,
+      "explanation": "Liu et al. (2023) demonstrated that LLMs are less effective at utilizing information placed in the middle of very long contexts. Information at the beginning (primacy) and end (recency) is attended to more reliably. This informs where to place critical content."
+    },
+    {
+      "id": "q3",
+      "question": "For a RAG pipeline, where should the most relevant retrieved document be placed in the context?",
+      "options": [
+        "At the very beginning, before the system prompt",
+        "In the middle, to evenly distribute attention",
+        "Near the end, just before the user's query, to exploit recency bias",
+        "Order does not matter; relevance score is the only factor"
+      ],
+      "correct": 2,
+      "explanation": "Due to recency bias, content placed just before the query receives the highest effective attention. Placing the most relevant retrieved chunk nearest to the user's question maximizes the probability it will be used in the response."
+    },
+    {
+      "id": "q4",
+      "question": "What is the main benefit of prompt caching?",
+      "options": [
+        "It stores model outputs so the model never has to generate the same response twice",
+        "It reuses the KV cache for identical context prefixes across requests, reducing latency and cost by ~80-90%",
+        "It compresses the prompt to use fewer tokens",
+        "It allows the model to access documents larger than its context window"
+      ],
+      "correct": 1,
+      "explanation": "Prompt caching (available in both Anthropic and OpenAI APIs) reuses the key-value attention cache computed for a static context prefix. If a long system prompt or document is the same across requests, the model doesn't recompute it — dramatically reducing both latency and token cost."
+    },
+    {
+      "id": "q5",
+      "question": "What is context poisoning?",
+      "options": [
+        "Providing too much irrelevant context that confuses the model",
+        "Malicious content inserted into the context that attempts to override instructions or extract sensitive information",
+        "A gradual degradation in response quality as conversation history grows",
+        "An API error caused by exceeding the context window limit"
+      ],
+      "correct": 1,
+      "explanation": "Context poisoning is a security attack where adversarial content (in user input, retrieved documents, or tool outputs) attempts to override system instructions or manipulate model behavior. It's a form of prompt injection targeting the retrieval or tool-use pipeline."
+    },
+    {
+      "id": "q6",
+      "question": "Which conversation history compression strategy replaces old turns with a condensed version?",
+      "options": [
+        "Sliding window",
+        "Token pruning",
+        "Progressive summarization",
+        "Context distillation"
+      ],
+      "correct": 2,
+      "explanation": "Progressive summarization replaces older conversation turns with a rolling summary, preserving the semantic content while dramatically reducing token count. This keeps the most recent turns verbatim while summarizing older context that is less likely to be directly referenced."
+    },
+    {
+      "id": "q7",
+      "question": "To maximize prompt cache hit rates, where should static content (like a long system prompt or document) be placed relative to dynamic content (user query)?",
+      "options": [
+        "After the dynamic content, at the end",
+        "Before the dynamic content, at the beginning",
+        "Alternating with the dynamic content",
+        "Position doesn't affect cache performance"
+      ],
+      "correct": 1,
+      "explanation": "Prompt caching works on identical prefixes. Static content must come first so it forms the cacheable prefix. Dynamic content (the user query that changes each request) must come last. Placing dynamic content first would prevent any caching, since the prefix would differ on every call."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Context engineering",
+      "back": "The practice of deliberately selecting, structuring, and managing the information placed in an LLM's context window. Involves relevance ranking, compression, placement decisions, and budget management to maximize response quality."
+    },
+    {
+      "id": "f2",
+      "front": "Context window",
+      "back": "The fixed-size space (measured in tokens) that an LLM can process in a single forward pass. Everything the model 'sees' — instructions, history, documents, examples, query — must fit within this window."
+    },
+    {
+      "id": "f3",
+      "front": "Context budget",
+      "back": "The allocation of context window tokens across different content types: system prompt, conversation history, retrieved documents, examples, tool results, and reserved output space. Effective context engineering manages this budget deliberately."
+    },
+    {
+      "id": "f4",
+      "front": "Recency bias",
+      "back": "The empirical tendency of transformer attention to weight information near the end of the context (just before the query) more heavily than information in the middle. Critical content should be placed near the end for maximum effect."
+    },
+    {
+      "id": "f5",
+      "front": "Prompt caching",
+      "back": "An API feature (Anthropic, OpenAI) that reuses the key-value attention cache for identical context prefixes across requests. Static content (system prompt, documents) placed at the beginning can be cached, reducing cost by ~90% and latency by ~80% for repeated calls."
+    },
+    {
+      "id": "f6",
+      "front": "Memory summary",
+      "back": "A compressed representation of earlier conversation turns, used to preserve semantic content without the token cost of verbatim history. Created by summarizing older turns and inserting the summary at the beginning of the history block."
+    },
+    {
+      "id": "f7",
+      "front": "Relevance ranking (for RAG context)",
+      "back": "The process of scoring and ordering retrieved documents by their relevance to the current query before insertion into the context window. Ensures the most useful information occupies the premium recency-biased positions near the query."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Andrej Karpathy — Intro to Large Language Models",
+      "youtube_id": "zjkBMFhNj_g",
+      "description": "Karpathy's foundational talk covering how context windows work, what goes into them, and how the industry thinks about managing information within token limits."
+    },
+    {
+      "title": "Prompt Engineering — Context Management and Advanced Techniques",
+      "youtube_id": "1bUy-1hGZpI",
+      "description": "Covers advanced context engineering topics including RAG context insertion strategies, history compression, and token budget management for production LLM applications."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

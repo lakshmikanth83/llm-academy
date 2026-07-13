@@ -1,0 +1,153 @@
+{
+  "id": "topic_33",
+  "level": 6,
+  "level_name": "Agents & Multi-Agent Systems",
+  "order": 1,
+  "title": "What is an AI Agent?",
+  "emoji": "🦾",
+  "duration_minutes": 20,
+  "eli8": "## Meet the AI Agent — The Robot That Actually *Does* Stuff! 🤖\n\nYou know how a calculator is super smart at math, but it just sits there waiting for you to press buttons? And a chatbot is great at talking, but all it does is *talk*? Well, an **AI agent** is different — it can actually *go out and do things* by itself!\n\nThink of it like the difference between a **brain in a jar** 🧠 and a **robot dog** 🐶:\n- The brain in a jar is super smart — it can answer any question you ask. That's a regular chatbot.\n- The robot dog is also smart, BUT it can also *walk around*, *pick things up*, *open doors*, and *learn from what it sees*. That's an AI agent!\n\n## What Can an Agent Actually Do? 🎯\n\nAn AI agent has three superpowers that a plain chatbot doesn't have:\n\n- 👁️ **Perceive**: It can look at the world — read websites, check your files, see what tools are available\n- 🧠 **Decide**: It thinks about what to do next, makes a plan, and figures out the best move\n- 🤝 **Act**: It actually *does* things — searches Google, writes a file, books a calendar event, runs code!\n\nAnd then after it acts, it looks at what happened and decides what to do *next*. It keeps looping: **See → Think → Do → See → Think → Do** — kind of like how you play a video game!\n\n## The Agent Loop — Like Playing Minecraft 🎮\n\nImagine you're playing Minecraft and someone says *\"build a castle\"*. You don't just magically build it all at once. You:\n1. Look around for materials 👀\n2. Decide to chop wood first 🪓\n3. Chop the wood 🌲\n4. See what you collected, then decide what to do next\n5. Keep going until the castle is done! 🏰\n\nAn AI agent does the *exact same thing* — it looks, thinks, acts, and repeats until the job is done. That's why agents can do big, complicated tasks that a normal chatbot could never finish!\n\nSome agents are like little helpers (do one thing, done). Others are fully autonomous — they can work for hours all by themselves! 🚀",
+  "detail": "## What is an AI Agent?\n\nAn **AI agent** is a system that uses a large language model (LLM) as its reasoning engine, combined with tools and memory, to perceive its environment, plan actions, and execute those actions in a loop until a goal is achieved. Unlike a one-shot LLM call that produces a single output, agents are dynamic, stateful, and capable of self-correction.\n\n## Core Agent Components\n\n### 1. Perception (Input)\nAgents receive observations from their environment. These may include:\n- User messages and conversation history\n- Tool outputs (search results, API responses, file contents)\n- System state (current time, working directory, active processes)\n\n### 2. World Model / State\nThe agent maintains a representation of the current situation. For LLM-based agents, this is primarily the **context window** — what the model currently \"knows\" about the task. Extended state may live in external memory systems.\n\n### 3. Planning / Reasoning\nThe LLM generates a plan or next action. This may be:\n- **Reactive**: pick the next tool call based on the last observation\n- **Deliberative**: generate a multi-step plan upfront, then execute\n- **Hybrid**: plan loosely, replan when surprises occur\n\n### 4. Action (Tool Calls)\nAgents act on the world through **tools** — functions the LLM can invoke:\n```python\ntools = [\n    {\"name\": \"web_search\", \"description\": \"Search the internet\"},\n    {\"name\": \"write_file\", \"description\": \"Write content to a file\"},\n    {\"name\": \"run_python\", \"description\": \"Execute Python code\"}\n]\n```\nEnvironments agents can operate in: web browsers (Playwright), file systems, code interpreters, REST APIs, databases, email/calendar.\n\n### 5. Memory\n- **In-context memory**: everything in the current prompt/conversation window\n- **External memory**: vector databases, key-value stores, SQL — persist across sessions\n\n## The Agent Loop\n\n```\nobserve → think → act → observe → think → act → ...\n```\n\nThis loop continues until the agent decides the task is complete, hits a stopping condition, or is interrupted by a human. The LLM evaluates after each action whether the goal has been achieved.\n\n## Agent vs. Chatbot vs. Chain\n\n| Feature | Chatbot | Chain | Agent |\n|---|---|---|---|\n| Multi-step | No | Fixed steps | Dynamic |\n| Tools | No | Sometimes | Yes |\n| Self-corrects | No | No | Yes |\n| Stateful | Minimal | No | Yes |\n| Autonomous | No | No | Yes |\n\n## Levels of Agency\n\n1. **Single-step**: One LLM call + one tool use (e.g., classify and route)\n2. **Multi-step loop**: LLM drives a loop of tool calls until done\n3. **Fully autonomous**: Long-horizon planning, multi-session, minimal human input\n\n## Real-World Examples\n- **OpenAI Operator**: browses the web to complete tasks\n- **Claude Computer Use**: controls a full desktop via screenshots\n- **Devin**: autonomous software engineer agent\n- **Research agents**: search → read → synthesize → cite → draft report\n\n## Key Insight\n\nThe LLM is the **brain** — it reasons and decides. Tools are the **hands** — they interact with the world. Memory is the **notebook** — it stores what the agent has learned. The agent loop is the **heartbeat** that keeps it all moving forward.",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What is the fundamental difference between a chatbot and an AI agent?",
+      "options": [
+        "Chatbots use larger language models than agents",
+        "Agents can perceive their environment and take actions, not just generate text",
+        "Chatbots are faster because they don't use tools",
+        "Agents only work with structured data, chatbots work with text"
+      ],
+      "correct": 1,
+      "explanation": "The key distinction is that agents can act on their environment through tools — searching the web, writing files, calling APIs — while chatbots only produce text responses. Agents have a perception-action loop; chatbots have a single input-output step."
+    },
+    {
+      "id": "q2",
+      "question": "Which component of an AI agent is responsible for deciding what to do next?",
+      "options": [
+        "Perception",
+        "Memory",
+        "Planning / Reasoning (the LLM)",
+        "Action executor"
+      ],
+      "correct": 2,
+      "explanation": "The LLM serves as the agent's reasoning/planning engine. It takes in the current observations and state, reasons about the goal, and outputs the next action to take. Perception gathers input, memory stores state, and action executes the decision."
+    },
+    {
+      "id": "q3",
+      "question": "What does the agent loop look like in correct order?",
+      "options": [
+        "Act → Think → Observe → Act → Think → Observe",
+        "Think → Observe → Act → Think → Observe → Act",
+        "Observe → Think → Act → Observe → Think → Act",
+        "Think → Act → Think → Act (no observation step)"
+      ],
+      "correct": 2,
+      "explanation": "The correct agent loop is Observe → Think → Act, repeated. The agent first observes its environment/tool outputs, then reasons about what to do, then executes an action. The result of the action feeds back as a new observation."
+    },
+    {
+      "id": "q4",
+      "question": "An agent that generates a complete plan upfront and then executes each step is using which planning style?",
+      "options": [
+        "Reactive planning",
+        "Deliberative planning",
+        "Episodic planning",
+        "Semantic planning"
+      ],
+      "correct": 1,
+      "explanation": "Deliberative planning means the agent generates a multi-step plan before taking any action. Reactive planning means picking the next action based only on the most recent observation, without upfront planning."
+    },
+    {
+      "id": "q5",
+      "question": "Which of the following is an example of an agent's 'tool'?",
+      "options": [
+        "The system prompt that describes the agent's persona",
+        "A Python function that executes a web search and returns results",
+        "The temperature parameter controlling output randomness",
+        "The tokenizer that converts text to token IDs"
+      ],
+      "correct": 1,
+      "explanation": "Tools are functions the LLM can call to interact with the external world. A web search function is a classic tool. System prompts, temperature, and tokenizers are parts of the LLM infrastructure, not tools the agent invokes during its loop."
+    },
+    {
+      "id": "q6",
+      "question": "What is the key advantage of external memory over in-context memory for an agent?",
+      "options": [
+        "External memory is faster to access than the context window",
+        "External memory persists across sessions and is not limited by context window size",
+        "External memory requires no additional infrastructure",
+        "In-context memory cannot store conversation history"
+      ],
+      "correct": 1,
+      "explanation": "In-context memory is limited by the context window size and is wiped when the session ends. External memory (vector databases, SQL stores) persists across sessions and can store much more information, enabling long-running and multi-session agents."
+    },
+    {
+      "id": "q7",
+      "question": "Which level of agency describes an agent that runs a loop of tool calls until the task is complete?",
+      "options": [
+        "Single-step agency",
+        "Multi-step loop agency",
+        "Fully autonomous agency",
+        "Reactive agency"
+      ],
+      "correct": 1,
+      "explanation": "Multi-step loop agency means the agent iteratively calls tools and reasons about results until the goal is achieved. Single-step is a one-shot tool call. Fully autonomous implies long-horizon, multi-session operation with minimal human oversight."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "AI Agent",
+      "back": "A system combining an LLM (reasoning) with tools (actions) and memory, operating in a perceive→think→act loop to accomplish goals autonomously."
+    },
+    {
+      "id": "f2",
+      "front": "Perception (in agents)",
+      "back": "The agent's ability to receive input from its environment: user messages, tool outputs, file contents, API responses, or any external observation."
+    },
+    {
+      "id": "f3",
+      "front": "Action (in agents)",
+      "back": "A concrete operation the agent performs on the world via tools — web search, file write, code execution, API call. Actions produce observations that feed back into the loop."
+    },
+    {
+      "id": "f4",
+      "front": "Planning (agent component)",
+      "back": "The reasoning step where the LLM decides what to do next. Can be reactive (next step only) or deliberative (full plan upfront)."
+    },
+    {
+      "id": "f5",
+      "front": "Agent Memory",
+      "back": "Storage for the agent's state. In-context memory lives in the prompt window (ephemeral, limited). External memory lives in databases (persistent, scalable)."
+    },
+    {
+      "id": "f6",
+      "front": "Tool (agent tool)",
+      "back": "A function exposed to the LLM that it can call to interact with external systems. Examples: web_search(), run_code(), read_file(), send_email()."
+    },
+    {
+      "id": "f7",
+      "front": "Agent Loop",
+      "back": "The repeating cycle: Observe → Think → Act → Observe → ... that continues until the agent determines the task is complete or a stopping condition is met."
+    },
+    {
+      "id": "f8",
+      "front": "Autonomy (agent levels)",
+      "back": "The degree to which an agent operates without human intervention. Ranges from single-step (one tool call) to fully autonomous (hours-long, multi-session operation)."
+    }
+  ],
+  "videos": [
+    {
+      "title": "AI Agents Explained — How LLM Agents Work",
+      "youtube_id": "J84e1L1_fMM",
+      "description": "A clear walkthrough of what AI agents are, how the perception-action loop works, and how LLMs serve as reasoning engines for autonomous systems."
+    },
+    {
+      "title": "LangChain Agents — Building Your First Agent",
+      "youtube_id": "mrjq3lFz23s",
+      "description": "Practical introduction to building LLM-powered agents with tools and memory using the LangChain framework."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

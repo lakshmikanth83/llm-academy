@@ -1,0 +1,153 @@
+{
+  "id": "topic_21",
+  "level": 4,
+  "level_name": "Using LLMs: APIs & the Tool Landscape",
+  "order": 1,
+  "title": "Using LLM APIs",
+  "emoji": "🔌",
+  "duration_minutes": 20,
+  "eli8": "# The AI Drive-Through Window 🍔\n\nImagine there's a super-smart chef locked inside a restaurant. You can't walk in and cook with them directly — but there's a **drive-through window**! You shout your order through the speaker (that's your **message**), they cook it up, and hand it back to you.\n\nThat drive-through window is called an **API** (Application Programming Interface). It's how YOUR code talks to the AI.\n\n## Your Membership Card 🪪\n\nBut wait — not just anyone can use this drive-through. You need a **special membership card** called an **API key**. It's a long secret code that proves YOU are the one ordering. Rules about your API key:\n\n- 🤫 **Never share it** — like a password, anyone with it can use YOUR account\n- 🙈 **Never write it directly in your code** — use a secret pocket called an *environment variable*\n- 💳 **It's connected to your wallet** — you get charged for every order!\n\n## Paying Per Bite 🪙\n\nYou don't pay one flat price — you pay per **token**, which is roughly one word (or part of a word). Think of it like buying candy by the piece instead of a whole bag:\n\n- Sending a long message? That costs tokens.\n- Getting a long reply? That costs tokens too (usually more!).\n- Short and sweet = cheaper and faster!\n\n## The Magic Order Form 📝\n\nWhen you call the API, you send a little package that looks like a list of messages — almost like a text message conversation:\n\n- **system**: \"You are a helpful assistant who speaks like a pirate\" 🏴‍☠️\n- **user**: \"What's the capital of France?\"\n- **assistant**: \"Arr, it be Paris, matey!\"\n\nYou can also turn some **knobs** to control the AI:\n- 🌡️ **Temperature**: High = creative and wild. Low = safe and predictable.\n- 📏 **Max tokens**: \"Don't talk more than 200 words!\"\n\nThat's it! Send your order, get your reply, pay your coins. Welcome to the AI drive-through! 🚗💨",
+  "detail": "## What Is an LLM API?\n\nA Large Language Model API is an HTTP endpoint that accepts structured requests and returns model-generated completions. Rather than running the model locally, you send text to a remote server and receive a response. The two most commonly used SDKs are **Anthropic's Python/TypeScript SDK** and **OpenAI's SDK**.\n\n## API Key Management\n\nNever hardcode API keys in source files — they'll leak into version control.\n\n```python\nimport os\nimport anthropic\n\n# Load from environment variable, set via:\n# export ANTHROPIC_API_KEY=\"sk-ant-...\"\nclient = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY automatically\n```\n\nUse `.env` files with `python-dotenv` during development, and proper secrets managers (AWS Secrets Manager, HashiCorp Vault, GCP Secret Manager) in production. Add `.env` to `.gitignore`.\n\n## The Messages Array\n\nBoth Anthropic and OpenAI use a **messages array** as the core input. Each element has a `role` and `content`:\n\n- `system` — sets the assistant's persona and constraints (Anthropic takes this as a separate top-level param)\n- `user` — the human turn\n- `assistant` — the model's prior response (for multi-turn conversations)\n\n```python\nmessage = client.messages.create(\n    model=\"claude-sonnet-4-5\",\n    max_tokens=1024,\n    system=\"You are a concise technical assistant.\",\n    messages=[\n        {\"role\": \"user\", \"content\": \"Explain REST APIs in one paragraph.\"}\n    ]\n)\nprint(message.content[0].text)\n```\n\n## Key Parameters\n\n| Parameter | Type | Effect |\n|---|---|---|\n| `model` | string | Which model to call (e.g. `claude-sonnet-4-5`) |\n| `max_tokens` | int | Hard cap on response length |\n| `temperature` | float 0–1 | 0 = deterministic, 1 = creative/random |\n| `top_p` | float 0–1 | Nucleus sampling — alternative to temperature |\n| `stop` | list[str] | Stop generating when any sequence is hit |\n\nDo not set both `temperature` and `top_p` simultaneously; pick one.\n\n## Streaming Responses\n\nFor long outputs or real-time UX, use streaming to receive tokens as they are generated:\n\n```python\nwith client.messages.stream(\n    model=\"claude-sonnet-4-5\",\n    max_tokens=1024,\n    messages=[{\"role\": \"user\", \"content\": \"Write a haiku about APIs.\"}]\n) as stream:\n    for text in stream.text_stream:\n        print(text, end=\"\", flush=True)\n```\n\nStreaming reduces **time-to-first-token** and lets users start reading before the full response is ready.\n\n## Error Handling and Rate Limits\n\nCommon errors to handle:\n\n- **429 RateLimitError** — too many requests per minute; implement exponential backoff\n- **529 OverloadedError** — server load; retry with jitter\n- **400 InvalidRequestError** — malformed request or context window exceeded\n- **401 AuthenticationError** — invalid API key\n\n```python\nimport time\nfrom anthropic import RateLimitError\n\ndef call_with_retry(client, **kwargs, retries=3):\n    for attempt in range(retries):\n        try:\n            return client.messages.create(**kwargs)\n        except RateLimitError:\n            wait = 2 ** attempt  # 1s, 2s, 4s\n            time.sleep(wait)\n    raise Exception(\"Max retries exceeded\")\n```\n\n## Token Counting and Cost Awareness\n\nAnthropics API returns usage in every response:\n\n```python\nprint(message.usage)  # InputTokens=45, OutputTokens=120\n```\n\nPricing (approximate, check current docs): Claude Sonnet is priced per million tokens, with **output tokens costing more than input tokens**. Always set a reasonable `max_tokens` to cap runaway costs. Use `client.messages.count_tokens()` to estimate before sending large prompts.\n\n## Async Usage\n\nFor concurrent workloads, use the async client:\n\n```python\nimport asyncio\nfrom anthropic import AsyncAnthropic\n\nasync def main():\n    client = AsyncAnthropic()\n    message = await client.messages.create(\n        model=\"claude-sonnet-4-5\",\n        max_tokens=256,\n        messages=[{\"role\": \"user\", \"content\": \"Hello!\"}]\n    )\n    print(message.content[0].text)\n\nasyncio.run(main())\n```\n\nAsync clients unlock parallel fan-out patterns where you fire multiple API calls simultaneously and `asyncio.gather()` their results.",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What is the correct structure for the messages array in an Anthropic API call?",
+      "options": [
+        "A flat string containing the conversation history",
+        "A list of objects each with a 'role' and 'content' field",
+        "A dictionary with keys 'input', 'output', and 'context'",
+        "An XML document with <message> tags"
+      ],
+      "correct": 1,
+      "explanation": "The messages array is a list of objects. Each object must have a 'role' (one of 'user' or 'assistant') and a 'content' field containing the message text. The system prompt is a separate top-level parameter in the Anthropic SDK."
+    },
+    {
+      "id": "q2",
+      "question": "Where should you store your API key in a Python project?",
+      "options": [
+        "Directly in your Python script as a string literal",
+        "In a public GitHub repository for easy access",
+        "As an environment variable, loaded at runtime",
+        "In a comment at the top of your main file"
+      ],
+      "correct": 2,
+      "explanation": "API keys must never be hardcoded in source files because they end up in version control and can be stolen. Environment variables (e.g., ANTHROPIC_API_KEY) keep secrets out of code. Use .env files locally and a proper secrets manager in production."
+    },
+    {
+      "id": "q3",
+      "question": "What does setting temperature=0 do when calling an LLM API?",
+      "options": [
+        "Makes the model refuse to answer",
+        "Causes the model to respond faster",
+        "Makes the model's outputs more deterministic and predictable",
+        "Disables the model's memory of previous messages"
+      ],
+      "correct": 2,
+      "explanation": "Temperature controls randomness in sampling. At temperature=0 the model almost always picks the highest-probability next token, making outputs highly deterministic. Higher temperatures (closer to 1) increase creativity and variety but also introduce more randomness."
+    },
+    {
+      "id": "q4",
+      "question": "You receive a 429 error from the LLM API. What should your code do?",
+      "options": [
+        "Immediately retry the same request as fast as possible",
+        "Switch to a different API provider permanently",
+        "Implement exponential backoff and retry after a delay",
+        "Reduce the temperature parameter and try again"
+      ],
+      "correct": 2,
+      "explanation": "A 429 RateLimitError means you've exceeded your requests-per-minute quota. Retrying immediately makes it worse. Exponential backoff (wait 1s, then 2s, then 4s) gives the rate limit window time to reset and is the industry-standard approach."
+    },
+    {
+      "id": "q5",
+      "question": "What is the main advantage of using streaming when calling an LLM API?",
+      "options": [
+        "It reduces the total number of tokens generated",
+        "It allows users to see tokens appear as they are generated, reducing perceived latency",
+        "It bypasses rate limits automatically",
+        "It always produces higher-quality responses"
+      ],
+      "correct": 1,
+      "explanation": "Streaming sends tokens to the client as they are generated rather than waiting for the full response. This dramatically reduces time-to-first-token from a user's perspective, making interfaces feel much more responsive even when the total generation time is the same."
+    },
+    {
+      "id": "q6",
+      "question": "Which statement about API token costs is correct?",
+      "options": [
+        "Input tokens and output tokens always cost the same",
+        "Output tokens typically cost more per token than input tokens",
+        "Streaming responses are always cheaper than non-streaming",
+        "The max_tokens parameter has no effect on cost"
+      ],
+      "correct": 1,
+      "explanation": "Most LLM providers charge more for output (generated) tokens than for input (prompt) tokens. This reflects the computational cost: generating each token requires a full forward pass, while processing input is done in a single batch. Setting a reasonable max_tokens cap is good cost hygiene."
+    },
+    {
+      "id": "q7",
+      "question": "What does the max_tokens parameter control?",
+      "options": [
+        "The maximum number of tokens in the input prompt",
+        "The total context window size",
+        "The maximum number of tokens the model will generate in its response",
+        "How many API calls you can make per minute"
+      ],
+      "correct": 2,
+      "explanation": "max_tokens sets an upper bound on the length of the model's generated response. It does not affect the input/prompt size. Setting it too low can cause the response to be cut off mid-sentence; setting it too high risks unexpected cost if the model generates a very long response."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "What is an API key?",
+      "back": "A secret credential string that authenticates your application to the LLM provider's servers. It identifies who is making requests and links usage to your billing account. It must never be hardcoded in source code or committed to version control."
+    },
+    {
+      "id": "f2",
+      "front": "What is the messages array?",
+      "back": "The core input structure for chat-based LLM APIs. It is a list of message objects, each with a 'role' ('user' or 'assistant') and 'content'. It represents the full conversation history sent to the model on every request, enabling multi-turn dialogue."
+    },
+    {
+      "id": "f3",
+      "front": "What does the 'role' field in a message object represent?",
+      "back": "It identifies who sent the message: 'user' for human turns, 'assistant' for model turns. The Anthropic API also accepts a top-level 'system' parameter (not in the messages array) for system prompt instructions."
+    },
+    {
+      "id": "f4",
+      "front": "What does max_tokens do?",
+      "back": "Sets a hard upper limit on the number of tokens the model can generate in its response. Keeps costs predictable and prevents runaway generation. The actual response may be shorter if the model naturally stops before the limit."
+    },
+    {
+      "id": "f5",
+      "front": "What is temperature in LLM API calls?",
+      "back": "A sampling parameter (0 to 1) controlling output randomness. Temperature=0 is nearly deterministic (always picks highest-probability token). Temperature=1 introduces creative variation. Most production tasks use 0–0.3; creative tasks use 0.7–1.0."
+    },
+    {
+      "id": "f6",
+      "front": "What is streaming in the context of LLM APIs?",
+      "back": "A mode where the server sends tokens to the client incrementally as they are generated, rather than waiting for the full response. This improves perceived responsiveness (lower time-to-first-token) and is essential for chat UIs."
+    },
+    {
+      "id": "f7",
+      "front": "What is a rate limit (HTTP 429)?",
+      "back": "A throttle imposed by the API provider that caps requests per minute (RPM) or tokens per minute (TPM). When exceeded, the API returns a 429 status. Best practice is exponential backoff with jitter: wait 2^attempt seconds before retrying."
+    },
+    {
+      "id": "f8",
+      "front": "What is an SDK in the context of LLM APIs?",
+      "back": "Software Development Kit — a pre-built library that wraps raw HTTP API calls into convenient functions. Anthropic provides SDKs for Python and TypeScript. They handle auth headers, JSON serialization, streaming, and retry logic automatically."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Anthropic Claude API Tutorial — Getting Started",
+      "youtube_id": "yzpYpCSiGi0",
+      "description": "Hands-on walkthrough of setting up the Anthropic SDK, managing API keys, and making your first Claude API calls in Python."
+    },
+    {
+      "title": "Karpathy — Intro to Large Language Models",
+      "youtube_id": "zjkBMFhNj_g",
+      "description": "Andrej Karpathy's accessible overview of how LLMs work, including how APIs expose model capabilities and what happens under the hood when you send a request."
+    }
+  ],
+  "has_practical": true,
+  "practical_description": "Interactive Python notebook that walks through making your first Claude API call: setting up env vars, constructing a messages array, tweaking temperature and max_tokens, and observing streaming output in real time."
+}

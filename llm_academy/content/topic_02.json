@@ -1,0 +1,153 @@
+{
+  "id": "topic_02",
+  "level": 1,
+  "level_name": "Foundations",
+  "order": 2,
+  "title": "What is Machine Learning?",
+  "emoji": "📚",
+  "duration_minutes": 15,
+  "eli8": "# What is Machine Learning? 📚\n\n## Learning to Ride a Bike 🚲\n\nThe first time you tried to ride a bike, you probably fell. Then you fell again. But each time you fell, your brain noticed something: \"OK, I leaned too far left — correct right next time.\" After enough tries, your brain figured out the balance *automatically*.\n\n**That's exactly how Machine Learning works!**\n\nInstead of a programmer writing out every single rule (\"if the email says FREE MONEY, delete it\"), the computer looks at *thousands of examples* and figures out the rules itself. 🧠\n\n## Traditional Programming vs. Machine Learning\n\n🧑‍💻 **Old way (Traditional Programming):**\n- You give the computer: **Rules + Data**\n- Computer gives you back: **Answers**\n- Example: \"If temperature > 100°C, print 'hot'.\"\n\n🤖 **New way (Machine Learning):**\n- You give the computer: **Data + Answers**\n- Computer figures out: **The Rules itself!**\n- Example: Show it 10,000 weather readings labeled \"hot\" or \"cold\" — it discovers the rules!\n\n## Three Ways Machines Learn\n\n- 🏷️ **Supervised Learning** — Learning WITH a teacher. Every example has a label. Like a flashcard with the answer on the back. \"This photo is a cat. This photo is a dog. Now — what's THIS photo?\"\n\n- 🔍 **Unsupervised Learning** — Finding patterns with NO teacher. Like sorting a pile of LEGO bricks by color and shape yourself, with nobody telling you the categories!\n\n- 🎮 **Reinforcement Learning** — Learning through trial and error with rewards. Like a video game: do the right thing, earn points. Do the wrong thing, lose points. The AI keeps playing until it masters the game!\n\nAll of these are ways of letting a computer **learn from experience** — just like you do! 🌟",
+  "detail": "# Machine Learning: Formal Overview\n\n## Definition\n\nMachine Learning is a subfield of AI in which systems learn to perform tasks by building models from data, rather than following explicitly programmed rules. Tom Mitchell's classic 1997 definition: *\"A computer program is said to learn from experience E with respect to some task T and performance measure P, if its performance at T, as measured by P, improves with experience E.\"*\n\n## The Core Shift: Rules vs. Examples\n\nTraditional programming inverts to ML:\n\n```\nTraditional:  Rules + Data  → Outputs\nMachine Learning:  Data + Outputs → Rules (model)\n```\n\nThis inversion is powerful: the model can discover patterns too subtle or complex for a human to articulate as rules.\n\n## Types of Machine Learning\n\n### 1. Supervised Learning\nThe training dataset contains labeled input-output pairs `(X, y)`. The model learns a mapping `f: X → y`.\n\n- **Classification**: Output is a discrete category. Example: email spam (spam/not spam), image recognition (cat/dog/bird).\n- **Regression**: Output is a continuous value. Example: predicting house prices, forecasting temperature.\n\n```python\nimport numpy as np\n\n# Toy dataset: hours studied → exam score\nhours  = np.array([1, 2, 3, 4, 5])\nscores = np.array([55, 63, 70, 78, 85])\n\n# Learn a linear relationship: score = m * hours + b\nm, b = np.polyfit(hours, scores, deg=1)\nprint(f\"Learned rule: score = {m:.1f} * hours + {b:.1f}\")\n# Output: score = 7.5 * hours + 47.5\n\nprint(f\"Predicted score for 6 hours: {m*6 + b:.1f}\")\n# Output: 92.5\n```\n\n### 2. Unsupervised Learning\nThe dataset has no labels. The model finds inherent structure.\n\n- **Clustering**: Grouping similar data points (K-Means, DBSCAN). Use case: customer segmentation.\n- **Dimensionality Reduction**: Compressing high-dimensional data (PCA, t-SNE). Use case: visualizing image embeddings.\n- **Generative Models**: Learning the data distribution to generate new samples (VAEs, GANs).\n\n### 3. Reinforcement Learning (RL)\nAn *agent* takes actions in an *environment* to maximize cumulative *reward*. No labeled dataset — the agent generates its own experience.\n\n- **Key components**: State, Action, Reward, Policy\n- **Examples**: AlphaGo, robotic locomotion, ChatGPT's RLHF fine-tuning\n\n## The ML Workflow\n\n1. **Collect and label data**\n2. **Split into train / validation / test sets** (e.g., 70% / 15% / 15%)\n3. **Choose and train a model** on training data\n4. **Evaluate** on validation set, tune hyperparameters\n5. **Final evaluation** on held-out test set (only once!)\n6. **Deploy** the trained model for inference\n\n## Overfitting and Underfitting\n\n- **Underfitting**: The model is too simple to capture the data's patterns. High error on both training and test data (\"high bias\").\n- **Overfitting**: The model memorizes training data but fails to generalize. Low training error, high test error (\"high variance\").\n- **Ideal**: Low error on both — the model has learned genuine patterns, not noise.\n\nCountermeasures for overfitting: more data, regularization (L1/L2), dropout, early stopping, simpler model architecture.\n\n## Key Terms\n\n| Term | Meaning |\n|---|---|\n| Feature | An input variable used for prediction |\n| Label / Target | The output the model learns to predict |\n| Model | The learned function mapping inputs to outputs |\n| Training | Adjusting model parameters to minimize error on training data |\n| Inference | Using a trained model to make predictions on new data |\n| Hyperparameter | A setting fixed before training (e.g., learning rate, tree depth) |\n\n## Real-World Applications\n\n- Fraud detection (classification on transaction features)\n- Medical diagnosis (image classification on scans)\n- Recommendation systems (collaborative filtering — unsupervised)\n- Game-playing agents (RL)\n- Language models (next-token prediction — a form of self-supervised learning)",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "In machine learning, what does the model learn from?",
+      "options": [
+        "Explicitly programmed if/else rules written by developers",
+        "Patterns discovered from data (examples)",
+        "Internet searches performed at inference time",
+        "Instructions written in plain English"
+      ],
+      "correct": 1,
+      "explanation": "ML systems learn by finding patterns in data rather than following hand-coded rules. This is the core distinction from traditional programming."
+    },
+    {
+      "id": "q2",
+      "question": "A model trained to classify emails as spam or not-spam using 10,000 labeled examples is using which type of ML?",
+      "options": [
+        "Unsupervised Learning",
+        "Reinforcement Learning",
+        "Supervised Learning",
+        "Transfer Learning"
+      ],
+      "correct": 2,
+      "explanation": "Supervised learning uses labeled input-output pairs. Here, each email has a known label (spam/not spam), making this a supervised classification problem."
+    },
+    {
+      "id": "q3",
+      "question": "Which of the following best describes unsupervised learning?",
+      "options": [
+        "A model learns from a dataset where every input has a correct label",
+        "An agent learns by receiving rewards and penalties",
+        "A model finds structure or patterns in data without predefined labels",
+        "A pre-trained model is adapted to a new task"
+      ],
+      "correct": 2,
+      "explanation": "Unsupervised learning discovers inherent structure in unlabeled data — grouping similar items (clustering), reducing dimensions, or learning data distributions."
+    },
+    {
+      "id": "q4",
+      "question": "Overfitting occurs when:",
+      "options": [
+        "A model is too simple and fails to capture patterns in training data",
+        "A model performs well on training data but poorly on new, unseen data",
+        "A model takes too long to train",
+        "A model is trained on too much data"
+      ],
+      "correct": 1,
+      "explanation": "Overfitting means the model has memorized the training data (including noise) rather than learning generalizable patterns. It shows low training error but high test error."
+    },
+    {
+      "id": "q5",
+      "question": "In the ML workflow, why is the test set kept separate and used only once?",
+      "options": [
+        "To make training faster by using less data",
+        "To provide an unbiased estimate of real-world performance on unseen data",
+        "Because the test set contains mislabeled examples",
+        "To comply with data privacy regulations"
+      ],
+      "correct": 1,
+      "explanation": "If you tune your model based on test set performance, you inadvertently overfit to it. The test set is reserved as a final, unbiased benchmark of how the model will perform on truly new data."
+    },
+    {
+      "id": "q6",
+      "question": "Reinforcement learning is most similar to which human experience?",
+      "options": [
+        "Studying a textbook with answer keys provided",
+        "Sorting objects into piles with no instructions",
+        "Learning to play a video game by trying actions and seeing what scores points",
+        "Memorizing a list of vocabulary words"
+      ],
+      "correct": 2,
+      "explanation": "Reinforcement learning involves an agent taking actions, receiving rewards or penalties, and adjusting behavior to maximize cumulative reward — directly analogous to learning through trial and error in a game."
+    },
+    {
+      "id": "q7",
+      "question": "Which term describes an input variable used to make a prediction in a machine learning model?",
+      "options": [
+        "Label",
+        "Feature",
+        "Hyperparameter",
+        "Loss"
+      ],
+      "correct": 1,
+      "explanation": "A feature is an individual measurable input variable (e.g., email word count, house square footage) fed to a model. Labels are the outputs being predicted."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Machine Learning",
+      "back": "A subfield of AI where systems improve their performance on a task through experience (data), rather than being explicitly programmed with rules. Formally: a program learns from experience E for task T if performance P improves with E."
+    },
+    {
+      "id": "f2",
+      "front": "Supervised Learning",
+      "back": "ML on labeled data: each training example has a known input-output pair (X, y). The model learns to map inputs to outputs. Used for classification (discrete outputs) and regression (continuous outputs)."
+    },
+    {
+      "id": "f3",
+      "front": "Unsupervised Learning",
+      "back": "ML on unlabeled data: the model discovers hidden structure, patterns, or groupings on its own. Examples: clustering (K-Means), dimensionality reduction (PCA), and generative modeling."
+    },
+    {
+      "id": "f4",
+      "front": "Reinforcement Learning",
+      "back": "An ML paradigm where an agent learns by taking actions in an environment and receiving rewards or penalties. The agent's goal is to learn a policy that maximizes cumulative reward. Used in game-playing AI and robotics."
+    },
+    {
+      "id": "f5",
+      "front": "Overfitting",
+      "back": "When a model learns the training data too well — including its noise — and fails to generalize to new data. Symptom: very low training error, high test error. Remedies: more data, regularization, simpler model."
+    },
+    {
+      "id": "f6",
+      "front": "Feature",
+      "back": "An individual measurable input variable provided to a machine learning model. Example: for predicting house prices, features might include square footage, number of bedrooms, and neighborhood. Feature engineering is the art of choosing and transforming these inputs."
+    },
+    {
+      "id": "f7",
+      "front": "Training vs. Inference",
+      "back": "Training: the process of adjusting model parameters using a dataset to minimize prediction error. Inference: using the already-trained model to make predictions on new, unseen inputs. Training is expensive; inference is fast."
+    },
+    {
+      "id": "f8",
+      "front": "Train / Validation / Test Split",
+      "back": "Standard practice of dividing a dataset into three parts: training set (model learns from this), validation set (used to tune hyperparameters), and test set (held out until the very end for unbiased final evaluation)."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Machine Learning for Beginners — freeCodeCamp",
+      "youtube_id": "ukzFI9rgwfU",
+      "description": "A comprehensive introduction to machine learning concepts including supervised, unsupervised, and reinforcement learning, with accessible explanations and visual examples."
+    },
+    {
+      "title": "But what is a Neural Network? — 3Blue1Brown",
+      "youtube_id": "aircAruvnKk",
+      "description": "Grant Sanderson's beautifully animated deep dive into how neural networks learn from data — the perfect visual companion to understanding the 'learning' in machine learning."
+    }
+  ],
+  "has_practical": true,
+  "practical_description": "A hands-on demo where you watch a simple linear regression model fit a line to a scatter plot in real time, adjusting the learning rate slider to see how the model converges (or diverges) as it learns from data."
+}

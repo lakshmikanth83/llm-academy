@@ -1,0 +1,148 @@
+{
+  "id": "topic_20",
+  "level": 3,
+  "level_name": "Talking to LLMs",
+  "order": 7,
+  "title": "Structured Outputs",
+  "emoji": "📊",
+  "duration_minutes": 15,
+  "eli8": "## Filling Out a Form 📝\n\nImagine you ask a classmate \"tell me about yourself.\" They might talk for 10 minutes about anything! But if you hand them a *form* to fill out:\n\n```\nName: ________\nAge: ________\nFavorite subject: ________\n```\n\n...you get exactly the information you need, in exactly the format you wanted.\n\n**Structured outputs** are like handing the AI a form to fill out instead of letting it write an essay. You say: \"Give me a JSON object with 'name', 'price', and 'rating' fields\" — and that's exactly what comes back!\n\n## Why Is This So Useful? 🤔\n\nImagine you're building an app that reads product reviews and extracts key information. Without structured output:\n\n> *\"The product is called SuperBlender 3000 and it costs around twenty-five dollars. Users seem to like it — I'd give it about 4 stars out of 5.\"*\n\nYour app would have to *guess* where the name, price, and rating are. But with structured output:\n\n```json\n{\"name\": \"SuperBlender 3000\", \"price\": 25.00, \"rating\": 4.0}\n```\n\nYour app can just read the fields directly! No guessing, no complicated text parsing. 🎉\n\n## The Magic of JSON Mode 🪄\n\nModern AI APIs have a special **JSON mode** that *guarantees* the model will always output valid JSON. It's like telling the AI: \"No matter what, your answer must be a proper form — no rambling essays!\"\n\nThis is super important when you're coding an app that processes the AI's responses automatically — you need to rely on a consistent structure every single time! ⚙️",
+  "detail": "## What Are Structured Outputs?\n\nStructured outputs are LLM responses constrained to a specific machine-readable format — typically JSON, XML, or CSV — rather than free-form natural language prose. This enables direct programmatic consumption without ad-hoc text parsing.\n\n**Free-text output** (unpredictable, hard to parse):\n```\nThe product is called SuperBlender 3000. It's priced at $24.99 and received mostly positive reviews, roughly 4 out of 5 stars.\n```\n\n**Structured output** (predictable, directly usable):\n```json\n{\"product_name\": \"SuperBlender 3000\", \"price\": 24.99, \"rating\": 4.0, \"sentiment\": \"positive\"}\n```\n\n## JSON Mode\n\nBoth OpenAI and Anthropic provide explicit JSON mode:\n\n**OpenAI:**\n```python\nresponse = client.chat.completions.create(\n    model=\"gpt-4o\",\n    response_format={\"type\": \"json_object\"},\n    messages=[{\"role\": \"user\", \"content\": \"Extract: name, price, rating from: 'SuperBlender 3000 costs $24.99 and rated 4/5'\"}]\n)\ndata = json.loads(response.choices[0].message.content)\n```\n\n**Anthropic (tool use pattern):**\n```python\nresponse = client.messages.create(\n    model=\"claude-3-5-sonnet-20241022\",\n    tools=[{\n        \"name\": \"extract_product\",\n        \"description\": \"Extract product information\",\n        \"input_schema\": {\n            \"type\": \"object\",\n            \"properties\": {\n                \"product_name\": {\"type\": \"string\"},\n                \"price\": {\"type\": \"number\"},\n                \"rating\": {\"type\": \"number\", \"minimum\": 0, \"maximum\": 5}\n            },\n            \"required\": [\"product_name\", \"price\", \"rating\"]\n        }\n    }],\n    tool_choice={\"type\": \"tool\", \"name\": \"extract_product\"},\n    messages=[...]\n)\ndata = response.content[0].input\n```\n\n## OpenAI Structured Outputs API\n\nOpenAI's structured outputs (2024) provides stronger guarantees than basic JSON mode: the output is guaranteed to match a provided JSON Schema exactly, including required fields, types, and enum values. This uses constrained decoding — the token sampling is filtered at each step to only allow tokens that could lead to a valid completion of the schema.\n\n```python\nfrom pydantic import BaseModel\nfrom openai import OpenAI\n\nclass ProductInfo(BaseModel):\n    product_name: str\n    price: float\n    rating: float\n    sentiment: Literal[\"positive\", \"neutral\", \"negative\"]\n\nresponse = client.beta.chat.completions.parse(\n    model=\"gpt-4o\",\n    messages=[...],\n    response_format=ProductInfo,\n)\nproduct = response.choices[0].message.parsed  # Already a ProductInfo instance\n```\n\n## Constrained Generation\n\nAt the token sampling level, constrained generation works by maintaining a grammar (e.g., a JSON Schema) and filtering the logit distribution at each step to only sample tokens that could form a valid continuation. Libraries like **Outlines** and **Guidance** provide this for local models:\n\n```python\nimport outlines\n\nmodel = outlines.models.transformers(\"mistralai/Mistral-7B-v0.1\")\ngenerator = outlines.generate.json(model, ProductInfo)\nresult = generator(\"Extract product info from: 'SuperBlender 3000, $24.99, 4 stars'\")\n# result is guaranteed to be a valid ProductInfo\n```\n\n## Pydantic for Schema Definition\n\nPydantic models are the standard way to define schemas for structured LLM outputs in Python:\n\n```python\nfrom pydantic import BaseModel, Field\nfrom typing import List, Optional\n\nclass ReviewAnalysis(BaseModel):\n    summary: str = Field(description=\"One-sentence summary of the review\")\n    pros: List[str] = Field(description=\"List of positive points mentioned\")\n    cons: List[str] = Field(description=\"List of negative points mentioned\")\n    overall_score: float = Field(ge=0, le=10, description=\"Score from 0-10\")\n    would_recommend: bool\n    verified_purchase: Optional[bool] = None\n```\n\nThe schema is serialized and provided to the model either as a tool definition or injected into the prompt.\n\n## Validation and Retry Pattern\n\nEven with JSON mode, outputs can fail validation (wrong types, missing fields, values out of range). A robust pattern:\n\n```python\ndef structured_extract(prompt, schema_class, max_retries=3):\n    for attempt in range(max_retries):\n        try:\n            raw = llm_json_mode(prompt)\n            return schema_class.model_validate_json(raw)\n        except (json.JSONDecodeError, ValidationError) as e:\n            prompt += f\"\\n\\nPrevious response was invalid ({e}). Please try again following the schema exactly.\"\n    raise RuntimeError(\"Structured extraction failed after retries\")\n```\n\n## Use Cases\n\n| Use Case | Schema Example |\n|---|---|\n| Information extraction | Product name, price, category from web page |\n| Classification | Intent label + confidence + detected entities |\n| Document parsing | Invoice fields: vendor, amount, date, line items |\n| API output normalization | Standardize varied LLM responses to a fixed format |\n| Evaluation pipelines | Rating + reasoning + pass/fail for LLM-as-judge |",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What is the primary benefit of structured outputs over free-text LLM responses?",
+      "options": [
+        "Structured outputs are faster to generate",
+        "The output is in a predictable, machine-readable format that can be directly consumed by code without text parsing",
+        "Structured outputs use fewer tokens",
+        "The model is more accurate when outputting structured data"
+      ],
+      "correct": 1,
+      "explanation": "The core benefit is programmatic reliability. When output is in a defined structure (JSON, CSV), downstream code can access fields directly without fragile regex or string parsing. This makes pipelines deterministic and maintainable."
+    },
+    {
+      "id": "q2",
+      "question": "What does JSON mode guarantee?",
+      "options": [
+        "The output will match a provided Pydantic schema exactly",
+        "The output will be valid, parseable JSON",
+        "The output will contain no hallucinated values",
+        "The output will always include all fields defined in the schema"
+      ],
+      "correct": 1,
+      "explanation": "Basic JSON mode guarantees syntactically valid JSON that parses without error. It does NOT guarantee the JSON will match a specific schema (have required fields, correct types, etc.) — that requires the stronger 'structured outputs' API or schema injection plus validation."
+    },
+    {
+      "id": "q3",
+      "question": "How does the Anthropic API most reliably produce structured JSON output?",
+      "options": [
+        "Asking the model to 'output JSON' in the user message",
+        "Using the tool use (function calling) API with a defined input schema and forcing a specific tool call",
+        "Setting response_format to json_object in the API call",
+        "Using the structured_output parameter"
+      ],
+      "correct": 1,
+      "explanation": "Anthropic's recommended pattern for reliable structured output is to define a tool with the desired JSON schema as its input_schema, then set tool_choice to force that specific tool. The model's tool inputs are constrained to match the schema."
+    },
+    {
+      "id": "q4",
+      "question": "What is constrained generation?",
+      "options": [
+        "Limiting the model's response length to a maximum token count",
+        "Filtering the token sampling distribution at each step to only allow tokens that could form a valid continuation of the target schema",
+        "Using a smaller model to constrain the larger model's outputs",
+        "Setting temperature to 0 for deterministic outputs"
+      ],
+      "correct": 1,
+      "explanation": "Constrained generation (used in Outlines, Guidance, and OpenAI's structured outputs API) maintains a grammar state machine alongside the LLM's token sampling. At each step, logits for tokens that would violate the schema are masked to zero, guaranteeing schema compliance at the generation level."
+    },
+    {
+      "id": "q5",
+      "question": "What should you do when a model's structured output fails schema validation?",
+      "options": [
+        "Accept the output anyway and handle the error in your application",
+        "Switch to a larger model",
+        "Retry with an updated prompt that includes the specific validation error, prompting the model to correct its output",
+        "Use regex to extract the relevant parts from the invalid response"
+      ],
+      "correct": 2,
+      "explanation": "The validation-and-retry pattern feeds the specific validation error back to the model in a subsequent request, giving it the information needed to correct the issue. This is more robust than accepting invalid output or using fragile regex extraction."
+    },
+    {
+      "id": "q6",
+      "question": "What is Pydantic used for in the context of structured LLM outputs?",
+      "options": [
+        "A Python library for making HTTP requests to LLM APIs",
+        "A data validation library used to define and enforce schemas for structured LLM outputs",
+        "A tool for compressing large documents before inserting them into the context",
+        "A framework for building LLM agents"
+      ],
+      "correct": 1,
+      "explanation": "Pydantic is a Python data validation library. In structured output workflows, Pydantic models define the expected schema (field names, types, constraints). The schema is serialized for the model, and Pydantic validates the returned output, raising clear errors when the response doesn't conform."
+    },
+    {
+      "id": "q7",
+      "question": "You are building a pipeline that uses an LLM to rate the quality of 10,000 support tickets daily (LLM-as-judge). Which output approach is most appropriate?",
+      "options": [
+        "Free text: let the model explain its rating in a paragraph",
+        "Structured output with fields for score (0-10), category, and reasoning",
+        "Zero-shot prompting with no format specification",
+        "Ask the model to output only the number with no additional text"
+      ],
+      "correct": 1,
+      "explanation": "At scale (10,000 tickets), you need programmatic reliability. A structured output with score, category, and reasoning gives you machine-parseable data for aggregation and reporting, plus enough context to audit ratings. Free text is unstructured; a bare number loses the reasoning needed for quality control."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Structured output",
+      "back": "An LLM response constrained to a specific machine-readable format (JSON, CSV, XML) rather than free-form prose. Enables direct programmatic consumption without text parsing."
+    },
+    {
+      "id": "f2",
+      "front": "JSON mode",
+      "back": "An API setting that guarantees the model's output is syntactically valid, parseable JSON. Available in both OpenAI and Anthropic APIs. Does not guarantee the JSON matches a specific schema."
+    },
+    {
+      "id": "f3",
+      "front": "Constrained generation",
+      "back": "A decoding technique that maintains a grammar (e.g., JSON Schema) alongside token sampling, masking tokens that would violate the grammar at each step. Guarantees schema-valid output at the generation level. Used in Outlines, Guidance, and OpenAI's structured outputs API."
+    },
+    {
+      "id": "f4",
+      "front": "Pydantic",
+      "back": "A Python library for data validation and schema definition. Used in LLM workflows to define the expected structure of model outputs, serialize schemas for the API, and validate returned JSON against the schema."
+    },
+    {
+      "id": "f5",
+      "front": "response_format / structured outputs API",
+      "back": "API parameters (OpenAI: response_format with json_schema; Anthropic: tool input_schema) that constrain model output to a defined JSON schema. Stronger than basic JSON mode — guarantees field presence, types, and enum values."
+    },
+    {
+      "id": "f6",
+      "front": "Schema",
+      "back": "A formal definition of the expected structure of a data object: field names, types, required vs. optional fields, allowed values. In structured outputs, the schema is provided to the model to constrain its response format."
+    },
+    {
+      "id": "f7",
+      "front": "Validation retry pattern",
+      "back": "A robustness pattern for structured outputs: attempt to parse and validate the model's response; if validation fails, feed the specific error message back to the model in a follow-up request, asking it to correct the output. Repeat up to N times before raising an error."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Prompt Engineering — Structured Outputs and JSON Mode",
+      "youtube_id": "1bUy-1hGZpI",
+      "description": "Covers structured output techniques including JSON mode, schema definition with Pydantic, and building reliable data extraction pipelines from unstructured text."
+    },
+    {
+      "title": "Advanced Prompting Techniques — Output Formatting and Reliability",
+      "youtube_id": "FKByLkRZyMU",
+      "description": "Deep dive into output format specification, constrained generation, and validation strategies for building production-grade LLM applications that process outputs programmatically."
+    }
+  ],
+  "has_practical": true,
+  "practical_description": "A live extraction demo where you paste a product review in free text and watch the model extract it into a typed JSON object with name, price, rating, pros, cons, and sentiment fields — with live schema validation feedback."
+}

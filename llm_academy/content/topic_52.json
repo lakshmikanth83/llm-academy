@@ -1,0 +1,158 @@
+{
+  "id": "topic_52",
+  "level": 9,
+  "level_name": "Fine-tuning, SLMs & Local Models",
+  "order": 2,
+  "title": "LoRA & QLoRA",
+  "emoji": "🎛️",
+  "duration_minutes": 25,
+  "eli8": "# Training AI Without Breaking the Bank 💸\n\nImagine a 7-billion-parameter AI model. That's 7 billion numbers that describe everything it knows. To train it normally, you'd need to update **all** 7 billion numbers — which needs a computer that costs more than a car! 🚗\n\nLoRA and QLoRA are clever tricks to make this affordable.\n\n## 🧩 What is LoRA?\n\nLoRA stands for **Low-Rank Adaptation**. Here's the trick:\n\n- Instead of changing all 7 billion numbers, you **freeze** them (don't touch!)\n- Then you add tiny extra \"adapter\" pieces to the model — like sticky notes attached to the side 📌\n- These adapters have only a **fraction** of the numbers — maybe 0.1% of the total!\n- During training, only these tiny adapters get updated\n- After training, the adapters hold all your new knowledge\n\nIt's like instead of rewriting a whole textbook, you just write notes in the margins. Much cheaper!\n\n## 🧊 What is QLoRA?\n\nQLoRA goes one step further — it **squishes** the big model into a smaller size first!\n\n- \"Quantization\" means converting big float numbers into tiny integer numbers\n- Like converting a 4K movie to a 480p clip — looks similar but takes way less space 📺\n- QLoRA squishes the model from 32-bit to 4-bit (8x smaller!)\n- Then adds LoRA adapters on top\n- A model that needed **120GB** of GPU memory now fits in **48GB**\n- You can fine-tune a **65-billion** parameter model on a single gaming GPU! 🎮\n\n## 📊 How Much Do They Save?\n\n| Method | Memory Needed | Cost |\n|--------|--------------|------|\n| Full fine-tuning | Huge! | 💰💰💰 |\n| LoRA | Much less | 💰💰 |\n| QLoRA | Tiny! | 💰 |\n\nWith QLoRA, what used to cost hundreds of dollars per training run can cost just a few dollars. That's why researchers and developers love it! 🎉\n\nAfter training, you can \"merge\" the adapters back into the original model — like pasting your sticky notes directly into the textbook — so serving is just as fast as a normal model.",
+  "detail": "# LoRA & QLoRA: Parameter-Efficient Fine-Tuning\n\n## The Problem with Full Fine-Tuning\n\nFull fine-tuning updates every parameter in the model. For a 7B parameter model in FP16:\n- Weight storage: 14GB\n- Optimizer states (AdamW): 2x weight size = 28GB additional\n- Gradients: another 14GB\n- **Total: ~56GB GPU memory** — requires multiple A100s\n\nThis is prohibitive for most practitioners.\n\n## LoRA: Low-Rank Adaptation\n\nPaper: \"LoRA: Low-Rank Adaptation of Large Language Models\" (Hu et al., 2021)\n\n**Core idea:** The weight updates during fine-tuning have low intrinsic rank. Instead of learning a full dense update matrix ΔW ∈ ℝ^(d×k), decompose it into two low-rank matrices:\n\n```\nΔW = B × A\n\nwhere:\n  A ∈ ℝ^(r×k)  — down-projection, initialized randomly\n  B ∈ ℝ^(d×r)  — up-projection, initialized to zero\n  r << min(d,k) — the rank hyperparameter\n```\n\nAt inference: `h = W₀x + (B·A)x = W₀x + ΔWx`\n\nThe base weights W₀ are **frozen**. Only A and B are trained.\n\n**Parameter savings example (7B model, rank=16):**\n```\nAttention weight matrix: d=4096, k=4096\nFull update: 4096 × 4096 = 16.7M params\nLoRA update: (4096×16) + (16×4096) = 131K params\nReduction: ~99.2%\n```\n\n**Target modules:** Typically applied to Q, K, V, and output projection matrices in attention layers. Sometimes also MLP layers.\n\n**Key hyperparameters:**\n- `r` (rank): 4, 8, 16, 32, 64. Higher = more capacity but more params. Start with 16.\n- `lora_alpha`: scaling factor for ΔW. Effective LR scaling = alpha/r. Often set equal to r or 2×r.\n- `target_modules`: which weight matrices to adapt. `[\"q_proj\", \"v_proj\"]` is minimal; add `k_proj`, `o_proj`, `gate_proj` for more capacity.\n- `lora_dropout`: regularization, typically 0.05–0.1.\n\n**PEFT library usage:**\n```python\nfrom peft import LoraConfig, get_peft_model\n\nconfig = LoraConfig(\n    r=16,\n    lora_alpha=32,\n    target_modules=[\"q_proj\", \"v_proj\", \"k_proj\", \"o_proj\"],\n    lora_dropout=0.05,\n    bias=\"none\",\n    task_type=\"CAUSAL_LM\"\n)\n\nmodel = get_peft_model(base_model, config)\nmodel.print_trainable_parameters()\n# trainable params: 6,553,600 || all params: 6,745,804,800 || trainable%: 0.0972\n```\n\n## QLoRA: Quantized LoRA\n\nPaper: \"QLoRA: Efficient Finetuning of Quantized LLMs\" (Dettmers et al., 2023)\n\nQLoRA combines three innovations:\n\n### 1. 4-bit NormalFloat (NF4) Quantization\nNF4 is an information-theoretically optimal quantization for normally distributed weights. Unlike standard INT4, NF4 preserves more information by aligning quantization bins to the normal distribution of neural network weights.\n\n```python\nfrom transformers import BitsAndBytesConfig\nimport torch\n\nbnb_config = BitsAndBytesConfig(\n    load_in_4bit=True,\n    bnb_4bit_use_double_quant=True,   # 2nd quantization of quantization constants\n    bnb_4bit_quant_type=\"nf4\",        # NormalFloat4\n    bnb_4bit_compute_dtype=torch.bfloat16  # compute in BF16, store in 4-bit\n)\n\nmodel = AutoModelForCausalLM.from_pretrained(\n    \"meta-llama/Llama-3.2-1B\",\n    quantization_config=bnb_config,\n    device_map=\"auto\"\n)\n```\n\n### 2. Double Quantization\nQuantizes the quantization constants themselves, saving an additional ~0.37 bits per parameter.\n\n### 3. Paged Optimizers\nUses NVIDIA unified memory to page optimizer states between GPU and CPU RAM, preventing OOM crashes during memory spikes.\n\n**Memory savings:**\n```\nLlama 65B model:\n  FP16:  130GB\n  4-bit: ~48GB  (fits on 2× A40 or 1× 80GB A100)\n\nLlama 7B model:\n  FP16:  14GB\n  4-bit: ~4GB   (fits on consumer GPU with 8GB VRAM)\n```\n\n## LoRA Merging\n\nAfter training, adapter matrices can be merged back into the base weights:\n```python\nmerged_model = model.merge_and_unload()\nmerged_model.save_pretrained(\"./my-finetuned-model\")\n```\n\nThis eliminates the adapter overhead at inference time. The merged model is a standard model and can be quantized, deployed with vLLM, etc.\n\n## Comparison Table\n\n| Method | Trainable Params | GPU Memory (7B) | Quality | Cost |\n|--------|-----------------|-----------------|---------|------|\n| Full FT | 100% | ~56GB | Highest | High |\n| LoRA | 0.1–1% | ~18GB | High | Medium |\n| QLoRA | 0.1–1% | ~6–8GB | High | Low |\n\n## When LoRA Falls Short\n\n- Very small ranks (r=2,4) can underfit on complex style tasks — increase rank\n- Not all task types benefit equally: structured output tasks respond well; broad factual knowledge injection works better with full FT or RAG\n- The adapter adds slight inference overhead if not merged (small in practice)",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "In LoRA, what does 'rank' (r) refer to?",
+      "options": [
+        "The number of attention heads in the model",
+        "The position of the model in a performance leaderboard",
+        "The inner dimension of the two low-rank matrices A and B that approximate the weight update",
+        "The number of training epochs completed"
+      ],
+      "correct": 2,
+      "explanation": "Rank r is the inner dimension of the decomposition ΔW = B×A where A is (r×k) and B is (d×r). A smaller r means fewer trainable parameters; a larger r gives more capacity to learn task-specific adaptations."
+    },
+    {
+      "id": "q2",
+      "question": "Why does LoRA freeze the base model weights and only train small adapter matrices?",
+      "options": [
+        "Because frozen weights train faster due to caching",
+        "To drastically reduce the number of trainable parameters, lowering memory and compute requirements while preserving the base model's general capabilities",
+        "Because PyTorch does not support gradient computation on large matrices",
+        "To comply with model licensing restrictions"
+      ],
+      "correct": 1,
+      "explanation": "Freezing base weights means optimizer states and gradients are only tracked for the small adapter matrices (0.1–1% of total params), reducing GPU memory requirements by a large factor and protecting the base model's general knowledge."
+    },
+    {
+      "id": "q3",
+      "question": "QLoRA's primary contribution over standard LoRA is:",
+      "options": [
+        "Using a higher rank for better quality",
+        "Quantizing the base model to 4-bit NF4 precision so that fine-tuning a very large model fits on consumer-grade GPU hardware",
+        "Replacing the AdamW optimizer with SGD",
+        "Adding convolutional layers to transformer models"
+      ],
+      "correct": 1,
+      "explanation": "QLoRA (Dettmers et al., 2023) quantizes the frozen base model to 4-bit NF4, reducing its memory footprint by ~8x, then applies standard LoRA adapters. This enables fine-tuning 65B models on a single 48GB GPU."
+    },
+    {
+      "id": "q4",
+      "question": "What is the PEFT library used for in the context of LoRA training?",
+      "options": [
+        "Post-training Evaluation of Fine-Tuned models — it runs automatic benchmarks",
+        "A Hugging Face library providing LoRA, prefix tuning, and other parameter-efficient fine-tuning methods with a unified API",
+        "A dataset formatting tool that converts raw text to instruction format",
+        "A quantization library for 4-bit inference"
+      ],
+      "correct": 1,
+      "explanation": "PEFT (Parameter-Efficient Fine-Tuning) is a Hugging Face library implementing LoRA, prefix tuning, prompt tuning, and other PEFT methods. It provides `LoraConfig`, `get_peft_model()`, and training utilities that integrate with Transformers."
+    },
+    {
+      "id": "q5",
+      "question": "After LoRA training, what does 'merging adapters' accomplish?",
+      "options": [
+        "It combines multiple LoRA adapters trained on different tasks into one",
+        "It mathematically folds the LoRA matrices (B×A) back into the base weight matrix W₀, creating a standard model with no adapter overhead at inference time",
+        "It uploads the adapter to the Hugging Face Hub",
+        "It removes the quantization and restores FP16 precision"
+      ],
+      "correct": 1,
+      "explanation": "Merging adds ΔW = B×A directly into W₀, producing W' = W₀ + ΔW. The result is a standard model with no separate adapter component — identical inference speed to the original, but with the fine-tuned behavior baked in."
+    },
+    {
+      "id": "q6",
+      "question": "A 7B model in FP16 requires approximately 14GB to store weights. After QLoRA's 4-bit quantization, roughly how much memory do the base weights require?",
+      "options": [
+        "7GB (2x reduction)",
+        "~3.5–4GB (approximately 4x reduction, from 16-bit to 4-bit)",
+        "~1GB (14x reduction)",
+        "The memory requirement doesn't change; QLoRA only affects training speed"
+      ],
+      "correct": 1,
+      "explanation": "Going from FP16 (16 bits per param) to INT4 (4 bits per param) is a 4x reduction in storage: 14GB / 4 = ~3.5GB. In practice, ~4GB accounting for some overhead — which fits on an 8GB gaming GPU."
+    },
+    {
+      "id": "q7",
+      "question": "What is NF4 (NormalFloat4) and why does QLoRA use it instead of standard INT4?",
+      "options": [
+        "NF4 is a compression format for neural network files; it reduces disk size but not GPU memory",
+        "NF4 is an information-theoretically optimal 4-bit datatype for normally-distributed weights, placing quantization bins to match the distribution of neural network weights — reducing quantization error versus standard INT4",
+        "NF4 is a floating-point format that uses 4 exponent bits and no mantissa bits",
+        "NF4 stores negative numbers more efficiently than INT4 by removing the sign bit"
+      ],
+      "correct": 1,
+      "explanation": "Neural network weights are approximately normally distributed. NF4 places its 16 quantization bins according to the quantiles of this distribution, meaning more bins are allocated where values are dense — minimizing information loss compared to evenly-spaced INT4 bins."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "LoRA (Low-Rank Adaptation)",
+      "back": "A parameter-efficient fine-tuning method that freezes base model weights and adds trainable low-rank adapter matrices (ΔW = B×A) to attention layers. Only 0.1–1% of parameters are trained, drastically reducing compute and memory requirements."
+    },
+    {
+      "id": "f2",
+      "front": "Low-rank decomposition in LoRA",
+      "back": "The weight update is decomposed as ΔW = B × A, where A ∈ ℝ^(r×k) and B ∈ ℝ^(d×r). The rank r (typically 8–64) is much smaller than d or k, making the update matrix far smaller than the original weight matrix."
+    },
+    {
+      "id": "f3",
+      "front": "LoRA rank (r)",
+      "back": "The inner dimension of the LoRA adapter matrices. Controls the capacity of the adaptation: higher r = more trainable parameters = more expressive adaptations, but higher memory cost. Common values: 8, 16, 32, 64."
+    },
+    {
+      "id": "f4",
+      "front": "Adapter (in PEFT)",
+      "back": "A small trainable module added to a frozen base model. In LoRA, adapters are pairs of low-rank matrices added to attention projections. Adapters can be saved separately from base weights and swapped at inference time."
+    },
+    {
+      "id": "f5",
+      "front": "QLoRA",
+      "back": "Quantized LoRA (Dettmers et al., 2023). Combines 4-bit NF4 quantization of the base model with LoRA adapters for fine-tuning. Enables fine-tuning 65B models on a single 48GB GPU by reducing base model memory ~4x."
+    },
+    {
+      "id": "f6",
+      "front": "NF4 (NormalFloat4) quantization",
+      "back": "An information-theoretically optimal 4-bit quantization format for normally-distributed values. Allocates quantization bins according to the normal distribution's quantiles, minimizing information loss compared to standard INT4."
+    },
+    {
+      "id": "f7",
+      "front": "PEFT library",
+      "back": "Hugging Face's Parameter-Efficient Fine-Tuning library. Provides implementations of LoRA, prefix tuning, prompt tuning, and other PEFT methods. Key API: `LoraConfig`, `get_peft_model()`, and `PeftModel.from_pretrained()`."
+    },
+    {
+      "id": "f8",
+      "front": "bitsandbytes",
+      "back": "A Python library by Tim Dettmers enabling 8-bit and 4-bit quantization of PyTorch models. Powers QLoRA's NF4 quantization via `BitsAndBytesConfig`. Required for QLoRA training with Hugging Face Transformers."
+    },
+    {
+      "id": "f9",
+      "front": "LoRA merge (merge_and_unload)",
+      "back": "The operation of adding LoRA adapter weights (B×A) directly into the base model's weight matrices (W' = W₀ + ΔW). Produces a standard model with no separate adapter, eliminating inference overhead while preserving fine-tuned behavior."
+    }
+  ],
+  "videos": [
+    {
+      "title": "LoRA Explained — Fine-tuning Large Language Models Efficiently",
+      "youtube_id": "dA-NhCtrrVE",
+      "description": "A clear walkthrough of the LoRA paper, explaining the math behind low-rank adaptation and why it reduces memory requirements so dramatically."
+    },
+    {
+      "title": "QLoRA: Fine-tuning Large Language Models on Consumer Hardware",
+      "youtube_id": "VPRSBzXzavo",
+      "description": "Covers QLoRA's innovations — NF4 quantization, double quantization, and paged optimizers — with a practical tutorial on running QLoRA training."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

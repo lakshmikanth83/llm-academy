@@ -1,0 +1,158 @@
+{
+  "id": "topic_25",
+  "level": 4,
+  "level_name": "Using LLMs: APIs & the Tool Landscape",
+  "order": 5,
+  "title": "Enterprise Platforms: Azure AI, AWS Bedrock, Google Vertex, Databricks",
+  "emoji": "☁️",
+  "duration_minutes": 20,
+  "eli8": "# The AI for Big Companies 🏢\n\nImagine you work at a huge company with thousands of employees and very sensitive customer data — like a hospital or a bank. You want to use AI to help your team work faster. But you can't just sign up on a website and start typing in patient records!\n\nYou need something **super secure, reliable, and trusted by lawyers**. That's where **enterprise AI platforms** come in!\n\n## The Big Cloud Providers 🌩️\n\n- 🔵 **Azure AI (Microsoft)** — If your company already uses Microsoft Word, Excel, and Teams, Azure feels right at home. It hosts AI models in Microsoft's own data centers, so your data stays private. It follows all the European privacy rules (GDPR).\n\n- 🟠 **AWS Bedrock (Amazon)** — Amazon's version. You can access Claude (Anthropic's AI), Llama (Meta's AI), and others all in one place, paying only for what you use. It works perfectly with all other Amazon cloud services.\n\n- 🔴 **Google Vertex AI** — Google's platform. Great if you already use Google Workspace (Docs, Sheets). Includes not just chatting but also training your own AI models.\n\n- 🟤 **Databricks** — Super popular with data science teams. It's where companies keep their data AND run AI on it, all in one place.\n\n## Why Companies Need These 🔒\n\nBig companies care about things normal users don't:\n\n- 🙅 **\"Our data must NOT be used to train the AI\"** — Enterprise platforms guarantee this\n- 🏥 **Compliance** — Laws like HIPAA (healthcare) and SOC2 (security) must be followed\n- 📋 **Audit logs** — Every AI call is recorded: who asked what, when\n- 🔐 **Private networks** — AI never goes through the public internet\n\nIt's like the difference between a public bus 🚌 and a private company shuttle 🚐 — same destination, but the shuttle is safer, more reliable, and only for your company!",
+  "detail": "## Why Enterprise AI Platforms Exist\n\nThe public APIs from Anthropic, OpenAI, and Google are excellent for developers and startups but fall short of enterprise requirements in five key dimensions: **data privacy, compliance, reliability, integration, and governance**. Enterprise platforms solve these by hosting the same models in environments with contractual guarantees.\n\n## Azure AI / Azure OpenAI Service\n\n**Azure OpenAI Service** provides GPT-4, GPT-4o, and embedding models hosted in Microsoft's Azure regions. **Azure AI Studio** is the broader platform including fine-tuning, model evaluation, and deployment.\n\n**Key enterprise features:**\n- **No training on your data:** Microsoft contractually guarantees that data sent to Azure OpenAI is not used to train or improve models\n- **Data residency:** Choose which Azure region processes and stores data (EU, US, Asia)\n- **Private endpoints:** Traffic stays within the customer's Azure Virtual Network and never traverses the public internet\n- **GDPR, HIPAA, SOC2 compliance:** Pre-negotiated data processing agreements\n- **Microsoft Purview integration:** Governance and data lineage tracking\n\n**Pricing:** Per-token, same model costs as OpenAI API but with enterprise SLAs and compliance guarantees.\n\n## AWS Bedrock\n\nAWS Bedrock is Amazon's managed inference service — a single API that provides access to models from Anthropic (Claude), Meta (Llama 3), Amazon (Titan), Mistral, Cohere, and others. You pay per token and never manage GPU infrastructure.\n\n**Key enterprise features:**\n- **Model choice:** Access frontier closed-source models alongside open-weight models through a single consistent API\n- **VPC integration:** Private endpoints via AWS PrivateLink — no public internet\n- **AWS IAM:** Fine-grained access control; different teams get different model access\n- **AWS CloudTrail:** Full audit log of every inference call — who called what model, when, with what inputs\n- **Bedrock Guardrails:** Configurable content filters applied at the platform level\n- **Knowledge Bases and Agents:** Managed RAG and agentic features\n\n**Bedrock is the dominant choice** for organizations already on AWS — it integrates naturally with S3, Lambda, SageMaker, and the rest of the AWS ecosystem.\n\n## Google Vertex AI\n\nVertex AI is Google Cloud's unified ML platform that hosts Gemini models alongside tools for training, deploying, and monitoring ML models.\n\n**Key features:**\n- **Gemini and PaLM 2 access:** Including Gemini 1.5 Pro with 1M context\n- **Model Garden:** Curated catalog of models including open-source (Llama, Mistral)\n- **AutoML:** Train custom models without writing model code\n- **Grounding with Google Search:** Responses backed by real-time Google Search results\n- **Google Workspace integration:** Directly connected to Docs, Sheets, Gmail via Duet AI\n- **MLOps tooling:** Feature Store, Model Registry, Pipeline orchestration, monitoring\n- **Data residency and VPC Service Controls:** Data stays within defined perimeters\n\nVertex AI is the natural choice for organizations already in Google Cloud or heavy Google Workspace users.\n\n## Databricks\n\nDatabricks is a unified data and AI platform originally built on Apache Spark. It is where large enterprises store, process, and govern their data — and it has become a major AI platform.\n\n**Key features:**\n- **Mosaic AI / LLM fine-tuning:** Fine-tune models (including Llama 3) on your own proprietary data using your Databricks cluster\n- **MLflow:** Open-source experiment tracking, model registry, and deployment — the de facto standard for ML lifecycle management\n- **Unity Catalog:** Governance layer for data AND AI models — track lineage, access control, and audit for both datasets and ML artifacts\n- **Model Serving:** Deploy fine-tuned or open-source models as low-latency APIs within your Databricks workspace\n- **Delta Lake integration:** Query structured enterprise data directly in AI pipelines\n\nDatabricks is the preferred platform for teams that need to **fine-tune LLMs on proprietary data** while maintaining data governance.\n\n## Key Enterprise Concerns Compared\n\n| Concern | Azure AI | AWS Bedrock | Google Vertex | Databricks |\n|---|---|---|---|---|\n| Data privacy guarantee | Yes | Yes | Yes | Yes |\n| Private network endpoint | VNet integration | PrivateLink | VPC Service Controls | Yes |\n| Compliance certs | GDPR, HIPAA, SOC2 | HIPAA, SOC2, FedRAMP | HIPAA, SOC2 | SOC2 |\n| Model fine-tuning | Limited | Limited | Vertex AutoML | Full (MLflow) |\n| Best for | Microsoft shops | AWS shops | Google/GCP shops | Data teams |\n\n## SLA and Uptime Guarantees\n\nEnterprise platforms include **Service Level Agreements (SLAs)** guaranteeing uptime (typically 99.9%), response latency tiers, and support response times. Public APIs offer no uptime guarantees — a critical difference for production systems.\n\n## Cost: Managed vs Self-Hosted\n\n**Managed inference (Bedrock, Vertex, Azure):**\n- No GPU infrastructure to manage\n- Higher per-token cost\n- Scales to zero automatically\n\n**Self-hosted (e.g., Llama 3 on EC2 / Databricks):**\n- Lower per-token cost at scale\n- Requires GPU provisioning, model serving, scaling, and maintenance\n- Full data control\n- Optimal for high-volume workloads where GPU utilization stays high",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "A healthcare company wants to use Claude to analyze patient records. Which of the following is the most important requirement they must verify?",
+      "options": [
+        "That the model supports the Python programming language",
+        "That the platform has HIPAA compliance and guarantees patient data is not used for model training",
+        "That the model can process images as well as text",
+        "That the platform supports the latest Llama model version"
+      ],
+      "correct": 1,
+      "explanation": "Healthcare data is regulated by HIPAA, which requires strict controls on who can access patient data and how it's processed. The platform must be HIPAA-compliant and contractually guarantee that data sent for inference is never used to train or improve models. This is a legal requirement, not a preference."
+    },
+    {
+      "id": "q2",
+      "question": "What is a private endpoint in the context of enterprise AI platforms?",
+      "options": [
+        "A model that only one company is allowed to use",
+        "A network connection that routes API traffic within a private virtual network, never over the public internet",
+        "An API key that never expires",
+        "A model with extra safety filters enabled"
+      ],
+      "correct": 1,
+      "explanation": "A private endpoint (e.g., AWS PrivateLink, Azure Private Link) routes API traffic from your application to the AI service through a private network connection within your cloud VPC. The data never traverses the public internet, dramatically reducing exposure to interception and meeting the network isolation requirements of many compliance frameworks."
+    },
+    {
+      "id": "q3",
+      "question": "Which cloud platform is AWS Bedrock most tightly integrated with for storage and event-driven workflows?",
+      "options": [
+        "Google Cloud Storage and Cloud Functions",
+        "Microsoft Azure Blob Storage and Logic Apps",
+        "Amazon S3, Lambda, and the broader AWS ecosystem",
+        "Databricks Delta Lake and MLflow"
+      ],
+      "correct": 2,
+      "explanation": "AWS Bedrock is Amazon's managed inference service and integrates natively with the rest of AWS — S3 for document storage, Lambda for serverless triggers, SageMaker for MLOps, CloudWatch for monitoring, and IAM for access control. Organizations already on AWS can build end-to-end AI pipelines entirely within their existing cloud environment."
+    },
+    {
+      "id": "q4",
+      "question": "What does an SLA (Service Level Agreement) guarantee that a standard public API does not?",
+      "options": [
+        "That the AI model will always give correct answers",
+        "That the API will be free of charge for enterprise customers",
+        "Contractual guarantees around uptime, latency tiers, and support response times",
+        "That the model will never require updates"
+      ],
+      "correct": 2,
+      "explanation": "SLAs are contractual commitments — typically 99.9%+ uptime, maximum latency targets, and support SLOs (e.g., P1 incidents responded to in 30 minutes). Public consumer APIs offer no such guarantees. For production systems where downtime has business consequences, an SLA is essential."
+    },
+    {
+      "id": "q5",
+      "question": "Which platform is best suited for a data science team that wants to fine-tune Llama 3 on their proprietary tabular data with full governance tracking?",
+      "options": [
+        "AWS Bedrock — it offers the widest model selection",
+        "Databricks — it combines LLM fine-tuning with MLflow tracking and Unity Catalog governance",
+        "Azure AI — it has the best Microsoft Office integration",
+        "Google Vertex AI — it has the longest context window"
+      ],
+      "correct": 1,
+      "explanation": "Databricks is purpose-built for this scenario. It combines compute for fine-tuning open-weight models (like Llama 3) on proprietary data, MLflow for experiment tracking and model registry, and Unity Catalog for data and model governance. For teams that live in the data lakehouse, it is the natural home for LLM fine-tuning."
+    },
+    {
+      "id": "q6",
+      "question": "What is model grounding with Google Search in Vertex AI?",
+      "options": [
+        "Training a model from scratch on Google's search index",
+        "Augmenting model responses with real-time Google Search results to reduce hallucinations and add current information",
+        "Limiting a model to only answer questions about Google products",
+        "Caching model responses in a search engine for faster retrieval"
+      ],
+      "correct": 1,
+      "explanation": "Grounding connects the model's response generation to real-time Google Search results. Instead of relying solely on training data, the model can retrieve and cite current information. This dramatically reduces hallucinations for factual questions and enables responses about events after the training cutoff."
+    },
+    {
+      "id": "q7",
+      "question": "When is self-hosted LLM inference (e.g., Llama 3 on your own GPUs) more cost-effective than managed services like Bedrock?",
+      "options": [
+        "Always — self-hosting is always cheaper",
+        "When GPU utilization stays consistently high and volume is large enough to amortize infrastructure costs",
+        "Only for models with fewer than 10 billion parameters",
+        "When the model needs to be updated daily"
+      ],
+      "correct": 1,
+      "explanation": "Managed services charge per token with no fixed costs, making them economical at low-to-moderate volume. Self-hosted inference has high fixed costs (GPU servers, engineering, maintenance) but lower per-token costs at scale. The crossover point depends on utilization: self-hosting wins when GPUs stay busy enough to amortize the fixed costs."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "What is Azure AI / Azure OpenAI Service?",
+      "back": "Microsoft's enterprise-grade hosted service for OpenAI models (GPT-4, embeddings) and broader AI tooling. Runs within Azure's data centers with GDPR/HIPAA compliance, private network endpoints, and contractual guarantees that customer data is never used for model training."
+    },
+    {
+      "id": "f2",
+      "front": "What is AWS Bedrock?",
+      "back": "Amazon's managed inference service providing a single API to access models from multiple providers (Anthropic Claude, Meta Llama, Amazon Titan, Mistral, Cohere). Integrates with AWS IAM, CloudTrail, PrivateLink, and the broader AWS ecosystem. Pay-per-token with no infrastructure to manage."
+    },
+    {
+      "id": "f3",
+      "front": "What is Google Vertex AI?",
+      "back": "Google Cloud's unified ML platform hosting Gemini models and a model garden of open-source alternatives. Includes AutoML, MLOps tooling, real-time Google Search grounding, Google Workspace integration, and VPC Service Controls for data isolation."
+    },
+    {
+      "id": "f4",
+      "front": "What is Databricks in the context of enterprise AI?",
+      "back": "A unified data and AI platform combining data lakehouse capabilities with LLM fine-tuning, MLflow experiment tracking, and Unity Catalog governance. Best suited for data science teams that need to fine-tune open-weight models on proprietary data within an existing data infrastructure."
+    },
+    {
+      "id": "f5",
+      "front": "What is a private endpoint (PrivateLink / VNet integration)?",
+      "back": "A network configuration that routes traffic between your application and the AI service through a private virtual network, bypassing the public internet entirely. Required for high-security workloads where data cannot traverse public networks."
+    },
+    {
+      "id": "f6",
+      "front": "What is a VPC (Virtual Private Cloud)?",
+      "back": "An isolated virtual network within a cloud provider where you define IP ranges, subnets, and routing rules. Enterprise AI deployments use VPCs to ensure AI API traffic stays within a controlled network perimeter, a key requirement for compliance frameworks like HIPAA and PCI-DSS."
+    },
+    {
+      "id": "f7",
+      "front": "What is an SLA (Service Level Agreement)?",
+      "back": "A contractual commitment from a cloud provider specifying minimum service standards: typically uptime percentage (e.g., 99.9%), maximum latency, and support response times. SLAs provide legal recourse if standards aren't met — critical for production systems. Public developer APIs usually have no SLA."
+    },
+    {
+      "id": "f8",
+      "front": "What compliance certifications do enterprise AI platforms typically hold?",
+      "back": "SOC 2 (security and availability controls), HIPAA (US healthcare data), GDPR (EU personal data), FedRAMP (US federal government), PCI-DSS (payment data), ISO 27001 (information security management). Customers should verify current certifications directly with providers as they evolve."
+    },
+    {
+      "id": "f9",
+      "front": "What is MLflow?",
+      "back": "An open-source ML lifecycle platform (created at Databricks) for tracking experiments, packaging models, managing a model registry, and deploying models to serving infrastructure. It is the de facto standard for ML experiment tracking and is deeply integrated into Databricks' LLM fine-tuning workflows."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Cloud AI Platforms: Azure, AWS, Google Vertex Explained",
+      "youtube_id": "YCVbKlVzVAI",
+      "description": "Overview of the major cloud AI platforms — Azure AI, AWS Bedrock, and Google Vertex AI — covering key features, enterprise capabilities, pricing models, and when to choose each."
+    },
+    {
+      "title": "Enterprise AI Deployment and LLM Infrastructure",
+      "youtube_id": "VPRSBzXzavo",
+      "description": "Deep dive into enterprise AI deployment considerations: private endpoints, compliance requirements, cost comparison of managed vs self-hosted inference, and platform selection criteria."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

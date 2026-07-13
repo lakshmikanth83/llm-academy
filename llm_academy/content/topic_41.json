@@ -1,0 +1,153 @@
+{
+  "id": "topic_41",
+  "level": 7,
+  "level_name": "Evaluation & Testing",
+  "order": 1,
+  "title": "Hallucinations",
+  "emoji": "👻",
+  "duration_minutes": 20,
+  "eli8": "## When AI Makes Stuff Up 👻\n\nImagine you ask your friend what happened in history class yesterday because you were sick. But your friend wasn't paying attention either — so instead of saying \"I don't know,\" they just **make up a really convincing answer**. They say it with total confidence, all the details sound right, but none of it actually happened. That's exactly what AI hallucination is!\n\n## The Confident Liar Problem 🎭\n\nAI language models are trained to produce text that *sounds* correct and fluent. But they don't actually \"know\" things the way you know that 2+2=4. They're really good at pattern-matching — and sometimes those patterns lead them to confidently generate complete fiction:\n\n- 🗓️ **Fake dates and events**: \"The Battle of Springfield was fought on March 3, 1742\" — sounds specific, completely invented\n- 📚 **Fake books and papers**: AI might cite a scientific paper that was never written, with a real-sounding author name and journal\n- 🔢 **Wrong math**: Ask it to add up a restaurant bill and it might give a confident but totally wrong answer\n- 🧠 **Fake reasoning**: It might explain *why* something is true using logic that looks right but has hidden errors\n\n## Why Does This Happen? 🤔\n\nAI models learn by reading billions of sentences. They get really good at predicting \"what word should come next.\" But there's no built-in **fact-checker** inside the model. It doesn't say to itself, \"Wait, let me verify this is true before I say it.\"\n\nThink of it like a student who studied by reading lots of textbooks, but during the exam they can't look anything up. For topics they studied well, they do great. For rare or obscure topics — they might start guessing and not even realize they're wrong.\n\n**The scariest part?** Hallucinations often sound MORE confident and detailed than correct answers. The AI doesn't know what it doesn't know!\n\n## How Do We Fix It? 🛠️\n\n- 🔍 **RAG (Retrieval)**: Give the AI real documents to look at before answering — like letting the student use notes\n- ✅ **Verification**: Have a separate checker review the AI's claims\n- 🤔 **Chain-of-thought**: Make the AI show its work step by step, which catches logical errors\n- 📊 **Benchmarks**: Use special tests like TruthfulQA to measure how often an AI hallucinates\n\nHallucination is one of AI's biggest challenges today — researchers are working hard to make models that know when to say \"I'm not sure\" instead of making things up!",
+  "detail": "## Hallucinations in LLMs\n\nHallucination refers to the phenomenon where a language model generates content that is factually incorrect, unsupported, or entirely fabricated — yet presents it with apparent confidence. It is one of the most critical reliability challenges in deploying LLM-based systems.\n\n### Types of Hallucinations\n\n**Factual hallucinations** occur when the model asserts incorrect facts about the world. These range from minor errors (wrong dates, misattributed quotes) to major fabrications (events that never happened, people who don't exist).\n\n**Source hallucinations** involve the model inventing citations — papers, books, URLs, or expert quotes that sound plausible but do not exist. This is particularly dangerous in academic, legal, and medical contexts.\n\n**Numerical hallucinations** arise in calculations, statistics, and quantitative reasoning. LLMs are not calculators; they predict tokens, and the statistically likely digit is not necessarily the mathematically correct one.\n\n**Reasoning hallucinations** are logical errors dressed as valid deductions. The model may produce a chain of reasoning that appears valid but contains subtle fallacies or unjustified leaps.\n\n**Faithfulness hallucinations** (distinct from factual) occur in summarization or RAG: the model's output contradicts or goes beyond the provided source material, even when accurate context was supplied.\n\n### Root Causes\n\n- **Training data gaps**: Models have uneven knowledge. Common topics have dense coverage; rare or specialized topics have sparse signals, increasing the chance of interpolation errors.\n- **No ground-truth verification**: Autoregressive generation picks the most probable next token — there's no internal oracle to verify claims against a knowledge base.\n- **Overconfidence in generation**: RLHF training sometimes rewards confident, fluent responses over appropriately hedged ones, inadvertently reinforcing assertive hallucinations.\n- **Knowledge cutoff**: Events after the training cutoff are unknown; models may confabulate rather than acknowledge ignorance.\n\n### Measured Hallucination Rates\n\nStudies on TruthfulQA show that even frontier models hallucinate on a non-trivial fraction of questions. GPT-4 achieves roughly 59% truthfulness on TruthfulQA's adversarial questions — meaning ~41% contain some falsehood. On obscure or highly specific queries, rates climb significantly higher.\n\n### Mitigation Strategies\n\n**Retrieval-Augmented Generation (RAG)**: Ground model responses in retrieved documents. The model is instructed to answer only from provided context, reducing reliance on parametric memory.\n\n```python\n# Simplified RAG grounding instruction\nsystem_prompt = \"\"\"\nAnswer ONLY based on the provided context.\nIf the context does not contain the answer, say \"I don't have enough information.\"\nDo not use your general knowledge.\n\"\"\"\n```\n\n**Chain-of-Thought (CoT) prompting**: Requiring step-by-step reasoning surfaces intermediate errors that might otherwise be hidden in a direct answer.\n\n**Self-consistency**: Sample multiple responses and select the answer that appears most frequently across samples. Reduces variance from any single generation.\n\n**Confidence calibration**: Train models to express uncertainty. A well-calibrated model says \"I'm not certain\" on questions where it is likely wrong.\n\n**Chain-of-Verification (CoVe)**: After generating a response, the model generates verification questions about its own claims, answers them independently, and revises if inconsistencies are found.\n\n### Evaluation Benchmarks\n\n**TruthfulQA**: 817 questions spanning 38 categories, designed so humans answer correctly but models tend to hallucinate. Measures both truthfulness (% correct) and informativeness.\n\n**FactScore**: Decomposes long-form generations into atomic facts and verifies each against a reference corpus. Gives a precision-style metric over factual claims.\n\n**FEVER**: Fact Extraction and VERification benchmark; tests whether models can classify claims as supported, refuted, or unverifiable given Wikipedia evidence.\n\n### Factuality vs. Faithfulness\n\nThese are distinct failure modes:\n- **Factuality**: Does the response agree with world knowledge?\n- **Faithfulness**: Does the response stay within what the provided context supports?\n\nA RAG system can be factually correct (the retrieved doc is accurate) but unfaithful (the model adds claims not in the doc). Both must be evaluated independently.",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "An LLM generates a response that cites a scientific paper with a plausible title, author name, and journal — but the paper does not exist. This is an example of:",
+      "options": [
+        "Factual hallucination",
+        "Source hallucination",
+        "Faithfulness hallucination",
+        "Numerical hallucination"
+      ],
+      "correct": 1,
+      "explanation": "Source hallucinations specifically involve fabricated citations, references, or attributions. The model generates a reference that sounds credible but has no real-world counterpart."
+    },
+    {
+      "id": "q2",
+      "question": "Which mitigation strategy involves instructing the model to generate verification questions about its own claims and then checking them independently?",
+      "options": [
+        "Retrieval-Augmented Generation",
+        "Self-consistency sampling",
+        "Chain-of-Verification (CoVe)",
+        "Confidence calibration"
+      ],
+      "correct": 2,
+      "explanation": "Chain-of-Verification (CoVe) is a multi-step approach where the model drafts a response, generates factual verification questions about that response, answers them independently, and revises if contradictions are found."
+    },
+    {
+      "id": "q3",
+      "question": "What is the primary difference between a faithfulness hallucination and a factual hallucination?",
+      "options": [
+        "Faithfulness refers to math errors; factual refers to date errors",
+        "Faithfulness measures agreement with provided context; factual measures agreement with world knowledge",
+        "Factual hallucinations only occur in RAG systems",
+        "Faithfulness hallucinations are always more severe"
+      ],
+      "correct": 1,
+      "explanation": "Factual hallucinations mean the model contradicts real-world facts. Faithfulness hallucinations mean the model contradicts or goes beyond the specific context provided to it — even if that context is itself accurate."
+    },
+    {
+      "id": "q4",
+      "question": "TruthfulQA is specifically designed so that:",
+      "options": [
+        "Models always answer correctly on well-known facts",
+        "The questions are easy for humans but models tend to hallucinate on them",
+        "It covers only scientific and medical topics",
+        "It tests code generation accuracy"
+      ],
+      "correct": 1,
+      "explanation": "TruthfulQA questions are adversarially designed around common misconceptions and patterns that cause models to generate plausible-sounding but false answers — the same questions humans answer correctly more reliably."
+    },
+    {
+      "id": "q5",
+      "question": "Why might RLHF training inadvertently worsen hallucination?",
+      "options": [
+        "RLHF removes all factual knowledge from the model",
+        "Human raters may prefer confident, fluent responses even when they contain errors",
+        "RLHF is only trained on code data",
+        "RLHF eliminates the model's ability to cite sources"
+      ],
+      "correct": 1,
+      "explanation": "Human raters evaluating response quality can be fooled by confident, well-written answers. If they rate confident-but-wrong responses highly, the model learns to be more assertive, inadvertently reinforcing hallucination behavior."
+    },
+    {
+      "id": "q6",
+      "question": "FactScore evaluates factuality by:",
+      "options": [
+        "Asking a separate LLM to rate the response on a 1-10 scale",
+        "Decomposing generated text into atomic facts and verifying each against a reference corpus",
+        "Comparing responses to a golden answer with exact string matching",
+        "Running the response through a plagiarism detector"
+      ],
+      "correct": 1,
+      "explanation": "FactScore breaks long-form generations into individual atomic claims (e.g., 'Einstein was born in 1879'), then verifies each one independently against a reference source like Wikipedia, producing a precision-style factuality score."
+    },
+    {
+      "id": "q7",
+      "question": "In a RAG system, if the model adds accurate information from its training data that was not in the retrieved documents, this is best described as:",
+      "options": [
+        "A factual hallucination",
+        "A numerical hallucination",
+        "A faithfulness hallucination",
+        "Not a hallucination — it is helpful behavior"
+      ],
+      "correct": 2,
+      "explanation": "Even if the added information happens to be factually correct, going beyond the provided context in a RAG system is a faithfulness failure. The system is supposed to answer from context, and adding external claims undermines trust and verifiability."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Hallucination (in LLMs)",
+      "back": "When a language model generates content that is factually incorrect, fabricated, or unsupported by evidence, presented with apparent confidence. Named by analogy to perceptual hallucinations — the model 'perceives' things that aren't there."
+    },
+    {
+      "id": "f2",
+      "front": "Factual hallucination",
+      "back": "A hallucination where the model asserts incorrect facts about the world — wrong dates, misattributed quotes, invented events, or false statistics. The model's output contradicts real-world ground truth."
+    },
+    {
+      "id": "f3",
+      "front": "Faithfulness (in RAG/summarization)",
+      "back": "The property that a model's output is fully supported by the provided source material. A faithful response makes no claims that go beyond or contradict the given context. Distinct from factual accuracy."
+    },
+    {
+      "id": "f4",
+      "front": "TruthfulQA",
+      "back": "A benchmark of 817 adversarially designed questions spanning 38 categories, crafted to probe common misconceptions. Measures the percentage of model answers that are both truthful and informative. Humans score ~94%; early LLMs scored ~20-30%."
+    },
+    {
+      "id": "f5",
+      "front": "FactScore",
+      "back": "An evaluation metric that decomposes long-form text into atomic factual claims and verifies each against a reference corpus (e.g., Wikipedia). Returns a precision-like score representing the fraction of claims that are supported."
+    },
+    {
+      "id": "f6",
+      "front": "Chain-of-Verification (CoVe)",
+      "back": "A hallucination mitigation technique where the model: (1) generates a draft response, (2) formulates verification questions about its own claims, (3) answers those questions independently, and (4) revises the original response to fix inconsistencies."
+    },
+    {
+      "id": "f7",
+      "front": "Grounding",
+      "back": "The practice of anchoring model outputs to verifiable source material — retrieved documents, structured databases, or tool outputs — rather than relying solely on parametric (training) memory. The primary defense against hallucination in production systems."
+    },
+    {
+      "id": "f8",
+      "front": "Source hallucination",
+      "back": "A specific type of hallucination where the model fabricates citations, references, book titles, paper authors, or URLs that do not exist. Particularly dangerous in academic, legal, and medical applications."
+    }
+  ],
+  "videos": [
+    {
+      "title": "AI Hallucinations Explained",
+      "youtube_id": "uPx9RLyxiMo",
+      "description": "A clear overview of why LLMs hallucinate, with examples of different hallucination types and their impact on real-world AI deployments."
+    },
+    {
+      "title": "Reducing Hallucinations in LLMs",
+      "youtube_id": "VPRSBzXzavo",
+      "description": "Practical techniques for mitigating hallucinations including RAG, chain-of-thought prompting, and verification strategies."
+    }
+  ],
+  "has_practical": false,
+  "practical_description": ""
+}

@@ -1,0 +1,158 @@
+{
+  "id": "topic_55",
+  "level": 9,
+  "level_name": "Fine-tuning, SLMs & Local Models",
+  "order": 5,
+  "title": "Running Models Locally: Ollama & vLLM",
+  "emoji": "🖥️",
+  "duration_minutes": 20,
+  "eli8": "# Your Own Private AI, Right on Your Computer! 🏠\n\nDid you know you can run powerful AI models **completely on your own computer**? No internet needed, no account required, totally free and completely private!\n\n## 🦙 Ollama — Easy Button for Local AI\n\nOllama makes running AI as easy as running a game:\n\n```bash\n# Download and run Llama 3 — literally this simple:\nollama run llama3\n```\n\nThat's it! After a quick download, you get a chat interface right in your terminal. No API key. No subscription. No data leaving your machine. 🔒\n\n**What you can do with Ollama:**\n- 📥 `ollama pull llama3` — download a model\n- 🏃 `ollama run phi3` — run and chat with a model\n- 📋 `ollama list` — see all your downloaded models\n- 🔌 Use it like a regular API — works with apps built for ChatGPT!\n\n**What you need:**\n- At least **8GB of RAM** for a 7B model at 4-bit\n- A computer made in the last 5-10 years\n- About 4GB of free disk space per model\n\n## 🚀 vLLM — When You Need Speed\n\nOllama is great for one person. But what if **thousands** of people need to use your AI at the same time?\n\nvLLM is like Ollama but designed for production — the kind of servers that handle millions of requests a day:\n\n- Handles many users at once using a clever trick called **PagedAttention**\n- Serves requests 2-24x faster than basic methods\n- Used by big companies running their own AI services\n- Needs a proper GPU (not just your laptop)\n\n## 🖱️ LM Studio — GUI for the Win\n\nIf you prefer buttons over typing commands, LM Studio gives you a beautiful desktop app:\n- Browse and download models visually\n- Chat in a nice interface\n- No terminal required!\n\n## 🔐 Why Run Locally?\n\n- **Privacy**: Your questions never leave your machine\n- **Cost**: Free after setup — no API bills\n- **Control**: No rate limits, no downtime, works offline\n- **Fun**: It's really cool to run AI on your own hardware! ✨",
+  "detail": "# Running Models Locally: Ollama & vLLM\n\n## Ollama: Developer-Friendly Local Inference\n\nOllama packages llama.cpp into an easy-to-use tool with a model library, CLI, and REST API. It handles model downloading, quantization selection, and serving automatically.\n\n### Installation and Core Commands\n\n```bash\n# Install (macOS/Linux)\ncurl -fsSL https://ollama.com/install.sh | sh\n\n# Core commands\nollama pull llama3.2:3b          # Download a model\nollama run llama3.2:3b           # Interactive chat\nollama run llama3.2:3b \"Tell me about transformers\"  # Single query\nollama list                       # List downloaded models\nollama ps                         # Show running models\nollama stop llama3.2:3b          # Stop a running model\nollama rm llama3.2:3b            # Delete a model\n```\n\n### REST API (OpenAI-Compatible)\n\nOllama serves an OpenAI-compatible API at `http://localhost:11434`:\n\n```bash\n# Chat completion\ncurl http://localhost:11434/v1/chat/completions \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"model\": \"llama3.2:3b\",\n    \"messages\": [{\"role\": \"user\", \"content\": \"Explain quantization in one sentence\"}]\n  }'\n```\n\n```python\n# Using the OpenAI Python client — just change the base_url\nfrom openai import OpenAI\n\nclient = OpenAI(\n    base_url=\"http://localhost:11434/v1\",\n    api_key=\"ollama\"  # Required but ignored\n)\n\nresponse = client.chat.completions.create(\n    model=\"llama3.2:3b\",\n    messages=[{\"role\": \"user\", \"content\": \"What is LoRA?\"}]\n)\nprint(response.choices[0].message.content)\n```\n\n### Modelfile: Custom Model Configuration\n\nModelfiles let you customize system prompts, temperature, and parameters:\n\n```dockerfile\n# Modelfile\nFROM llama3.2:3b\n\nSYSTEM \"\"\"\nYou are a helpful Python tutor. Always include working code examples.\nRespond in a friendly, encouraging tone.\n\"\"\"\n\nPARAMETER temperature 0.7\nPARAMETER num_ctx 4096\nPARAMETER stop \"<|eot_id|>\"\n```\n\n```bash\nollama create python-tutor -f Modelfile\nollama run python-tutor\n```\n\n### Supported Models in Ollama\n\n| Model | Size | Best For |\n|-------|------|----------|\n| llama3.2:1b | 1.3GB | Ultra-fast, limited tasks |\n| llama3.2:3b | 2.0GB | Good balance |\n| phi3:mini | 2.2GB | Strong reasoning for size |\n| mistral:7b | 4.1GB | Strong general performance |\n| codellama:7b | 3.8GB | Code generation |\n| gemma2:2b | 1.6GB | Google's efficient model |\n\n### Hardware Requirements\n\n```\nModel Size | Min RAM  | Recommended VRAM\n1B (4-bit) | 4GB RAM  | 2GB VRAM\n3B (4-bit) | 6GB RAM  | 3GB VRAM\n7B (4-bit) | 8GB RAM  | 5GB VRAM\n13B (4-bit)| 16GB RAM | 8GB VRAM\n```\n\nOn Apple Silicon (M1/M2/M3/M4), unified memory is used — 16GB Mac can comfortably run 7B models. On Windows/Linux, a GPU with adequate VRAM runs faster; CPU-only is slower but works.\n\n## vLLM: Production-Grade Serving\n\nvLLM is an open-source LLM serving library optimized for high throughput and low latency in production environments.\n\n### PagedAttention\n\nvLLM's key innovation is **PagedAttention** (Kwon et al., 2023): it manages the KV cache using virtual memory and paging, similar to OS virtual memory management.\n\n**Why this matters:**\n- Traditional serving pre-allocates KV cache memory per request → wasted when sequences are shorter than max\n- PagedAttention stores KV cache in non-contiguous \"pages\" that are allocated on demand\n- Pages from finished requests are immediately available for new ones\n- Result: 2–24x higher throughput vs HuggingFace text-generation-inference on the same hardware\n\n### vLLM Setup\n\n```bash\npip install vllm\n\n# Start OpenAI-compatible server\npython -m vllm.entrypoints.openai.api_server \\\n  --model meta-llama/Llama-3.2-3B-Instruct \\\n  --port 8000 \\\n  --quantization awq          # Optional: load AWQ-quantized model\n  --max-model-len 4096\n```\n\n```python\n# Same OpenAI client, different base_url\nfrom openai import OpenAI\nclient = OpenAI(base_url=\"http://localhost:8000/v1\", api_key=\"token\")\n```\n\n### Docker Deployment\n\n```bash\ndocker run --gpus all \\\n  -v ~/.cache/huggingface:/root/.cache/huggingface \\\n  -p 8000:8000 \\\n  vllm/vllm-openai:latest \\\n  --model meta-llama/Llama-3.1-8B-Instruct\n```\n\n## Comparison: Ollama vs vLLM\n\n| Dimension | Ollama | vLLM |\n|-----------|--------|------|\n| Target use | Local dev, single user | Production, multi-user |\n| Hardware | CPU + consumer GPU | GPU required (A10, A100, etc.) |\n| Throughput | ~5–20 tok/s | ~200–2000 tok/s |\n| API compatibility | OpenAI compatible | OpenAI compatible |\n| Setup difficulty | One-command install | Requires Python env / Docker |\n| Quantization | GGUF (auto) | AWQ, GPTQ, bitsandbytes |\n| Concurrency | Sequential (1 request) | Batched (many simultaneous) |\n| Best for | Prototyping, privacy, offline | API services, team deployments |\n\n## LM Studio\n\nLM Studio is a desktop GUI application for local model inference:\n- Visual model browser and downloader (pulls from Hugging Face)\n- Chat interface with conversation history\n- Local server with OpenAI-compatible API\n- Supports GGUF models, automatic hardware detection\n- Available for macOS, Windows, Linux\n- Best choice for non-developers and demos\n\n## Privacy and Data Residency\n\nKey advantage of local inference: **zero data egress**. For:\n- Healthcare: HIPAA-sensitive patient data never leaves the network\n- Legal: Client-privileged documents processed locally\n- Finance: Proprietary trading data stays in-house\n- Personal: Private conversations, journals, personal documents\n\nThis is the primary driver for local model adoption in enterprise settings, where regulatory compliance makes cloud API usage complex.",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "Which Ollama command downloads a model without starting an interactive session?",
+      "options": [
+        "ollama fetch llama3",
+        "ollama pull llama3",
+        "ollama download llama3",
+        "ollama get llama3"
+      ],
+      "correct": 1,
+      "explanation": "`ollama pull <model>` downloads a model to your local machine without starting it. `ollama run <model>` downloads if needed AND starts an interactive chat session."
+    },
+    {
+      "id": "q2",
+      "question": "PagedAttention in vLLM improves throughput primarily by:",
+      "options": [
+        "Using INT4 quantization automatically for all models",
+        "Running multiple model replicas in parallel across GPUs",
+        "Managing the KV cache with virtual memory paging — storing cache in non-contiguous blocks allocated on demand, eliminating pre-allocation waste and enabling larger effective batch sizes",
+        "Caching identical prompts across different users"
+      ],
+      "correct": 2,
+      "explanation": "Traditional serving pre-allocates maximum KV cache per request, wasting memory when sequences end early. PagedAttention uses OS-style virtual paging: cache is allocated page-by-page as sequences grow, and freed immediately when sequences end — enabling far larger effective batch sizes and 2–24x higher throughput."
+    },
+    {
+      "id": "q3",
+      "question": "A developer wants to use Ollama with an existing application built for the OpenAI API. What needs to change?",
+      "options": [
+        "The entire application must be rewritten for Ollama's custom SDK",
+        "Only the `base_url` needs to be updated to `http://localhost:11434/v1` — Ollama is OpenAI-compatible",
+        "The application must be converted from Python to Go",
+        "A special authentication token must be obtained from Ollama's website"
+      ],
+      "correct": 1,
+      "explanation": "Ollama exposes an OpenAI-compatible REST API. Any application using the OpenAI client just needs `base_url='http://localhost:11434/v1'` and a placeholder API key — all OpenAI SDK calls work without other code changes."
+    },
+    {
+      "id": "q4",
+      "question": "For a startup deploying an internal AI assistant for 50 concurrent employees, which tool is the better fit?",
+      "options": [
+        "Ollama — it's free and easy to set up",
+        "LM Studio — the GUI makes it accessible to non-technical staff",
+        "vLLM — it handles concurrent requests with high throughput via batching, unlike Ollama which processes one request at a time",
+        "llama.cpp directly — maximum control"
+      ],
+      "correct": 2,
+      "explanation": "Ollama processes requests sequentially (one at a time). For 50 concurrent users, this creates a queue and high latency. vLLM's continuous batching and PagedAttention are designed exactly for this scenario — handling many simultaneous requests efficiently."
+    },
+    {
+      "id": "q5",
+      "question": "What is an Ollama Modelfile used for?",
+      "options": [
+        "Defining the model architecture and weight initialization for training",
+        "Specifying a GGUF download URL for offline installation",
+        "Customizing a model with a persistent system prompt, temperature, context length, and stop tokens — creating a named custom model variant",
+        "Configuring GPU memory allocation for vLLM"
+      ],
+      "correct": 2,
+      "explanation": "A Modelfile is Ollama's configuration format (similar to a Dockerfile). It specifies the base model (`FROM`), system prompt (`SYSTEM`), and parameters (temperature, context length, stop sequences). Running `ollama create <name> -f Modelfile` creates a named custom model variant."
+    },
+    {
+      "id": "q6",
+      "question": "On an Apple M2 Mac with 16GB unified memory, which model can realistically run in Ollama?",
+      "options": [
+        "Only models up to 1B parameters",
+        "A 7B model at 4-bit quantization (~4GB) — well within the 16GB unified memory budget, with room for the OS and other applications",
+        "70B models at full FP16 precision",
+        "Only cloud-based models accessed via API"
+      ],
+      "correct": 1,
+      "explanation": "Apple Silicon uses unified memory (shared between CPU and GPU), so the full 16GB is available for model inference. A 7B model at 4-bit GGUF requires ~4–5GB, leaving ~10GB for macOS and other apps. This runs well with Ollama or LM Studio."
+    },
+    {
+      "id": "q7",
+      "question": "A healthcare company wants to use LLMs to analyze patient records. The primary reason to use local inference instead of a cloud API is:",
+      "options": [
+        "Local models are always more accurate than API models for medical text",
+        "Cloud API providers don't support healthcare use cases",
+        "Patient data is HIPAA-sensitive — sending it to external cloud APIs creates regulatory and privacy risks; local inference ensures data never leaves the controlled network",
+        "Cloud APIs cannot handle medical terminology"
+      ],
+      "correct": 2,
+      "explanation": "Healthcare data is protected under HIPAA and equivalent regulations in other jurisdictions. Sending patient records to external cloud APIs requires Business Associate Agreements and creates data egress risks. Local inference keeps data within the organization's controlled environment, satisfying compliance requirements."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Ollama",
+      "back": "An open-source tool that packages llama.cpp into a simple CLI and REST API for local LLM inference. Provides a model library, one-command downloads, OpenAI-compatible API at localhost:11434, and Modelfile customization. Best for local development and privacy-sensitive single-user scenarios."
+    },
+    {
+      "id": "f2",
+      "front": "vLLM",
+      "back": "An open-source production LLM serving library with OpenAI-compatible API. Uses PagedAttention for 2–24x higher throughput than naive implementations. Designed for concurrent multi-user deployments on GPU hardware. Supports AWQ, GPTQ, and bitsandbytes quantization."
+    },
+    {
+      "id": "f3",
+      "front": "PagedAttention",
+      "back": "vLLM's core innovation (Kwon et al., 2023). Manages the KV cache using virtual memory paging — storing key/value tensors in non-contiguous blocks allocated on demand. Eliminates pre-allocation waste, enables larger effective batch sizes, and achieves 2–24x throughput improvement."
+    },
+    {
+      "id": "f4",
+      "front": "GGUF (in local inference context)",
+      "back": "The file format used by Ollama, llama.cpp, and LM Studio for quantized model weights. A single file contains model architecture, tokenizer, and quantized weights. Different quantization variants (Q4_K_M, Q5_K_M, etc.) are distributed as separate files."
+    },
+    {
+      "id": "f5",
+      "front": "Modelfile (Ollama)",
+      "back": "Ollama's model configuration format. Specifies base model (FROM), system prompt (SYSTEM), and runtime parameters (temperature, context length, stop sequences). Used to create named custom model variants with `ollama create <name> -f Modelfile`."
+    },
+    {
+      "id": "f6",
+      "front": "localhost:11434",
+      "back": "The default port where Ollama serves its OpenAI-compatible REST API. Applications built for the OpenAI API can point their base_url to http://localhost:11434/v1 to use locally-running Ollama models without code changes."
+    },
+    {
+      "id": "f7",
+      "front": "LM Studio",
+      "back": "A desktop GUI application for local LLM inference. Provides a visual model browser and downloader (from Hugging Face), chat interface, and local OpenAI-compatible server. Supports GGUF models with automatic hardware detection. Available for macOS, Windows, Linux."
+    },
+    {
+      "id": "f8",
+      "front": "GPU memory vs unified memory (Apple Silicon)",
+      "back": "Traditional discrete GPUs have separate VRAM (e.g., 8GB VRAM on an RTX 3070). Apple Silicon uses unified memory shared between CPU and GPU — an M2 with 16GB can use all 16GB for model inference, making it more efficient for local LLM use than a PC with 16GB RAM + 8GB VRAM."
+    },
+    {
+      "id": "f9",
+      "front": "Continuous batching (vLLM)",
+      "back": "A serving technique where new requests are inserted into a running batch as soon as sequence slots free up — rather than waiting for an entire batch to complete. Combined with PagedAttention, this keeps GPU utilization near 100% under load, maximizing throughput."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Running LLMs Locally — Ollama, LM Studio, and llama.cpp",
+      "youtube_id": "Mn_9W1nCFLo",
+      "description": "A practical guide to running large language models on your own hardware using Ollama and related tools, covering installation, model selection, and the OpenAI-compatible API."
+    },
+    {
+      "title": "vLLM — Fast LLM Serving with PagedAttention",
+      "youtube_id": "UPbi7bT5klk",
+      "description": "Introduction to vLLM's architecture, PagedAttention algorithm, and how to deploy an OpenAI-compatible local LLM API server for production use cases."
+    }
+  ],
+  "has_practical": true,
+  "practical_description": "Interactive demo showing Ollama's Python client in action: lists available local models, sends chat completion requests to localhost:11434, and streams responses — all running against a locally-served quantized model with no external API calls."
+}

@@ -1,0 +1,136 @@
+{
+  "id": "topic_12",
+  "level": 2,
+  "level_name": "How LLMs Work",
+  "order": 7,
+  "title": "Temperature & Sampling",
+  "emoji": "🌡️",
+  "duration_minutes": 15,
+  "eli8": "# The Creativity Thermostat 🌡️\n\nImagine the AI is picking the next word from a bag of options. **Temperature** controls how it picks!\n\n## Low Temperature = Careful Picker 🎯\n\nAt **temperature = 0**, the AI is like a very careful student who always picks the most common, safest answer:\n- \"The sky is...\" → Always picks **\"blue\"**\n- Great for math problems and coding!\n- Boring but correct ✓\n\n## Medium Temperature = Natural Talker 💬\n\nAt **temperature = 0.7**, the AI is like a normal person having a conversation:\n- \"The sky is...\" → Might say **\"blue\"** (60%), **\"clear\"** (25%), **\"beautiful\"** (10%), or something else (5%)\n- Sounds natural and varied!\n- Great for chatting and explaining things 😊\n\n## High Temperature = Creative Artist 🎨\n\nAt **temperature = 1.5** or **2.0**, the AI is like an artist who loves surprises:\n- \"The sky is...\" → Might say **\"weeping\"**, **\"a canvas of forgotten dreams\"**, or even **\"hungry\"**!\n- Wild and creative, but can make mistakes\n- Great for brainstorming and poetry 🎭\n\n## Other Tricks: Top-K and Top-P 🎰\n\nThe AI doesn't just have temperature — it has other knobs too:\n\n- **Top-K = 50**: \"Only choose from the 50 most likely next words!\"\n  - Like telling the AI: \"No weird words allowed!\"\n\n- **Top-P = 0.9**: \"Keep picking likely words until you've covered 90% of the probability!\"\n  - Smarter than Top-K — automatically adjusts to how sure the AI is\n\nThese controls let you tune the AI like a music mixer! 🎛️",
+  "detail": "# Temperature & Sampling\n\n## From Logits to Probabilities\n\nAt each generation step, the LLM outputs a vector of **logits** — one raw score per vocabulary token. These are converted to a probability distribution via **softmax**:\n\n```python\nimport torch\nimport torch.nn.functional as F\n\nlogits = torch.tensor([2.0, 1.5, 0.5, -1.0, 3.0])  # 5 hypothetical tokens\nprobs = F.softmax(logits, dim=-1)\n# → [0.197, 0.119, 0.044, 0.008, 0.537] (sums to 1.0)\n```\n\n## Temperature Scaling\n\nBefore applying softmax, logits are divided by temperature T:\n\n```python\ndef temperature_sample(logits, temperature=1.0):\n    if temperature == 0:\n        return logits.argmax()  # greedy decoding\n    scaled_logits = logits / temperature\n    probs = F.softmax(scaled_logits, dim=-1)\n    return torch.multinomial(probs, num_samples=1)\n```\n\n**Effect of temperature on distributions:**\n\n| Temperature | Effect | Use Case |\n|------------|--------|----------|\n| 0.0 | Greedy — always picks max | Code, math, factual Q&A |\n| 0.2–0.5 | Conservative — peaked distribution | Technical writing, structured output |\n| 0.7–1.0 | Balanced — natural variation | General chat, explanations |\n| 1.2–1.5 | Creative — flatter distribution | Brainstorming, poetry |\n| 2.0+ | Chaotic — near-uniform | Experimental only |\n\nT < 1 sharpens the distribution (more peaked), T > 1 flattens it (more uniform), T = 1 leaves it unchanged.\n\n## Greedy Decoding\n\nAlways select the highest-probability token. Deterministic, reproducible, but:\n- Produces repetitive, formulaic text\n- Can get stuck in degenerate loops\n- Often not the highest-quality output despite seeming \"confident\"\n\n## Top-K Sampling\n\nBefore sampling, zero out all but the K highest-probability tokens, then renormalize:\n\n```python\ndef top_k_sampling(logits, k=50, temperature=1.0):\n    # Zero out all but top-k\n    top_k_logits, top_k_indices = torch.topk(logits, k)\n    filtered = torch.full_like(logits, float('-inf'))\n    filtered.scatter_(0, top_k_indices, top_k_logits)\n    scaled = filtered / temperature\n    probs = F.softmax(scaled, dim=-1)\n    return torch.multinomial(probs, num_samples=1)\n```\n\n**Limitation**: K is fixed regardless of the distribution shape. When the model is very confident (one token has 90% probability), K=50 still forces competition with 49 unlikely options.\n\n## Top-P (Nucleus) Sampling\n\nSample from the smallest set of tokens whose cumulative probability exceeds P:\n\n```python\ndef top_p_sampling(logits, p=0.9, temperature=1.0):\n    sorted_logits, sorted_indices = torch.sort(logits, descending=True)\n    probs = F.softmax(sorted_logits / temperature, dim=-1)\n    cumulative_probs = torch.cumsum(probs, dim=-1)\n    # Remove tokens with cumulative prob > p (shift right to include the crossing token)\n    sorted_indices_to_remove = cumulative_probs - probs > p\n    sorted_logits[sorted_indices_to_remove] = float('-inf')\n    # Scatter back to original order\n    logits_filtered = sorted_logits.scatter(0, sorted_indices, sorted_logits)\n    return torch.multinomial(F.softmax(logits_filtered / temperature, dim=-1), 1)\n```\n\nTop-P adapts to distribution shape: when the model is certain, the nucleus may contain only 2–3 tokens; when uncertain, it may include 50+ tokens.\n\n## Min-P Sampling\n\nA more recent alternative (Nguyen et al., 2023): filter out tokens whose probability falls below `min_p × p_max` (where p_max is the highest token probability). Scales the threshold relative to the most likely token, performing well at high temperatures.\n\n## Beam Search\n\nInstead of sampling one token at a time, maintain the B most probable sequences (beams) at each step. Guarantees higher probability sequences but:\n- Deterministic (no randomness)\n- Computationally expensive (B× more compute)\n- Often produces generic, repetitive text for open-ended generation\n- Still used in machine translation and structured prediction\n\n## Repetition Penalty\n\nA technique to discourage the model from repeating tokens it has already generated:\n```python\n# Divide logits of previously seen tokens by a penalty factor\nfor token_id in past_token_ids:\n    logits[token_id] /= repetition_penalty  # e.g., 1.1 to 1.3\n```\n\n## Practical Settings\n\n| Task | Temperature | Top-P | Notes |\n|------|-------------|-------|-------|\n| Code generation | 0.0–0.2 | 0.95 | Correctness over creativity |\n| Factual Q&A | 0.0–0.3 | 0.9 | Deterministic answers |\n| Chat/conversation | 0.7 | 0.9 | Natural variation |\n| Creative writing | 0.9–1.1 | 0.95 | Varied but coherent |\n| Poetry/brainstorm | 1.0–1.5 | 1.0 | Maximize diversity |",
+  "mcqs": [
+    {
+      "id": "q1",
+      "question": "What happens to the probability distribution when you set temperature to a value less than 1?",
+      "options": [
+        "The distribution becomes flatter, giving more probability to unlikely tokens",
+        "The distribution becomes more peaked, concentrating probability on the most likely tokens",
+        "All tokens receive equal probability",
+        "The distribution is unchanged; only sampling speed is affected"
+      ],
+      "correct": 1,
+      "explanation": "Dividing logits by T < 1 amplifies differences between them, making the softmax distribution more peaked. The most likely token gets even more probability, and unlikely tokens get less. T > 1 does the opposite — flattening the distribution."
+    },
+    {
+      "id": "q2",
+      "question": "What is greedy decoding?",
+      "options": [
+        "Sampling multiple tokens and selecting the longest response",
+        "Always selecting the single highest-probability token at each generation step",
+        "Using a large Top-K value to consider many possible next tokens",
+        "Running the model multiple times and averaging the outputs"
+      ],
+      "correct": 1,
+      "explanation": "Greedy decoding selects the argmax token (highest probability) at every step. It is deterministic and reproducible, but often produces repetitive or suboptimal text because it never explores lower-probability but potentially better continuations."
+    },
+    {
+      "id": "q3",
+      "question": "What is the key advantage of Top-P (nucleus) sampling over Top-K sampling?",
+      "options": [
+        "Top-P is always faster to compute than Top-K",
+        "Top-P adapts the candidate set size to the distribution shape — small when the model is confident, large when uncertain",
+        "Top-P guarantees grammatically correct output",
+        "Top-P allows for a deterministic output when P is set to exactly 1.0"
+      ],
+      "correct": 1,
+      "explanation": "Top-K uses a fixed number of candidates regardless of distribution shape. Top-P uses a dynamic candidate set: it includes only the minimal set of tokens whose cumulative probability reaches P. When the model is confident, the nucleus is small (2–3 tokens); when uncertain, it expands automatically."
+    },
+    {
+      "id": "q4",
+      "question": "For generating production-quality code, which temperature setting is most appropriate?",
+      "options": [
+        "Temperature = 0.0 to 0.2, for deterministic and conservative outputs",
+        "Temperature = 0.7, for natural variation in variable names and structure",
+        "Temperature = 1.0, to ensure diverse coding approaches",
+        "Temperature = 1.5, so the model explores unusual algorithmic solutions"
+      ],
+      "correct": 0,
+      "explanation": "Code generation benefits from low temperature (0–0.2) because correctness is paramount — there are usually right and wrong ways to implement something. Higher temperatures introduce randomness that increases the chance of syntactic or logical errors."
+    },
+    {
+      "id": "q5",
+      "question": "What is the purpose of a repetition penalty in text generation?",
+      "options": [
+        "To prevent the model from using the same sentence structure twice",
+        "To reduce the probability of tokens that have already appeared in the output, discouraging repetitive loops",
+        "To ensure the model uses varied vocabulary from a reference corpus",
+        "To penalize the model during training when it produces repeated data"
+      ],
+      "correct": 1,
+      "explanation": "Repetition penalty divides the logits of previously generated tokens by a penalty factor (typically 1.1–1.3). This reduces their probability, helping the model avoid generating the same phrases or sentences repeatedly — a common failure mode without this mitigation."
+    },
+    {
+      "id": "q6",
+      "question": "Why does beam search often produce less natural text than sampling for open-ended generation?",
+      "options": [
+        "Beam search cannot handle context windows longer than 1,024 tokens",
+        "Beam search maximizes probability, which tends to favor generic, high-frequency phrases over diverse and natural-sounding continuations",
+        "Beam search requires a larger vocabulary than sampling methods",
+        "Beam search introduces more randomness than temperature-based sampling"
+      ],
+      "correct": 1,
+      "explanation": "Beam search maintains the B highest-probability sequences, tending to converge on generic phrases that are 'safe' (high probability) but dull. Open-ended generation (chat, stories) benefits from the diversity that sampling introduces, while beam search is still useful for constrained tasks like translation."
+    }
+  ],
+  "flashcards": [
+    {
+      "id": "f1",
+      "front": "Temperature (in LLM sampling)",
+      "back": "A scalar that controls the randomness of token selection. Logits are divided by T before softmax: T < 1 sharpens the distribution (less random), T > 1 flattens it (more random), T = 0 is greedy (deterministic)."
+    },
+    {
+      "id": "f2",
+      "front": "Top-K sampling",
+      "back": "A sampling method that restricts the candidate set to the K highest-probability tokens before sampling. The other tokens have their probabilities zeroed out. Common value: K=50. Limitation: the candidate set size is fixed regardless of distribution confidence."
+    },
+    {
+      "id": "f3",
+      "front": "Top-P (nucleus) sampling",
+      "back": "A sampling method that includes the smallest set of highest-probability tokens whose cumulative probability exceeds P (e.g., P=0.9). Adapts candidate set size to distribution shape. When confident: small nucleus. When uncertain: large nucleus."
+    },
+    {
+      "id": "f4",
+      "front": "Greedy decoding",
+      "back": "The simplest generation strategy: always select the token with the highest probability at each step. Deterministic and reproducible, but tends to produce repetitive and formulaic output. Equivalent to temperature=0."
+    },
+    {
+      "id": "f5",
+      "front": "Softmax",
+      "back": "A function that converts a vector of raw logit scores to a probability distribution (all positive, sum to 1): softmax(xᵢ) = exp(xᵢ) / Σ exp(xⱼ). Applied to LLM logits (after temperature scaling) to produce next-token probabilities."
+    },
+    {
+      "id": "f6",
+      "front": "Sampling",
+      "back": "Probabilistically selecting the next token by drawing from the probability distribution (rather than always taking the argmax). Introduces controlled randomness, producing more natural and diverse text. Governed by temperature, top-K, and top-P."
+    },
+    {
+      "id": "f7",
+      "front": "Logits",
+      "back": "The raw, unnormalized scores output by the last linear layer of an LLM — one value per vocabulary token. Converted to probabilities via softmax (after temperature scaling). Higher logit = more likely token before softmax."
+    }
+  ],
+  "videos": [
+    {
+      "title": "Temperature, Top-P, and Top-K in LLMs explained",
+      "youtube_id": "YjVuJjmlaVA",
+      "description": "Clear visual walkthrough of how temperature scaling, top-K filtering, and top-P nucleus sampling affect the token probability distribution, with animated examples showing how each parameter changes the output distribution."
+    },
+    {
+      "title": "Let's build GPT: from scratch, in code — Andrej Karpathy",
+      "youtube_id": "kCc8FmEb1nY",
+      "description": "The generation/sampling section of this full GPT build shows exactly how logits are converted to probabilities and sampled at inference time, grounding sampling theory in working code."
+    }
+  ],
+  "has_practical": true,
+  "practical_description": "Interactive sampling playground where you enter a prompt prefix and adjust temperature and top-P sliders in real time, watching the probability distribution bar chart update and seeing how different settings affect which tokens get sampled."
+}
