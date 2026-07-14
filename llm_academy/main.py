@@ -15,6 +15,8 @@ from llm_academy.api.progress import router as progress_router
 from llm_academy.api.quiz import router as quiz_router
 from llm_academy.api.content import router as content_router
 from llm_academy.api.run_example import router as run_router
+from llm_academy.api.flashcards import router as flashcards_router
+from llm_academy.api.gamification import router as gamification_router
 
 STATIC_DIR = pathlib.Path(__file__).parent / "static"
 
@@ -32,6 +34,8 @@ app.include_router(progress_router, prefix="/api")
 app.include_router(quiz_router, prefix="/api")
 app.include_router(content_router, prefix="/api")
 app.include_router(run_router, prefix="/api")
+app.include_router(flashcards_router, prefix="/api")
+app.include_router(gamification_router, prefix="/api")
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 

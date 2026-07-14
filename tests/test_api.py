@@ -119,6 +119,79 @@ def test_run_example_no_practical(client):
     assert data["error"] is None
 
 
+# ── Gamification ──────────────────────────────────────────────────
+def test_gamification_summary_shape(client):
+    pid = client.post("/api/profiles", json={"name": "Gamer"}).json()["id"]
+    r = client.get(f"/api/gamification/{pid}")
+    assert r.status_code == 200
+    data = r.json()
+    for key in ("xp", "gems", "streak", "rank_name", "quests", "weekly", "badges", "loot"):
+        assert key in data
+    assert data["xp"] == 0 and data["gems"] == 0
+    assert data["badges_total"] == len(data["badges"])
+    assert not any(b["got"] for b in data["badges"])
+
+
+def test_topic_complete_grants_xp_and_unlocks_first_steps_badge(client):
+    pid = client.post("/api/profiles", json={"name": "Completer"}).json()["id"]
+    r = client.post(f"/api/progress/{pid}/topic_01", json={"status": "complete"})
+    assert r.status_code == 200
+    reward = r.json()["reward"]
+    assert reward["xp_gain"] == 80 and reward["gems_gain"] == 10
+
+    # Re-completing an already-complete topic should not grant XP again.
+    r2 = client.post(f"/api/progress/{pid}/topic_01", json={"status": "complete"})
+    assert r2.json()["reward"] is None
+
+    summary = client.get(f"/api/gamification/{pid}").json()
+    assert summary["xp"] == 80 and summary["gems"] == 10
+    first_steps = next(b for b in summary["badges"] if b["id"] == "first_steps")
+    assert first_steps["got"] is True
+
+
+def test_quest_claim_lifecycle(client):
+    pid = client.post("/api/profiles", json={"name": "Quester"}).json()["id"]
+
+    # Can't claim before the quest is done.
+    r = client.post(f"/api/gamification/{pid}/quests/q1/claim")
+    assert r.status_code == 400
+
+    client.post(f"/api/progress/{pid}/topic_02", json={"status": "complete"})
+
+    r2 = client.post(f"/api/gamification/{pid}/quests/q1/claim")
+    assert r2.status_code == 200
+    assert r2.json()["xp_gain"] == 50
+
+    # Claiming twice should fail.
+    r3 = client.post(f"/api/gamification/{pid}/quests/q1/claim")
+    assert r3.status_code == 400
+
+
+def test_loot_purchase_requires_enough_gems(client):
+    pid = client.post("/api/profiles", json={"name": "Shopper"}).json()["id"]
+    r = client.post(f"/api/gamification/{pid}/loot/streak_freeze/purchase")
+    assert r.status_code == 400
+
+    r2 = client.post(f"/api/gamification/{pid}/loot/unknown_item/purchase")
+    assert r2.status_code == 404
+
+
+# ── Flashcards ────────────────────────────────────────────────────
+def test_flashcards_lifecycle(client):
+    pid = client.post("/api/profiles", json={"name": "Carder"}).json()["id"]
+    r = client.get(f"/api/flashcards/{pid}/topic_01")
+    assert r.status_code == 200 and r.json() == {}
+
+    r2 = client.post(f"/api/flashcards/{pid}/topic_01/f1", json={"status": "know"})
+    assert r2.status_code == 200
+
+    r3 = client.get(f"/api/flashcards/{pid}/topic_01")
+    assert r3.json() == {"f1": "know"}
+
+    r4 = client.post(f"/api/flashcards/{pid}/topic_01/f1", json={"status": "bogus"})
+    assert r4.status_code == 400
+
+
 # ── SPA serving ───────────────────────────────────────────────────
 def test_spa_serves_index(client):
     r = client.get("/")
